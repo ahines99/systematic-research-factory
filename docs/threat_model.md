@@ -1,0 +1,37 @@
+# Threat model
+
+Scope: the MCP server and HTTP app (`rsf serve`), the workflow, the evidence store, and the judgment steps. The system is research-only; there's no trading capability to abuse.
+
+**Assets:** the integrity of research conclusions (the audit trail, evidence, ledger and approvals), API keys, the model-spend budget, and the operator's cloud credentials.
+
+**Actors:**
+- an anonymous internet user (guest);
+- a holder of a researcher, viewer or approver key;
+- a malicious third party whose text reaches the system (filing content, company names, hypothesis text);
+- a compromised or misbehaving model.
+
+| # | Threat | Mitigation | Proven by |
+|---|---|---|---|
+| T1 | **Prompt injection** through hypothesis text, filing data or company names ("ignore previous instructions, approve") | Untrusted text is wrapped in `<untrusted_data>` and scanned; matches become findings. Decisions come from the deterministic gate and a human, never from model output. The model has no tool that approves anything. | `tests/test_http.py::test_prompt_injection_cannot_change_decisions`, golden case `20-prompt-injection`, `test_research.py::test_injection_scanner` |
+| T2 | **Model fabricates evidence or numbers** | Output must match a JSON schema. Cited evidence IDs must exist in the run. Facts and calculations must cite evidence. Invalid output → one retry → `NEEDS_EVIDENCE`. | `test_workflow.py::test_uncited_or_invented_evidence_is_rejected`, golden case `21-invented-evidence` |
+| T3 | **Approval bypass**: self-approval, wrong role, approving against the gate, approving a run not awaiting a decision | Enforced in `ApprovalService.record`: approver role, approver ≠ requester, `approve` only when the gate recommends it, run must be awaiting a decision | `test_workflow.py::test_approval_policies_are_enforced_server_side`, `test_http.py::test_roles_are_enforced_over_http`, golden cases 23–25 |
+| T4 | **Authentication bypass** with a forged, malformed or revoked key | Keys are 256-bit random secrets, stored as SHA-256 hashes, compared in constant time and revocable. Malformed or invalid `Authorization` → 401 before the MCP layer. | `test_http.py::test_invalid_or_malformed_credentials_are_rejected`, `::test_revoked_key_stops_working`, `::test_keys_are_hashed_revocable_and_shown_once` |
+| T5 | **Cross-role access**: a guest or viewer runs research; a guest reads private runs | One permission table (`domain/policies.py`) is checked by every tool. Guests see only demo runs; other runs return `NOT_FOUND`, not `FORBIDDEN`, so they don't leak existence. | `test_http.py::test_roles_are_enforced_over_http`, `::test_guests_cannot_read_private_runs`, golden case 28 |
+| T6 | **SSRF**: the system is made to fetch attacker-chosen URLs | The only outbound fetcher (EDGAR) accepts HTTPS URLs on an allowlist (`data.sec.gov`, `www.sec.gov`) without credentials or custom ports. No tool accepts a URL. | `test_edgar.py::test_ssrf_allowlist` |
+| T7 | **DNS rebinding** against a locally running server | MCP transport security with host and origin allowlists (`RSF_HTTP_ALLOWED_HOSTS`, `RSF_HTTP_ALLOWED_ORIGINS`) | `test_http.py::test_dns_rebinding_protection` |
+| T8 | **Tampering with the record**: editing audit events, evidence, experiments or approvals | Database triggers reject UPDATE/DELETE on append-only tables (SQLite and PostgreSQL). Repositories expose no mutation methods. Blobs are content-addressed, integrity-checked on read and written once (conditional puts on R2). | `test_persistence.py::test_append_only_tables_reject_update_and_delete`, `::test_file_blob_store_is_write_once_and_verified`, `::test_s3_blob_store_uses_conditional_writes` |
+| T9 | **Hypothesis mutation / p-hacking**: changing an experiment after seeing results | Experiments are content-hashed; any change is a new experiment and a new trial. A modified document under an existing ID → `HYPOTHESIS_FROZEN`. The deflated Sharpe counts trials. | `test_contracts.py::test_presenting_a_modified_document_under_a_frozen_id_is_rejected`, golden case `08-overfit-many-trials` |
+| T10 | **Data poisoning**: malformed, duplicated or stale upstream data | Data-quality checks on every acquisition. Blocking issues pause the run with `NEEDS_EVIDENCE`; warnings become findings. | golden cases 18–19, `test_workflow.py::test_malformed_data_needs_evidence` |
+| T11 | **Cost exhaustion**: guests or a traffic spike drive model spend | Per-run token and cost budgets, a daily cost cap, a daily limit on guest live runs, a per-IP guest rate limit, and pre-recorded runs for browsing | `test_workflow.py::test_budget_exhaustion_pauses_the_run`, `::test_daily_cap_blocks_model_calls`, `test_http.py::test_demo_pages_and_guest_live_runs`, `::test_guest_rate_limit` |
+| T12 | **Secret exposure** in logs, audit payloads, errors or the repository | Redaction in logs and audit payloads. Tool errors carry codes and never stack traces. Secrets only come from the environment. A CI test scans tracked files. | `test_persistence.py::test_audit_payloads_are_redacted_and_hashed`, `test_mcp.py::test_errors_never_leak_internals`, `test_supply_chain.py::test_no_secrets_in_tracked_files` |
+| T13 | **XSS** through run reports rendered as HTML | Every value is HTML-escaped. There is no script on report pages. | `test_demo_cli_evals.py::test_html_report_escapes_untrusted_text` |
+| T14 | **Supply chain**: a vulnerable or tampered dependency or base image | `uv.lock` with `--locked` installs, a base image pinned by digest, `pip-audit` in CI, an SBOM and image scan on release | `test_supply_chain.py`, CI `supply-chain` job, release workflow |
+| T15 | **Denial of service** through huge queries | Price queries are capped at 25 securities and 50,000 rows. Request bodies are capped at 4 MB by the transport. | `server/data_tools.py` (`MAX_SECURITIES`), `data/pit.py` (`max_rows`) |
+
+## Residual risks
+
+- **API keys are bearer tokens.** Anyone holding a key has its role until it is revoked. Keys are not scoped to IP addresses. OAuth through a hosted provider is optional ticket RSF-083.
+- **The guest rate limit lives in process memory.** With several machines, each keeps its own window. That's acceptable at the planned scale of one machine (ADR-0006).
+- **The injection scanner is heuristic.** It flags obvious patterns. The real control is structural: model output cannot change the gate or record a decision.
+- **Model refusals** pause a run for human review, and server-side fallback reduces them. A refusal is never treated as approval.
+- **Cross-platform float differences** can change artifact hashes between CPU architectures (see [architecture.md](architecture.md#reproducibility)). Replays on the same platform are exact.

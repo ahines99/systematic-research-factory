@@ -38,23 +38,20 @@ The demonstration shows a complete end-to-end run with both a successful path an
 
 ## Current state (as of 2026-09-23)
 
-The repository is a **scaffold**. The specification in this document is complete; almost none of it is implemented yet.
+**v0.1 is complete, and v1.0 is implemented and verified locally.** Deployment waits on the owner's accounts; see [docs/go-live-review.md](docs/go-live-review.md) and the ticket statuses in [docs/ROADMAP.md](docs/ROADMAP.md#ticket-index).
 
 | Area | State |
 |---|---|
-| Version control | Not a git repository yet (RSF-001) |
-| Packaging | `pyproject.toml` has dependencies but no `[build-system]`. The `src/` folder is imported as a package (`from src.mcp_server import mcp`), but setuptools treats it as a src-layout root, so a wheel build fails. Tests only pass via `python -m pytest` from the repo root (RSF-002) |
-| `src/domain/models.py` | `Confidence`, `EvidenceRef` and `Finding` exist. `AuditEvent` (below) is **not** implemented (RSF-006) |
-| `src/domain/project_models.py`, `policies.py`, `services.py` | Not created |
-| `src/adapters/`, `src/observability.py` | Not created |
-| `src/workflows/` | Empty package; `base.py` and `primary.py` not created |
-| `src/mcp_server.py` | `healthcheck` tool and `project://policies` resource only. The `review_run` prompt and all domain tools are missing. Display name updated to "Systematic Research Factory" |
-| `skills/*/SKILL.md` | Four files with **identical boilerplate**; only the name differs. They don't yet meet the "dynamically useful Skill" acceptance item (RSF-034–037) |
-| `tests/test_mcp.py` | One test, passing. It checks `is_error` but not the returned status |
-| `README.md`, `docs/` | README, roadmap and ADRs 0001–0007 written; architecture, data-contract and threat-model docs not written |
-| Fixtures, database, Docker | None |
+| Package | `src/research_factory`, built with hatchling, locked with `uv.lock`; Python 3.12+ |
+| Quality gates | ruff, `ruff format`, strict mypy, 152 pytest tests (on 3.12 and 3.14), 28 golden eval cases |
+| Data | Synthetic worlds with planted effects, plus real SEC EDGAR filings for 44 companies with simulated prices |
+| Workflow | All nine steps, persisted, resumable, idempotent, with retries, timeouts, fault injection and approvals |
+| MCP | 15 tools, 4 resources, 2 prompts over stdio or Streamable HTTP with API keys and roles |
+| Skills | Four Skills with procedures, references and a timestamp-check script, loaded into the judgment prompts |
+| Docs | Architecture, data contracts (generated), threat model, deployment, runbook, go-live review, ADRs |
+| Not yet done | GitHub CI run, container build, Fly.io/Neon/R2 deployment, restore drill, demo recording, a Claude eval baseline (needs an API key) |
 
-Code blocks in the rest of this document are the **target design** unless marked as existing. Work is tracked as tickets in [docs/ROADMAP.md](docs/ROADMAP.md).
+The code sketches in earlier versions of this document were the design; the implementation is now authoritative. The [implementation map](#implementation-map) below points to it.
 
 
 ## Reference architecture
@@ -80,18 +77,18 @@ For local development, use MCP over stdio or in-process tests. For deployed serv
 | Concern | Choice | Notes |
 |---|---|---|
 | Language | Python 3.12 | Pinned via `.python-version` (RSF-003) |
-| Environment | `uv` with committed `uv.lock` | Not yet installed on the dev machine |
-| Build backend | hatchling | Added in RSF-002 |
+| Environment | `uv` with committed `uv.lock` | `uv sync --locked` |
+| Build backend | hatchling | Skills are bundled into the wheel |
 | MCP | `mcp[cli]` v2 | `MCPServer`, in-process `Client` |
 | Contracts | Pydantic v2 | Frozen models for frozen artifacts |
 | Operational state | **SQLite for v0.1**, PostgreSQL from M7 | SQLAlchemy 2 + Alembic with portable types only (ADR-0001, RSF-060) |
-| Analytics | Polars (and DuckDB where SQL is clearer) | Deterministic feature build and backtest |
+| Analytics | NumPy | Dense in-memory matrices; deterministic (see deviations below) |
 | Evidence blobs | Local content-addressed store, then S3-compatible storage with object lock | RSF-013, RSF-065 |
 | Workflow | In-house state machine persisted in the operational DB; no workflow engine | [ADR-0005](docs/adr/0005-workflow-state-machine.md) |
 | Market data | Real SEC EDGAR filings; semi-synthetic prices keyed to acceptance time; fully synthetic fixtures for tests | [ADR-0003](docs/adr/0003-market-data-semi-synthetic.md) |
-| Model access | Anthropic SDK behind a `ModelClient` interface | Deterministic fake for tests (RSF-039) |
+| Model access | Anthropic SDK (`claude-opus-5`, structured output, refusal fallback) behind a `JudgmentProvider` interface | Deterministic rules provider for offline use and tests (RSF-039) |
 | Observability | structlog; OpenTelemetry optional | RSF-069; RSF-070 optional ([ADR-0007](docs/adr/0007-v1-scope.md)) |
-| Tests | pytest, in-process MCP client, `hypothesis` for property tests | One async plugin only (RSF-003) |
+| Tests | pytest with `anyio`, in-process MCP client, Starlette test client, `hypothesis` for property tests | Warnings are errors for this package |
 | Authentication | Bearer API keys with server-side roles; read-only guest with no login; hosted OAuth only if a Claude.ai connector is wanted | [ADR-0004](docs/adr/0004-authentication-api-keys.md) |
 | Deployment | Docker, ASGI (Starlette/FastAPI only for non-MCP endpoints) on Fly.io, with Neon Postgres and Cloudflare R2 | [ADR-0006](docs/adr/0006-hosting.md) |
 
@@ -107,11 +104,11 @@ In the MVP these are separate modules in one process (RSF-025). Split them into 
 
 | Module | Responsibility | Example tools |
 |---|---|---|
-| `sec_pit` | Filings and XBRL facts as known at `as_of`, using SEC acceptance time as knowledge time; restatement-aware | `get_filing_as_of`, `get_facts_as_of` |
+| `sec_pit` | Filings and XBRL facts as known at `as_of`, using SEC acceptance time as knowledge time; restatement-aware | `get_filings_as_of` |
 | `market_data_pit` | Prices, corporate actions and universe membership as known at `as_of`; survivorship-safe | `get_prices_as_of`, `get_universe_as_of` |
 | `factor_research` | Feature build with knowledge-time lineage; leakage audit | `build_features`, `audit_leakage` |
 | `backtest` | Deterministic backtests and statistical review | `run_backtest`, `get_statistics` |
-| `research_ledger` | Hypothesis freezing, experiment identity, trial counting, runs, evidence, approvals | `freeze_hypothesis`, `start_run`, `get_run_report` |
+| `research_ledger` | Hypothesis freezing, experiment identity, trial counting, runs, evidence, approvals | `freeze_hypothesis`, `start_run`, `resume_run`, `get_run_report`, `list_runs`, `approve_run`, `get_ledger` |
 
 ### Agent Skills
 Skills hold checklists, decision rules, examples and reference links. They never hold secrets or mutable state. The frontmatter advertises the Skill, the body gives the procedure, and `references/` or `scripts/` add depth only when needed.
@@ -144,388 +141,34 @@ Skills hold checklists, decision rules, examples and reference links. They never
 - No LLM calculation of returns or statistics.
 - The committee decision requires an approver who is not the run requester (enforced from RSF-063).
 
-## Data and state model
+## Implementation map
+
+| Concern | Code | Docs |
+|---|---|---|
+| Contracts | `domain/models.py`, `domain/project_models.py`, `judgment/contract.py` | [data_contracts.md](docs/data_contracts.md) (generated) |
+| Experiment identity and ledger | `domain/identity.py`, `services/ledger.py` | ADR-0001 |
+| Persistence | `persistence/schema.py`, `persistence/migrations/`, `persistence/repositories.py`, `persistence/blobs.py` | [data_contracts.md](docs/data_contracts.md#relational-schema) |
+| Evidence and audit | `services/evidence.py`, `services/audit.py` | [architecture.md](docs/architecture.md#evidence-and-provenance) |
+| Point-in-time data | `data/pit.py`, `data/calendar.py`, `data/fundamentals.py` | [architecture.md](docs/architecture.md#point-in-time-rules) |
+| Datasets | `data/synthetic.py`, `data/price_sim.py`, `data/edgar.py`, `data/edgar_universe.py`, `data/semi_synthetic.py` | ADR-0003 |
+| Research core | `research/features.py`, `research/backtest.py`, `research/leakage.py`, `research/statistics.py`, `research/quality.py` | |
+| Workflow | `workflows/engine.py`, `workflows/steps.py`, `workflows/primary.py`, `workflows/faults.py` | ADR-0005 |
+| Judgment | `judgment/providers.py`, `judgment/prompts.py` | |
+| Gate, approvals, budgets | `services/approvals.py`, `services/budget.py`, `domain/policies.py` | ADR-0004, ADR-0006 |
+| MCP server | `server/__init__.py`, `server/data_tools.py`, `server/research_tools.py`, `server/common.py` | |
+| HTTP, auth | `http_app.py`, `auth.py` | [deployment.md](docs/deployment.md) |
+| Reports, demo, replay | `report.py`, `demo.py` | [runbook.md](docs/runbook.md) |
+| Evaluation | `evals.py`, `evals/golden/` | |
+| CLI | `cli.py` (`rsf`) | [README](README.md#try-it) |
+
+### Deviations from the original design
+
+- **Analytics use NumPy, not Polars or DuckDB.** The data fits in memory as dense matrices; one library is simpler and deterministic.
+- **The in-memory "fakes" for repositories are in-memory SQLite** (RSF-012). The same SQL code then runs in tests and in production, with no second implementation to drift.
+- **Evidence IDs are content-derived, not UUIDs.** This makes reruns byte-identical and deduplicates evidence. A `run_evidence` table links evidence to runs, and there are `experiments`, `trial_results`, `step_results`, `approvals`, `api_keys` and `model_usage` tables beyond the original sketch.
+- **Standalone analysis tools** (`run_backtest`, `audit_leakage`, …) run the deterministic prefix of the workflow as an auditable `analysis` run, so every result has a run and evidence.
+- **A too-short sample yields only `NEEDS_EVIDENCE`.** The other statistics are not treated as evidence either way. The evaluation suite found this.
 
-The workflow database is the source of truth: SQLite in v0.1, PostgreSQL from M7. Migrations use portable types through SQLAlchemy. The DDL below is the PostgreSQL target.
-
-```sql
-create table workflow_runs (
-  run_id uuid primary key,
-  experiment_id text not null,
-  project_type text not null,
-  status text not null,
-  current_step text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  requested_by text not null
-);
-
-create table evidence (
-  evidence_id uuid primary key,
-  run_id uuid references workflow_runs(run_id),
-  source_uri text not null,
-  source_type text not null,
-  as_of timestamptz,
-  content_hash text not null,
-  metadata jsonb not null default '{}'::jsonb
-);
-
-create table findings (
-  finding_id uuid primary key,
-  run_id uuid references workflow_runs(run_id),
-  finding_type text not null,
-  statement text not null,
-  confidence text not null,
-  assumptions jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-create table finding_evidence (
-  finding_id uuid references findings(finding_id),
-  evidence_id uuid references evidence(evidence_id),
-  relation text not null,
-  primary key (finding_id, evidence_id, relation)
-);
-
-create table audit_events (
-  event_id bigserial primary key,
-  run_id uuid references workflow_runs(run_id),
-  step text not null,
-  actor text not null,
-  event_type text not null,
-  payload jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
--- Added beyond the original spec; needed for experiment identity, idempotency and approvals.
-create table experiments (
-  experiment_id text primary key,          -- content hash of frozen hypothesis + spec
-  research_family text not null,           -- trial counting for the deflated Sharpe ratio
-  hypothesis jsonb not null,
-  backtest_spec jsonb not null,
-  created_at timestamptz not null default now()
-);
-
-create table step_results (
-  run_id uuid references workflow_runs(run_id),
-  step text not null,
-  idempotency_key text not null,
-  status text not null,
-  artifact_evidence_id uuid references evidence(evidence_id),
-  created_at timestamptz not null default now(),
-  primary key (run_id, step)
-);
-
-create table approvals (
-  approval_id uuid primary key,
-  run_id uuid references workflow_runs(run_id),
-  step text not null,
-  approver text not null,
-  decision text not null,                  -- approved | rejected | needs_more_evidence
-  reason text not null,
-  created_at timestamptz not null default now()
-);
-```
-
-`src/domain/models.py` **currently contains** `Confidence`, `EvidenceRef` and `Finding` as below. `AuditEvent` still needs to be added.
-
-```python
-# src/domain/models.py
-from __future__ import annotations
-from datetime import datetime
-from enum import StrEnum
-from typing import Any
-from pydantic import BaseModel, Field
-
-class Confidence(StrEnum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-
-class EvidenceRef(BaseModel):
-    source_id: str
-    uri: str
-    retrieved_at: datetime
-    as_of: datetime | None = None
-    excerpt_hash: str | None = None
-
-class Finding(BaseModel):
-    finding_id: str
-    title: str
-    statement: str
-    confidence: Confidence
-    evidence: list[EvidenceRef] = Field(default_factory=list)
-    assumptions: list[str] = Field(default_factory=list)
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-# TODO (RSF-006): not yet implemented
-class AuditEvent(BaseModel):
-    run_id: str
-    step: str
-    event_type: str
-    created_at: datetime
-    actor: str
-    payload: dict[str, Any] = Field(default_factory=dict)
-```
-
-
-### Project-specific contracts (target, RSF-006)
-
-```python
-# src/domain/project_models.py
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict
-
-class Hypothesis(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    schema_version: str = "1"
-    hypothesis_id: str
-    research_family: str
-    statement: str
-    created_at: datetime          # must be timezone-aware
-    universe: str
-    horizon_days: int             # > 0
-
-class BacktestSpec(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    schema_version: str = "1"
-    hypothesis_id: str
-    as_of: datetime               # must be timezone-aware
-    execution_delay_minutes: int  # >= 0
-    transaction_cost_bps: float   # >= 0
-    hold_days: int                # > 0
-```
-
-The original spec's `frozen: bool = True` field is replaced by true immutability (`frozen=True`) plus a content-hash `experiment_id`.
-
-### Project-specific MCP tools (target, RSF-026)
-
-Tools are thin wrappers; logic lives in services.
-
-```python
-# add to the MCP server
-@mcp.tool()
-def get_filing_as_of(cik: str, as_of: str, form: str | None = None) -> list[dict]:
-    return sec_repo.get_as_of(cik=cik, as_of=as_of, form=form)
-
-@mcp.tool()
-def run_backtest(spec: BacktestSpec) -> dict:
-    return backtester.run(spec.model_dump())
-
-@mcp.tool()
-def freeze_hypothesis(h: Hypothesis) -> dict:
-    return ledger.freeze(h.model_dump())
-```
-
-
-## Repository layout
-
-Target layout after RSF-002 moves the code into a named package. ✅ = exists today.
-
-```text
-02_systematic-research-factory/
-├── pyproject.toml                ✅ (needs [build-system])
-├── README.md                     ✅
-├── IMPLEMENTATION_HANDOFF.md     ✅
-├── .env.example
-├── docker-compose.yml
-├── src/
-│   └── research_factory/         (today: src/ with __init__.py)
-│       ├── mcp_server.py         ✅ (healthcheck + policies only)
-│       ├── mcp/                  sec_pit, market_data_pit, factor_research, backtest, research_ledger
-│       ├── domain/
-│       │   ├── models.py         ✅ (missing AuditEvent)
-│       │   ├── project_models.py
-│       │   ├── services.py
-│       │   └── policies.py
-│       ├── adapters/
-│       │   ├── repositories.py
-│       │   └── external.py
-│       ├── workflows/            ✅ (empty package)
-│       │   ├── base.py
-│       │   └── primary.py
-│       └── observability.py
-├── skills/                       ✅ (4 placeholder SKILL.md files)
-│   ├── point-in-time-research/SKILL.md
-│   ├── financial-research-statistics/SKILL.md
-│   ├── signal-red-team/SKILL.md
-│   └── research-committee/SKILL.md
-├── tests/
-│   ├── test_mcp.py               ✅ (1 test)
-│   ├── test_workflow.py
-│   ├── fixtures/
-│   └── golden/
-└── docs/
-    ├── ROADMAP.md                ✅
-    ├── adr/                      ✅ (ADR-0001 to ADR-0007)
-    ├── architecture.md
-    ├── data_contracts.md
-    ├── threat_model.md
-    └── runbook.md
-```
-
-## Package configuration
-
-`pyproject.toml` exists with the dependencies below. It still needs a `[build-system]` table and package discovery (RSF-002), and dev extras for `hypothesis` and `pytest-cov` (RSF-003). Only one of `anyio` and `pytest-asyncio` should drive async tests; the existing test uses the `anyio` marker.
-
-```toml
-[project]
-name = "systematic-research-factory"
-version = "0.1.0"
-requires-python = ">=3.12"
-dependencies = [
-  "mcp[cli]>=2,<3",
-  "pydantic>=2.9",
-  "fastapi>=0.115",
-  "uvicorn>=0.30",
-  "sqlalchemy>=2.0",
-  "psycopg[binary]>=3.2",
-  "httpx>=0.27",
-  "structlog>=24.4",
-  "opentelemetry-api>=1.27",
-]
-
-[project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.7", "mypy>=1.12"]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-```
-
-
-## MCP server (target)
-
-The existing server has `healthcheck` and `project://policies`. The `review_run` prompt below is not yet implemented (RSF-028), and the policies resource should return structured data rather than a pipe-delimited string (RSF-027).
-
-```python
-from __future__ import annotations
-from mcp.server import MCPServer
-from pydantic import BaseModel
-
-mcp = MCPServer("Systematic Research Factory")
-
-class Health(BaseModel):
-    status: str
-    version: str
-
-@mcp.tool()
-def healthcheck() -> Health:
-    """Return service health for diagnostics."""
-    return Health(status="ok", version="0.1.0")
-
-@mcp.resource("project://policies")
-def policies() -> str:
-    """Human-readable operating and safety policies."""
-    return "Read-only by default. Material actions require explicit approval."
-
-@mcp.prompt()
-def review_run(run_id: str) -> str:
-    """Create a user-controlled review prompt for a workflow run."""
-    return f"Review workflow run {run_id}. Separate facts, assumptions, and recommendations."
-
-app = mcp.streamable_http_app()
-```
-
-
-## Workflow (target, RSF-022–023)
-
-```python
-# workflows/base.py
-from __future__ import annotations
-from dataclasses import dataclass, field
-from enum import StrEnum
-from typing import Any, Protocol
-
-class Status(StrEnum):
-    PENDING = "pending"
-    RUNNING = "running"
-    NEEDS_REVIEW = "needs_review"
-    COMPLETE = "complete"
-    FAILED = "failed"
-
-@dataclass
-class RunState:
-    run_id: str
-    status: Status = Status.PENDING
-    current_step: str | None = None
-    artifacts: dict[str, Any] = field(default_factory=dict)
-    errors: list[str] = field(default_factory=list)
-
-class Step(Protocol):
-    name: str
-    async def execute(self, state: RunState) -> RunState: ...
-
-async def run_steps(state: RunState, steps: list[Step]) -> RunState:
-    state.status = Status.RUNNING
-    for step in steps:
-        state.current_step = step.name
-        try:
-            state = await step.execute(state)
-        except Exception as exc:
-            state.errors.append(f"{step.name}: {exc}")
-            state.status = Status.FAILED
-            return state
-        if state.status == Status.NEEDS_REVIEW:
-            return state
-    state.status = Status.COMPLETE
-    return state
-```
-
-The production version must also persist each step result before continuing (RSF-022), skip steps that already completed on resume (RSF-043–044), and write an audit event on every transition.
-
-```python
-# workflows/primary.py
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
-from typing import Any, Protocol
-from .base import RunState, run_steps
-
-@dataclass
-class FunctionalStep:
-    name: str
-    fn: Callable[[RunState], Awaitable[Any]]
-
-    async def execute(self, state: RunState) -> RunState:
-        result = await self.fn(state)
-        state.artifacts[self.name] = result
-        return state
-
-class StepService(Protocol):
-    async def execute(self, state: RunState) -> Any: ...
-
-class StepServices(Protocol):
-    def for_step(self, name: str) -> StepService: ...
-
-# Each step is wired to a domain service that returns structured data, not prose.
-PROJECT_STEPS = [
-    "Hypothesis freeze", "Data acquisition", "Feature build", "Backtest",
-    "Leakage audit", "Statistical review", "Economic rationale review",
-    "Implementation review", "Research committee",
-]
-
-async def run_primary(run_id: str, services: StepServices) -> RunState:
-    state = RunState(run_id=run_id)
-    wired = [FunctionalStep(name=n, fn=services.for_step(n).execute) for n in PROJECT_STEPS]
-    return await run_steps(state, wired)
-```
-
-## Policy pattern (target, RSF-029)
-
-```python
-# domain/policies.py
-from pydantic import BaseModel
-
-class ActionDecision(BaseModel):
-    allowed: bool
-    requires_human_approval: bool
-    reason: str
-
-def check_action(action: str, risk_tier: str, has_approval: bool) -> ActionDecision:
-    if risk_tier in {"high", "critical"} and not has_approval:
-        return ActionDecision(allowed=False, requires_human_approval=True,
-                              reason="Material action requires explicit human approval")
-    return ActionDecision(allowed=True, requires_human_approval=False, reason="Policy satisfied")
-```
 
 ## Evaluation strategy
 
@@ -543,31 +186,13 @@ Create a golden dataset of at least 25 representative cases before calling the M
 
 ## Testing
 
-The existing test (`tests/test_mcp.py`) checks only `is_error`. The MCP v2 `CallToolResult` exposes `structured_content`, so the target test also asserts the payload:
-
-```python
-import pytest
-from mcp import Client
-from src.mcp_server import mcp   # becomes research_factory.mcp_server after RSF-002
-
-@pytest.mark.anyio
-async def test_healthcheck():
-    async with Client(mcp) as client:
-        result = await client.call_tool("healthcheck", {})
-        assert result.is_error is False
-        assert result.structured_content["status"] == "ok"
+```bash
+uv run pytest                      # unit, integration, property, MCP, HTTP, docs and supply-chain tests
+uv run rsf eval                    # golden evaluation suite -> var/scorecard.{json,md}
+DATABASE_URL=postgresql+psycopg://... uv run pytest tests/test_persistence.py tests/test_postgres.py
 ```
 
-Until RSF-002 lands, run tests from the repo root with `python -m pytest`.
-
-Add tests for:
-- each project-specific MCP tool;
-- authorization and approval rejection;
-- workflow pause and resume;
-- idempotent reruns;
-- provenance links;
-- deterministic calculation fixtures, including property tests;
-- at least one injected dependency failure.
+MCP tools are tested in process with `mcp.Client(create_server(services))` and over HTTP with Starlette's test client. The healthcheck test asserts `structured_content["status"] == "ok"`.
 
 ## Observability
 
@@ -614,39 +239,38 @@ v1.0 is a portfolio-grade cut ([ADR-0007](docs/adr/0007-v1-scope.md)). Tickets m
 
 ## Acceptance checklist (v0.1)
 
-Status as of 2026-09-23: **0 of 18 met.**
+Status as of 2026-09-23: **18 of 18 met** (CI is configured; its first run happens when the repository is pushed).
 
-Workflow steps. Each needs a deterministic artifact, an audit event and a tested failure path:
-- [ ] Hypothesis freeze: frozen model, content-hash experiment ID, ledger entry; rejects changes to a frozen hypothesis.
-- [ ] Data acquisition: every read stored as evidence with `as_of`; rejects a missing `as_of`; outage gives `NEEDS_EVIDENCE`.
-- [ ] Feature build: knowledge-time lineage on every value; malformed input handled.
-- [ ] Backtest: matches hand-computed fixtures; delay and costs applied; point-in-time universe.
-- [ ] Leakage audit: catches the planted leak and passes the clean fixture.
-- [ ] Statistical review: deflated Sharpe ratio uses the ledger's trial count; all statistics match the reference implementation.
-- [ ] Economic rationale review: schema-validated; uncited claims rejected.
-- [ ] Implementation review: capacity, turnover and cost assessment from deterministic inputs.
-- [ ] Research committee: memo plus a human `ApprovalRecord`; pauses at `needs_review`.
+Workflow steps. Each has a deterministic artifact, an audit event and a tested failure path:
+- [x] Hypothesis freeze: frozen model, content-hash experiment ID, ledger entry; rejects changes to a frozen hypothesis (`test_contracts.py`).
+- [x] Data acquisition: every read stored as evidence with `as_of`; rejects a missing `as_of`; an outage pauses the run (`test_data.py`, `test_workflow.py`).
+- [x] Feature build: knowledge-time lineage on every value; malformed input handled (`test_research.py`, golden case 18).
+- [x] Backtest: matches hand-computed fixtures; delay and costs applied; point-in-time universe (`test_research.py`).
+- [x] Leakage audit: catches the planted leaks and passes the clean fixture (golden cases 02–06, 15).
+- [x] Statistical review: deflated Sharpe uses the ledger's trial count; statistics match reference values (`test_research.py`, recomputation in every eval case).
+- [x] Economic rationale review: schema-validated; uncited claims rejected (golden case 21).
+- [x] Implementation review: capacity, turnover and cost assessment from deterministic inputs.
+- [x] Research committee: memo plus a human `ApprovalRecord`; pauses at `needs_review` (`test_workflow.py`).
 
 Cross-cutting:
-- [ ] Every material recommendation cites evidence or explicitly says evidence is insufficient.
-- [ ] All irreversible actions are disabled or human-approved; no trading tool exists.
-- [ ] Every MCP tool has a typed schema and integration tests.
-- [ ] At least one Skill is dynamically useful and not duplicate prompt text.
-- [ ] Every arithmetic, financial or statistical calculation has deterministic tests.
-- [ ] 25 golden cases are scored on all seven evaluation dimensions.
-- [ ] A run pauses and resumes across a process restart without re-executing completed steps.
-- [ ] The demo survives one injected tool failure.
-- [ ] The package installs from a clean venv, and CI is green.
+- [x] Every material recommendation cites evidence or explicitly says evidence is insufficient (automatic evidence-fidelity checks in every eval case).
+- [x] All irreversible actions are disabled or human-approved; no trading tool exists (`test_tool_surface_is_exact_and_has_no_trading`).
+- [x] Every MCP tool has a typed schema and integration tests (`test_mcp.py`, `test_http.py`).
+- [x] At least one Skill is dynamically useful: the point-in-time Skill's script catches the restatement leak in exported lineage (`test_skill_script_accepts_exported_lineage`).
+- [x] Every arithmetic, financial or statistical calculation has deterministic tests.
+- [x] 28 golden cases are scored on all seven evaluation dimensions.
+- [x] A run pauses and resumes across a process restart without re-executing completed steps (`test_resume_after_process_restart`).
+- [x] The demo survives one injected tool failure (demo scenario `fault-survived`, golden case 16).
+- [x] The package installs from a clean environment (`uv sync --locked`, verified on Python 3.12); CI is configured in `.github/workflows/ci.yml`.
 
-## First implementation-agent tasks
+## Remaining owner actions
 
-Follow the v0.1 critical path in [docs/ROADMAP.md](docs/ROADMAP.md#critical-path). Start with:
-
-1. RSF-001 / RSF-002: git init and the package-layout fix.
-2. RSF-003 / RSF-004: tooling and CI.
-3. RSF-006 / RSF-007: contracts and experiment identity.
-4. RSF-008 / RSF-009: synthetic fixtures with a planted signal and a planted leak.
-5. RSF-010: the first 10 golden cases, **before** building services.
+1. Push to GitHub, confirm CI (including the PostgreSQL job) is green, and protect `main` (RSF-004, RSF-060).
+2. Build the container: `docker compose up --build` (RSF-061).
+3. Deploy with [docs/deployment.md](docs/deployment.md): Fly.io, Neon, R2 (RSF-067, RSF-079).
+4. Run the restore drill in [docs/runbook.md](docs/runbook.md) (RSF-068).
+5. Set `ANTHROPIC_API_KEY` and record a Claude baseline: `rsf eval --provider anthropic` (RSF-039).
+6. Record the demo with [docs/demo-script.md](docs/demo-script.md) (RSF-052), then tag `v1.0.0` (RSF-078, RSF-080).
 
 ## Handoff note to the coding agent
 Don't broaden scope until the first vertical slice is demonstrably correct, auditable and restartable. Prefer boring deterministic code over agent autonomy. Every time a model is introduced, document why a deterministic rule is not enough, and define an evaluation for that model-dependent decision.

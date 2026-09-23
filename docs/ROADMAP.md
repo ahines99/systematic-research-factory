@@ -2,6 +2,8 @@
 
 Last reviewed: 2026-09-23. Ticket prefix: `RSF-`.
 
+**Status (2026-09-23):** 69 tickets done, 10 waiting on the owner, 4 optional tickets skipped (ADR-0007). Everything that can be verified without the owner's accounts is implemented and tested; see [go-live-review.md](go-live-review.md). Status values: `done`; `owner` (code and config are complete, but the done-when needs the owner's accounts, a GitHub remote, an API key or a recording); `skipped` (optional).
+
 This roadmap takes the repository from its current state (a spec plus a stub MCP server) to a deployed v1.0. Milestones M0–M5 match the six milestones in [IMPLEMENTATION_HANDOFF.md](../IMPLEMENTATION_HANDOFF.md) and end at the **v0.1 MVP**. Milestones M6–M9 take the MVP to **v1.0 production**. Some M6–M9 tickets are optional ([ADR-0007](adr/0007-v1-scope.md)).
 
 ## What "production" means here
@@ -39,6 +41,21 @@ v1.0  RSF-055 → 056 → 057 → 059 → 077 → 082 → 079 → 080
 
 These can run in parallel with the critical path: CI (RSF-004), Skill content (RSF-034–037), and docs (RSF-050–051).
 
+## Waiting on the owner
+
+| Ticket | What's needed |
+|---|---|
+| RSF-004 | Push to GitHub; confirm the `ci` workflow is green; protect `main` |
+| RSF-039 | Set `ANTHROPIC_API_KEY` and run `rsf eval --provider anthropic` to record the Claude baseline (the rules baseline is recorded) |
+| RSF-052 | Record the demo using [demo-script.md](demo-script.md) (README claims are verified and linked) |
+| RSF-060 | First CI run of the PostgreSQL job (no PostgreSQL on the build machine) |
+| RSF-061 | Build the image (no Docker on the build machine): `docker compose up --build` |
+| RSF-067 | Create the Fly.io, Neon and R2 resources and deploy ([deployment.md](deployment.md)) |
+| RSF-068 | Run and time the restore drill ([runbook.md](runbook.md#restoring-from-backup-rsf-068)) |
+| RSF-078 | Add the `FLY_API_TOKEN` secret; tag a release to exercise the pipeline |
+| RSF-079 | Deploy, then `rsf demo` on the instance |
+| RSF-080 | Sign off [go-live-review.md](go-live-review.md) and tag `v1.0.0` |
+
 ## Decisions
 
 All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/README.md).
@@ -57,89 +74,89 @@ All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/R
 
 | ID | Title | Milestone | Cut | Size | Depends on | Status |
 |---|---|---|---|---|---|---|
-| RSF-001 | Initialize git repository | M0 | v0.1 | S | — | todo |
-| RSF-002 | Fix package layout and build system | M0 | v0.1 | S | — | todo |
-| RSF-003 | Dev tooling and lockfile | M0 | v0.1 | S | 002 | todo |
-| RSF-004 | Continuous integration | M0 | v0.1 | S | 001, 003 | todo |
+| RSF-001 | Initialize git repository | M0 | v0.1 | S | — | done |
+| RSF-002 | Fix package layout and build system | M0 | v0.1 | S | — | done |
+| RSF-003 | Dev tooling and lockfile | M0 | v0.1 | S | 002 | done |
+| RSF-004 | Continuous integration | M0 | v0.1 | S | 001, 003 | owner |
 | RSF-005 | ADR log and naming decision | M0 | v0.1 | S | — | done |
-| RSF-006 | Core domain contracts | M0 | v0.1 | M | 002 | todo |
-| RSF-007 | Experiment identity and hypothesis freezing | M0 | v0.1 | S | 006 | todo |
-| RSF-008 | Synthetic market-data fixture | M0 | v0.1 | M | 006 | todo |
-| RSF-009 | Synthetic filings fixture with planted leak | M0 | v0.1 | M | 006 | todo |
-| RSF-010 | Golden case format and first 10 cases | M0 | v0.1 | M | 008, 009 | todo |
-| RSF-011 | Persistence schema and migrations | M1 | v0.1 | M | 006 | todo |
-| RSF-012 | Repository interfaces and in-memory fakes | M1 | v0.1 | M | 011 | todo |
-| RSF-013 | Content-addressed evidence store | M1 | v0.1 | M | 012 | todo |
-| RSF-014 | Append-only audit log | M1 | v0.1 | S | 012 | todo |
-| RSF-015 | Research ledger (trial counting) | M1 | v0.1 | S | 007, 012 | todo |
-| RSF-016 | Point-in-time data access services | M1 | v0.1 | M | 008, 009, 013 | todo |
-| RSF-017 | Feature build with knowledge-time lineage | M1 | v0.1 | M | 016 | todo |
-| RSF-018 | Backtest engine | M1 | v0.1 | L | 017 | todo |
-| RSF-019 | Backtest reference and property tests | M1 | v0.1 | M | 018 | todo |
-| RSF-020 | Leakage audit | M1 | v0.1 | M | 017, 018 | todo |
-| RSF-021 | Statistical review service | M1 | v0.1 | L | 015, 018 | todo |
-| RSF-022 | Workflow state machine | M1 | v0.1 | M | 011, 014 | todo |
-| RSF-023 | Primary workflow without an LLM | M1 | v0.1 | M | 013–022 | todo |
-| RSF-024 | CLI runner | M1 | v0.1 | S | 023 | todo |
-| RSF-025 | Modular MCP server layout | M2 | v0.1 | S | 002 | todo |
-| RSF-026 | Domain MCP tools | M2 | v0.1 | M | 023, 025 | todo |
-| RSF-027 | MCP resources | M2 | v0.1 | S | 026 | todo |
-| RSF-028 | MCP prompts | M2 | v0.1 | S | 025 | todo |
-| RSF-029 | Server-side policy enforcement | M2 | v0.1 | M | 026 | todo |
-| RSF-030 | Structured tool error model | M2 | v0.1 | S | 026 | todo |
-| RSF-031 | MCP integration test suite | M2 | v0.1 | M | 026–030 | todo |
-| RSF-032 | Evaluation harness | M3 | v0.1 | L | 010, 023 | todo |
-| RSF-033 | Golden dataset to 25 cases, including adversarial | M3 | v0.1 | M | 032 | todo |
-| RSF-034 | Skill: point-in-time-research | M3 | v0.1 | M | — | todo |
-| RSF-035 | Skill: financial-research-statistics | M3 | v0.1 | M | — | todo |
-| RSF-036 | Skill: signal-red-team | M3 | v0.1 | M | — | todo |
-| RSF-037 | Skill: research-committee | M3 | v0.1 | M | — | todo |
-| RSF-038 | Model-judgment step contract | M3 | v0.1 | M | 023 | todo |
-| RSF-039 | Model client and economic rationale review | M3 | v0.1 | M | 032, 038 | todo |
-| RSF-040 | Implementation review and committee steps | M3 | v0.1 | M | 039 | todo |
-| RSF-041 | Version stamping for prompts, Skills and models | M3 | v0.1 | S | 038 | todo |
-| RSF-042 | Approval gates and approval records | M4 | v0.1 | M | 022, 040 | todo |
-| RSF-043 | Pause and resume across restarts | M4 | v0.1 | M | 042 | todo |
-| RSF-044 | Idempotent steps and reruns | M4 | v0.1 | M | 022 | todo |
-| RSF-045 | Retries and timeouts | M4 | v0.1 | S | 022 | todo |
-| RSF-046 | Failure-injection harness | M4 | v0.1 | M | 045 | todo |
-| RSF-047 | Workflow test suite | M4 | v0.1 | M | 042–046 | todo |
-| RSF-048 | One-command local demo | M5 | v0.1 | M | 047 | todo |
-| RSF-049 | Run report | M5 | v0.1 | M | 023 | todo |
-| RSF-050 | Architecture and data-contract docs | M5 | v0.1 | M | 031 | todo |
-| RSF-051 | Threat model | M5 | v0.1 | M | 029 | todo |
-| RSF-052 | README verification and demo recording | M5 | v0.1 | S | 048, 049 | todo |
-| RSF-053 | Release v0.1.0 | M5 | v0.1 | S | 048–052 | todo |
+| RSF-006 | Core domain contracts | M0 | v0.1 | M | 002 | done |
+| RSF-007 | Experiment identity and hypothesis freezing | M0 | v0.1 | S | 006 | done |
+| RSF-008 | Synthetic market-data fixture | M0 | v0.1 | M | 006 | done |
+| RSF-009 | Synthetic filings fixture with planted leak | M0 | v0.1 | M | 006 | done |
+| RSF-010 | Golden case format and first 10 cases | M0 | v0.1 | M | 008, 009 | done |
+| RSF-011 | Persistence schema and migrations | M1 | v0.1 | M | 006 | done |
+| RSF-012 | Repository interfaces and in-memory fakes | M1 | v0.1 | M | 011 | done |
+| RSF-013 | Content-addressed evidence store | M1 | v0.1 | M | 012 | done |
+| RSF-014 | Append-only audit log | M1 | v0.1 | S | 012 | done |
+| RSF-015 | Research ledger (trial counting) | M1 | v0.1 | S | 007, 012 | done |
+| RSF-016 | Point-in-time data access services | M1 | v0.1 | M | 008, 009, 013 | done |
+| RSF-017 | Feature build with knowledge-time lineage | M1 | v0.1 | M | 016 | done |
+| RSF-018 | Backtest engine | M1 | v0.1 | L | 017 | done |
+| RSF-019 | Backtest reference and property tests | M1 | v0.1 | M | 018 | done |
+| RSF-020 | Leakage audit | M1 | v0.1 | M | 017, 018 | done |
+| RSF-021 | Statistical review service | M1 | v0.1 | L | 015, 018 | done |
+| RSF-022 | Workflow state machine | M1 | v0.1 | M | 011, 014 | done |
+| RSF-023 | Primary workflow without an LLM | M1 | v0.1 | M | 013–022 | done |
+| RSF-024 | CLI runner | M1 | v0.1 | S | 023 | done |
+| RSF-025 | Modular MCP server layout | M2 | v0.1 | S | 002 | done |
+| RSF-026 | Domain MCP tools | M2 | v0.1 | M | 023, 025 | done |
+| RSF-027 | MCP resources | M2 | v0.1 | S | 026 | done |
+| RSF-028 | MCP prompts | M2 | v0.1 | S | 025 | done |
+| RSF-029 | Server-side policy enforcement | M2 | v0.1 | M | 026 | done |
+| RSF-030 | Structured tool error model | M2 | v0.1 | S | 026 | done |
+| RSF-031 | MCP integration test suite | M2 | v0.1 | M | 026–030 | done |
+| RSF-032 | Evaluation harness | M3 | v0.1 | L | 010, 023 | done |
+| RSF-033 | Golden dataset to 25 cases, including adversarial | M3 | v0.1 | M | 032 | done |
+| RSF-034 | Skill: point-in-time-research | M3 | v0.1 | M | — | done |
+| RSF-035 | Skill: financial-research-statistics | M3 | v0.1 | M | — | done |
+| RSF-036 | Skill: signal-red-team | M3 | v0.1 | M | — | done |
+| RSF-037 | Skill: research-committee | M3 | v0.1 | M | — | done |
+| RSF-038 | Model-judgment step contract | M3 | v0.1 | M | 023 | done |
+| RSF-039 | Model client and economic rationale review | M3 | v0.1 | M | 032, 038 | owner |
+| RSF-040 | Implementation review and committee steps | M3 | v0.1 | M | 039 | done |
+| RSF-041 | Version stamping for prompts, Skills and models | M3 | v0.1 | S | 038 | done |
+| RSF-042 | Approval gates and approval records | M4 | v0.1 | M | 022, 040 | done |
+| RSF-043 | Pause and resume across restarts | M4 | v0.1 | M | 042 | done |
+| RSF-044 | Idempotent steps and reruns | M4 | v0.1 | M | 022 | done |
+| RSF-045 | Retries and timeouts | M4 | v0.1 | S | 022 | done |
+| RSF-046 | Failure-injection harness | M4 | v0.1 | M | 045 | done |
+| RSF-047 | Workflow test suite | M4 | v0.1 | M | 042–046 | done |
+| RSF-048 | One-command local demo | M5 | v0.1 | M | 047 | done |
+| RSF-049 | Run report | M5 | v0.1 | M | 023 | done |
+| RSF-050 | Architecture and data-contract docs | M5 | v0.1 | M | 031 | done |
+| RSF-051 | Threat model | M5 | v0.1 | M | 029 | done |
+| RSF-052 | README verification and demo recording | M5 | v0.1 | S | 048, 049 | owner |
+| RSF-053 | Release v0.1.0 | M5 | v0.1 | S | 048–052 | done |
 | RSF-054 | Market-data source decision | M6 | v1.0 | S | — | done |
-| RSF-055 | SEC EDGAR adapter | M6 | v1.0 | L | 016 | todo |
-| RSF-056 | Security master and identifier history | M6 | v1.0 | M | 055 | todo |
-| RSF-057 | Semi-synthetic price generator for the EDGAR universe | M6 | v1.0 | L | 054, 056 | todo |
-| RSF-058 | Data-quality checks | M6 | v1.0 | M | 055, 057 | todo |
-| RSF-059 | Data snapshots for reproducibility | M6 | v1.0 | M | 055, 057 | todo |
-| RSF-081 | Licensed vendor price adapter | M6 | optional | L | 057 | todo |
-| RSF-060 | PostgreSQL backend | M7 | v1.0 | M | 011 | todo |
-| RSF-061 | Container image and compose stack | M7 | v1.0 | M | 060 | todo |
-| RSF-062 | Streamable HTTP with API-key authentication | M7 | v1.0 | M | 061 | todo |
-| RSF-063 | Roles and server-side authorization | M7 | v1.0 | M | 062 | todo |
-| RSF-064 | Secrets and configuration | M7 | v1.0 | S | 061 | todo |
-| RSF-065 | Object storage for evidence | M7 | v1.0 | M | 013, 061 | todo |
+| RSF-055 | SEC EDGAR adapter | M6 | v1.0 | L | 016 | done |
+| RSF-056 | Security master and identifier history | M6 | v1.0 | M | 055 | done |
+| RSF-057 | Semi-synthetic price generator for the EDGAR universe | M6 | v1.0 | L | 054, 056 | done |
+| RSF-058 | Data-quality checks | M6 | v1.0 | M | 055, 057 | done |
+| RSF-059 | Data snapshots for reproducibility | M6 | v1.0 | M | 055, 057 | done |
+| RSF-081 | Licensed vendor price adapter | M6 | optional | L | 057 | skipped |
+| RSF-060 | PostgreSQL backend | M7 | v1.0 | M | 011 | owner |
+| RSF-061 | Container image and compose stack | M7 | v1.0 | M | 060 | owner |
+| RSF-062 | Streamable HTTP with API-key authentication | M7 | v1.0 | M | 061 | done |
+| RSF-063 | Roles and server-side authorization | M7 | v1.0 | M | 062 | done |
+| RSF-064 | Secrets and configuration | M7 | v1.0 | S | 061 | done |
+| RSF-065 | Object storage for evidence | M7 | v1.0 | M | 013, 061 | done |
 | RSF-066 | Workflow engine decision | M7 | v1.0 | S | — | done |
-| RSF-067 | Hosting and infrastructure as code | M7 | v1.0 | M | 061 | todo |
-| RSF-068 | Backups and restore drill | M7 | v1.0 | S | 065, 067 | todo |
-| RSF-083 | Hosted OAuth for a Claude.ai connector | M7 | optional | M | 062 | todo |
-| RSF-069 | Structured logging and redaction | M8 | v1.0 | S | 022 | todo |
-| RSF-070 | OpenTelemetry traces and metrics | M8 | optional | M | 069 | todo |
-| RSF-071 | Cost and latency budgets | M8 | v1.0 | S | 041, 045 | todo |
-| RSF-072 | Dashboards and alerts | M8 | optional | M | 070, 067 | todo |
-| RSF-073 | Operations runbook | M8 | v1.0 | S | 068, 071 | todo |
-| RSF-074 | Security testing | M9 | v1.0 | M | 051, 063 | todo |
-| RSF-075 | Supply-chain controls | M9 | v1.0 | S | 004, 061 | todo |
-| RSF-076 | Concurrency and load test | M9 | optional | M | 060, 062 | todo |
-| RSF-077 | Reproducibility audit | M9 | v1.0 | M | 059, 060 | todo |
-| RSF-078 | Release pipeline | M9 | v1.0 | M | 067, 075 | todo |
-| RSF-079 | Public demo instance | M9 | v1.0 | M | 063, 078, 082 | todo |
-| RSF-082 | Pre-recorded demo runs | M9 | v1.0 | M | 049, 059, 077 | todo |
-| RSF-080 | v1.0 go-live review | M9 | v1.0 | S | 073–075, 077–079, 082 | todo |
+| RSF-067 | Hosting and infrastructure as code | M7 | v1.0 | M | 061 | owner |
+| RSF-068 | Backups and restore drill | M7 | v1.0 | S | 065, 067 | owner |
+| RSF-083 | Hosted OAuth for a Claude.ai connector | M7 | optional | M | 062 | skipped |
+| RSF-069 | Structured logging and redaction | M8 | v1.0 | S | 022 | done |
+| RSF-070 | OpenTelemetry traces and metrics | M8 | optional | M | 069 | skipped |
+| RSF-071 | Cost and latency budgets | M8 | v1.0 | S | 041, 045 | done |
+| RSF-072 | Dashboards and alerts | M8 | optional | M | 070, 067 | skipped |
+| RSF-073 | Operations runbook | M8 | v1.0 | S | 068, 071 | done |
+| RSF-074 | Security testing | M9 | v1.0 | M | 051, 063 | done |
+| RSF-075 | Supply-chain controls | M9 | v1.0 | S | 004, 061 | done |
+| RSF-076 | Concurrency and load test | M9 | optional | M | 060, 062 | done |
+| RSF-077 | Reproducibility audit | M9 | v1.0 | M | 059, 060 | done |
+| RSF-078 | Release pipeline | M9 | v1.0 | M | 067, 075 | owner |
+| RSF-079 | Public demo instance | M9 | v1.0 | M | 063, 078, 082 | owner |
+| RSF-082 | Pre-recorded demo runs | M9 | v1.0 | M | 049, 059, 077 | done |
+| RSF-080 | v1.0 go-live review | M9 | v1.0 | S | 073–075, 077–079, 082 | owner |
 
 ---
 
@@ -243,6 +260,7 @@ Filings with `period_end`, `filed_at` and `accepted_at` timestamps, including re
 ### RSF-012 · Repository interfaces and in-memory fakes
 `M` · depends on: RSF-011
 **Done when:** each aggregate has a `Protocol` repository, a SQL implementation and an in-memory fake, and the same contract test suite runs against both implementations.
+*As built:* the in-memory implementation is the same SQL code on in-memory SQLite, so there is no second implementation to drift; the contract suite runs on SQLite locally and on PostgreSQL in CI.
 
 ### RSF-013 · Content-addressed evidence store
 `M` · depends on: RSF-012
