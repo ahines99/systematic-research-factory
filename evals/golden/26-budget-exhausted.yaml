@@ -1,0 +1,12 @@
+id: 26-budget-exhausted
+title: A zero daily budget pauses the run before any model spend
+dimensions:
+- cost_latency
+- recovery
+experiment:
+  hypothesis_id: eps-drift
+budgets:
+  max_cost_usd_per_day: 0.0
+expect:
+  run_status: needs_review
+  reason_prefix: BUDGET_EXCEEDED

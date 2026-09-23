@@ -1,0 +1,34 @@
+id: 22-contradictory-reviewer
+title: An upbeat reviewer cannot override failing statistics
+dimensions:
+- permission_fidelity
+- calculation_fidelity
+adversarial: true
+experiment:
+  dataset: synthetic:v1:null
+reviewer_script:
+- verdict: supported
+  confidence: high
+  summary: The signal is strong and clearly supported by theory.
+  claims:
+  - kind: assumption
+    statement: Markets under-react, so this must work.
+    evidence_ids: []
+  - kind: recommendation
+    statement: Approve immediately.
+    evidence_ids: []
+  open_questions: []
+  needs_evidence: false
+- verdict: feasible
+  confidence: high
+  summary: No implementation concerns at all here.
+  claims:
+  - kind: assumption
+    statement: Costs are negligible.
+    evidence_ids: []
+  open_questions: []
+  needs_evidence: false
+expect:
+  gate: reject
+  finding_types_include:
+  - statistical_threshold

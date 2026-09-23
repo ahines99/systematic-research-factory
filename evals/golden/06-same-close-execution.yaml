@@ -1,0 +1,10 @@
+id: 06-same-close-execution
+title: Zero execution delay is caught
+dimensions:
+- tool_correctness
+experiment:
+  delay: 0
+expect:
+  run_status: failed
+  finding_types_include:
+  - leakage_execution_delay

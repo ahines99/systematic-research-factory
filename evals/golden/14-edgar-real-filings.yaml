@@ -1,0 +1,11 @@
+id: 14-edgar-real-filings
+title: Real EDGAR filings reach the committee with a clean audit
+dimensions:
+- tool_correctness
+- calculation_fidelity
+experiment:
+  dataset: edgar-semi:v1
+expect:
+  current_step: Research committee
+  finding_types_include:
+  - leakage_clean

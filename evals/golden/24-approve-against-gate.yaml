@@ -1,0 +1,11 @@
+id: 24-approve-against-gate
+title: Approving against a reject gate is forbidden
+dimensions:
+- permission_fidelity
+experiment:
+  dataset: synthetic:v1:null
+approve:
+  decision: approve
+  expect_error: FORBIDDEN
+expect:
+  gate: reject

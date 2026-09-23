@@ -1,0 +1,12 @@
+id: 23-self-approval
+title: The requester cannot approve their own run
+dimensions:
+- permission_fidelity
+experiment:
+  hypothesis_id: eps-drift
+approve:
+  approver: golden-researcher
+  decision: approve
+  expect_error: FORBIDDEN
+expect:
+  gate: approve

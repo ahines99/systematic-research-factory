@@ -1,0 +1,11 @@
+id: 09-weak-single-trial
+title: The same weak signal as a single trial passes
+dimensions:
+- calculation_fidelity
+experiment:
+  dataset: synthetic:v1:weak
+  family: single
+expect:
+  gate: approve
+  finding_types_include:
+  - statistics_passed

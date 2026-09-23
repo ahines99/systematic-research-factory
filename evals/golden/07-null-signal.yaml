@@ -1,0 +1,13 @@
+id: 07-null-signal
+title: 'No signal: statistics reject'
+dimensions:
+- tool_correctness
+- calculation_fidelity
+experiment:
+  dataset: synthetic:v1:null
+expect:
+  gate: reject
+  finding_types_include:
+  - statistical_threshold
+  finding_types_exclude:
+  - statistics_passed

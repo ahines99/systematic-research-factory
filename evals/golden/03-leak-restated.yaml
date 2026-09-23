@@ -1,0 +1,12 @@
+id: 03-leak-restated
+title: Back-filled restatements are a look-ahead leak
+dimensions:
+- tool_correctness
+- calculation_fidelity
+experiment:
+  timing: latest_restated
+expect:
+  run_status: failed
+  current_step: Leakage audit
+  finding_types_include:
+  - leakage_knowledge_time

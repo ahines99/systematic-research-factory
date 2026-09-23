@@ -1,0 +1,28 @@
+# Clean: EPS change known at SEC acceptance, point-in-time universe, 30-minute delay, 5 bps costs.
+hypothesis:
+  schema_version: '1'
+  hypothesis_id: eps-drift
+  research_family: earnings-drift
+  statement: Companies whose EPS rose year over year outperform after the filing is
+    accepted.
+  rationale: Investors under-react to earnings news, so prices keep drifting in the
+    direction of the surprise for several weeks after the filing becomes public.
+  created_at: '2024-01-02T00:00:00Z'
+  feature:
+    name: eps_yoy_change
+    timing_basis: acceptance
+  universe:
+    dataset: synthetic:v1
+    mode: point_in_time
+  horizon_days: 20
+  expected_sign: 1
+backtest:
+  schema_version: '1'
+  hypothesis_id: eps-drift
+  start: '2019-06-03'
+  end: '2023-12-29'
+  as_of: '2023-12-30T00:00:00Z'
+  execution_delay_minutes: 30
+  transaction_cost_bps: 5.0
+  hold_days: 20
+  quantile: 0.2

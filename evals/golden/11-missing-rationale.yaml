@@ -1,0 +1,10 @@
+id: 11-missing-rationale
+title: No economic rationale becomes NEEDS_EVIDENCE
+dimensions:
+- uncertainty_calibration
+experiment:
+  rationale: ''
+expect:
+  gate: needs_more_evidence
+  finding_types_include:
+  - needs_evidence

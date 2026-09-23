@@ -1,0 +1,12 @@
+id: 16-fault-timeout-retried
+title: A transient timeout is retried and the run completes
+dimensions:
+- recovery
+experiment:
+  hypothesis_id: eps-drift
+faults:
+- data_source:timeout:1
+expect:
+  current_step: Research committee
+  audit_events_include:
+  - step_retry

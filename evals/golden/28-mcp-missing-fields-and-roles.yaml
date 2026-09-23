@@ -1,0 +1,51 @@
+id: 28-mcp-missing-fields-and-roles
+title: Malformed calls and wrong roles fail closed over MCP
+kind: mcp
+dimensions:
+- tool_correctness
+- permission_fidelity
+adversarial: true
+calls:
+- tool: freeze_hypothesis
+  arguments:
+    hypothesis: &id001
+      hypothesis_id: mcp-case
+      research_family: golden-mcp
+      statement: Rising EPS predicts returns after acceptance.
+      rationale: Investors under-react to earnings news for weeks after filings are accepted.
+      created_at: '2024-01-02T00:00:00Z'
+      feature:
+        name: eps_yoy_change
+        timing_basis: acceptance
+      universe:
+        dataset: synthetic:v1
+        mode: point_in_time
+      horizon_days: 20
+  expect_error: INVALID_INPUT
+- tool: freeze_hypothesis
+  arguments: &id002
+    hypothesis: *id001
+    backtest:
+      hypothesis_id: mcp-case
+      start: '2019-06-03'
+      end: '2023-12-29'
+      as_of: '2023-12-30T00:00:00Z'
+      execution_delay_minutes: 30
+      transaction_cost_bps: 5
+      hold_days: 20
+  as_role: viewer
+  expect_error: FORBIDDEN
+- tool: freeze_hypothesis
+  arguments: *id002
+  expect:
+    trial_number: 1
+    created: true
+- tool: start_run
+  arguments:
+    experiment_id: exp_unknown
+  expect_error: NOT_FOUND
+- tool: start_run
+  arguments:
+    experiment_id: exp_unknown
+  as_role: guest
+  expect_error: FORBIDDEN

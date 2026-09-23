@@ -1,0 +1,11 @@
+id: 12-short-sample
+title: Six months of data is too short
+dimensions:
+- uncertainty_calibration
+experiment:
+  start: '2023-06-01'
+  hold: 5
+expect:
+  gate: needs_more_evidence
+  finding_types_include:
+  - needs_evidence

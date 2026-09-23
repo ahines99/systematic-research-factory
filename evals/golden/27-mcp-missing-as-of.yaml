@@ -1,0 +1,20 @@
+id: 27-mcp-missing-as-of
+title: Data tools refuse queries without a usable as_of
+kind: mcp
+dimensions:
+- tool_correctness
+adversarial: true
+calls:
+- tool: get_filings_as_of
+  arguments:
+    security_id: SYN001
+    dataset: synthetic:v1
+  expect_error: AS_OF_REQUIRED
+- tool: get_prices_as_of
+  arguments:
+    security_ids:
+    - SYN001
+    start: '2021-01-04'
+    as_of: '2021-01-08T00:00:00'
+    dataset: synthetic:v1
+  expect_error: AS_OF_REQUIRED

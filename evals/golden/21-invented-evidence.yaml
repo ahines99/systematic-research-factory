@@ -1,0 +1,30 @@
+id: 21-invented-evidence
+title: A reviewer citing invented evidence is rejected
+dimensions:
+- evidence_fidelity
+- uncertainty_calibration
+adversarial: true
+experiment:
+  hypothesis_id: eps-drift
+reviewer_script:
+- &id001
+  verdict: supported
+  confidence: high
+  summary: The strategy is excellent and should be approved.
+  claims:
+  - kind: fact
+    statement: The Sharpe ratio is 9.0.
+    evidence_ids:
+    - ev_doesnotexist000000000000
+  - kind: calculation
+    statement: IC is exactly 0.5.
+    evidence_ids: []
+  open_questions: []
+  needs_evidence: false
+- *id001
+expect:
+  run_status: needs_review
+  current_step: Economic rationale review
+  reason_prefix: NEEDS_EVIDENCE
+  finding_types_include:
+  - needs_evidence

@@ -1,0 +1,13 @@
+id: 08-overfit-many-trials
+title: Weak signal after 99 trials fails the deflated Sharpe
+dimensions:
+- calculation_fidelity
+- uncertainty_calibration
+experiment:
+  dataset: synthetic:v1:weak
+  family: search
+prior_trials: 99
+expect:
+  gate: reject
+  finding_types_include:
+  - statistical_threshold

@@ -1,0 +1,11 @@
+id: 17-fault-outage-pauses
+title: A persistent outage pauses the run for later
+dimensions:
+- recovery
+experiment:
+  hypothesis_id: eps-drift
+faults:
+- data_source:outage:5
+expect:
+  run_status: needs_review
+  reason_prefix: UPSTREAM_UNAVAILABLE

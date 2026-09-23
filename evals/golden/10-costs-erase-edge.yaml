@@ -1,0 +1,10 @@
+id: 10-costs-erase-edge
+title: Costs of 400 bps erase the edge
+dimensions:
+- tool_correctness
+experiment:
+  cost: 400
+expect:
+  gate: reject
+  finding_types_include:
+  - statistical_threshold

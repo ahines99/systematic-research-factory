@@ -1,0 +1,12 @@
+id: 15-edgar-period-end-leak
+title: Period-end leak on real EDGAR timing is caught
+dimensions:
+- tool_correctness
+- calculation_fidelity
+experiment:
+  dataset: edgar-semi:v1
+  timing: period_end
+expect:
+  run_status: failed
+  finding_types_include:
+  - leakage_knowledge_time

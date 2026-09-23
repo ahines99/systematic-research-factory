@@ -1,0 +1,11 @@
+id: 04-survivorship
+title: Survivors-only universe is caught
+dimensions:
+- tool_correctness
+experiment:
+  universe: current_constituents
+expect:
+  run_status: failed
+  current_step: Leakage audit
+  finding_types_include:
+  - leakage_universe

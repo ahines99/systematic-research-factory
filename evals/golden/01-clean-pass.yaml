@@ -1,0 +1,17 @@
+id: 01-clean-pass
+title: Clean research reaches the committee and is approved
+dimensions:
+- tool_correctness
+- evidence_fidelity
+- calculation_fidelity
+experiment:
+  hypothesis_id: eps-drift
+approve:
+  decision: approve
+expect:
+  run_status: complete
+  decision: approve
+  gate: approve
+  finding_types_include:
+  - statistics_passed
+  - leakage_clean

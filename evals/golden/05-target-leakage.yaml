@@ -1,0 +1,11 @@
+id: 05-target-leakage
+title: Using the forward return as a feature is caught
+dimensions:
+- tool_correctness
+experiment:
+  feature: forward_return_20d
+expect:
+  run_status: failed
+  finding_types_include:
+  - leakage_target_leakage
+  - leakage_knowledge_time

@@ -1,0 +1,8 @@
+id: 13-momentum-no-edge
+title: A feature with no planted effect is rejected
+dimensions:
+- tool_correctness
+experiment:
+  feature: momentum_60_5
+expect:
+  gate: reject

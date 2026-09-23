@@ -1,0 +1,95 @@
+{
+  "format": "rsf-demo-manifest/1",
+  "scenarios": {
+    "clean-approved": {
+      "artifacts": {
+        "Backtest": "97b8e6f69cb533648b04ea5cac287b12c051b3aaea177937b55b9986ac9f69d6",
+        "Data acquisition": "4392883065dd73b231bd00be01432b1af22e1343d1edd75942f5577ad179ba87",
+        "Economic rationale review": "fab54b3cccda22b07627aa22b53b2b5a240382510b4f23c796302176ed2562a6",
+        "Feature build": "b26984c74231afef51745321f72b35c218554df2e11910e9886b3e2df48fae42",
+        "Hypothesis freeze": "c8c83c8bc79acd3c588fd52f64f4d546bffb6289b588aec929cd46403e61142b",
+        "Implementation review": "1c10cce4a59fe49bea39791b2895c172dc0f945f33571475ced6d501b78ea681",
+        "Leakage audit": "213d13a0523c853cae47d04d0e8ebfd1465a33f06b909acb0e240881668293f1",
+        "Statistical review": "1409980baa8dd762860d461829e77d7c56da83e0459490fe75895a91f9f3bae9"
+      },
+      "current_step": "Research committee",
+      "decision": "approve",
+      "gate": "approve",
+      "status": "complete"
+    },
+    "fault-survived": {
+      "artifacts": {
+        "Backtest": "97b8e6f69cb533648b04ea5cac287b12c051b3aaea177937b55b9986ac9f69d6",
+        "Data acquisition": "4392883065dd73b231bd00be01432b1af22e1343d1edd75942f5577ad179ba87",
+        "Economic rationale review": "fab54b3cccda22b07627aa22b53b2b5a240382510b4f23c796302176ed2562a6",
+        "Feature build": "b26984c74231afef51745321f72b35c218554df2e11910e9886b3e2df48fae42",
+        "Hypothesis freeze": "c8c83c8bc79acd3c588fd52f64f4d546bffb6289b588aec929cd46403e61142b",
+        "Implementation review": "1c10cce4a59fe49bea39791b2895c172dc0f945f33571475ced6d501b78ea681",
+        "Leakage audit": "213d13a0523c853cae47d04d0e8ebfd1465a33f06b909acb0e240881668293f1",
+        "Statistical review": "1409980baa8dd762860d461829e77d7c56da83e0459490fe75895a91f9f3bae9"
+      },
+      "current_step": "Research committee",
+      "decision": "approve",
+      "gate": "approve",
+      "status": "complete"
+    },
+    "leak-caught": {
+      "artifacts": {
+        "Backtest": "71bbed837fb3aa584b81068d753bf44c28b62d255ea236defd801a925b025b4e",
+        "Data acquisition": "4392883065dd73b231bd00be01432b1af22e1343d1edd75942f5577ad179ba87",
+        "Feature build": "690a22fda6ac7fcd539e51833691983ca4522df8f9928d4230e550fbe9a3e485",
+        "Hypothesis freeze": "e1206f15cfd881df213e03fe74cb9a9db02248032f4878845e58fbb1b00f3503",
+        "Leakage audit": "14b6f77e46ab680242c1043ba86888710b747a3d6a93d9427d523462b37620c0"
+      },
+      "current_step": "Leakage audit",
+      "decision": null,
+      "gate": null,
+      "status": "failed"
+    },
+    "overfit-rejected": {
+      "artifacts": {
+        "Backtest": "a7a47cd8fc316c67066e59e634ecf722e5c54e0f0e956dc435f06fc85fd67a5f",
+        "Data acquisition": "4a1e400836711e1cdffee82889fbff171bad2a4850e23252b8af091c9cbb93c0",
+        "Economic rationale review": "93f9db4f004e60c3e18d800c5cede855fccad4b53c6374e4e3d8f61c247a8056",
+        "Feature build": "60d133fcde6ae8ea6b065d2aaa96194f8231f170ad2428553132be0f6d829a4e",
+        "Hypothesis freeze": "3dfb18563758f009cf3dd17db762b966827b8152442c741b96b0fdacef3f15a5",
+        "Implementation review": "091fe4885ab57267a73d9ff0485b59450735e37f7674cc85c70d2d449f3efb5c",
+        "Leakage audit": "213d13a0523c853cae47d04d0e8ebfd1465a33f06b909acb0e240881668293f1",
+        "Statistical review": "3567c54d5a1de335fceba1a9db7c16a2fae6541c70c7b6767638a5dbe5670a8d"
+      },
+      "current_step": "Research committee",
+      "decision": "reject",
+      "gate": "reject",
+      "status": "complete"
+    },
+    "real-filings": {
+      "artifacts": {
+        "Backtest": "475dfe9bbe9bae714a6a3fda6ceb37010ec1754b1f99a2f7684554f73659ab20",
+        "Data acquisition": "065d779e549d39d31c1e0fdf277a22f71d672be17e84236bcb17b644ef5b53dc",
+        "Economic rationale review": "998c0ca6f76ac8c4837f1b36ea6f046a4d337cb85d8a378c16b9185c6c5e5b72",
+        "Feature build": "0870bd0219f6dcbf28a4e4063dd5cfa00e097f11e5a3f6919705d285b9bedf16",
+        "Hypothesis freeze": "dbddbaf08c0bdb601a0fab8a86ff76c6bd14f330825e6905c3dd39d272f20a6b",
+        "Implementation review": "59cb91b11e0e82cc8346f0ba791348256ad95d8ec2fc725bf1f6250cb04ea978",
+        "Leakage audit": "5e6efb01629826ab8091d44149c46d229255fa1a75dc1c2dcd7f28c79ccfb7f5",
+        "Statistical review": "e375f755639795b2f99b3f2003483c3346e0203095942f166e3bcfeadc9054e9"
+      },
+      "current_step": "Research committee",
+      "decision": "reject",
+      "gate": "reject",
+      "status": "complete"
+    },
+    "survivorship-caught": {
+      "artifacts": {
+        "Backtest": "f1b1ea18c238d3cc17c4b71664a00187ef2246bacd15170f6a6c3ebf61dabb16",
+        "Data acquisition": "4392883065dd73b231bd00be01432b1af22e1343d1edd75942f5577ad179ba87",
+        "Feature build": "639f332be7d6a60cc122f46b129670b17f3a23e612781d094ba1b5bf64300a07",
+        "Hypothesis freeze": "226d2a73abf092f009f2940da2bf729c24425b80fb665a67dd9c99d8392018bb",
+        "Leakage audit": "c687b16ec4653694ad2d3e88f87082383578fadb7aa9dbfa63ceda6f00a357da"
+      },
+      "current_step": "Leakage audit",
+      "decision": null,
+      "gate": null,
+      "status": "failed"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: 02-leak-period-end
+title: Period-end timing is a look-ahead leak
+dimensions:
+- tool_correctness
+- calculation_fidelity
+experiment:
+  timing: period_end
+expect:
+  run_status: failed
+  current_step: Leakage audit
+  finding_types_include:
+  - leakage_knowledge_time

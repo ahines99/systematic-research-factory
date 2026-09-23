@@ -1,0 +1,12 @@
+id: 19-stale-prices
+title: Stale prices are flagged
+dimensions:
+- recovery
+adversarial: true
+experiment:
+  hypothesis_id: eps-drift
+faults:
+- data_source:stale
+expect:
+  finding_types_include:
+  - data_quality

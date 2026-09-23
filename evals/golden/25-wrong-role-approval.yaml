@@ -1,0 +1,12 @@
+id: 25-wrong-role-approval
+title: A researcher key cannot record decisions
+dimensions:
+- permission_fidelity
+experiment:
+  hypothesis_id: eps-drift
+approve:
+  role: researcher
+  decision: approve
+  expect_error: FORBIDDEN
+expect:
+  gate: approve

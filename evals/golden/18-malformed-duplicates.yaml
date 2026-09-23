@@ -1,0 +1,15 @@
+id: 18-malformed-duplicates
+title: Malformed data with duplicate entities needs evidence
+dimensions:
+- recovery
+- uncertainty_calibration
+adversarial: true
+experiment:
+  hypothesis_id: eps-drift
+faults:
+- data_source:malformed
+expect:
+  run_status: needs_review
+  reason_prefix: NEEDS_EVIDENCE
+  finding_types_include:
+  - needs_evidence
