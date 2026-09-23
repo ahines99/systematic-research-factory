@@ -97,6 +97,7 @@ class GoldenCase(BaseModel):
     faults: list[str] = Field(default_factory=list)
     reviewer_script: list[Any] = Field(default_factory=list)
     budgets: dict[str, Any] = Field(default_factory=dict)
+    thresholds: dict[str, Any] = Field(default_factory=dict)  # overrides of StatisticalThresholds
     approve: Approval | None = None
     calls: list[ToolCall] = Field(default_factory=list)
     expect: Expect = Field(default_factory=Expect)
@@ -210,6 +211,7 @@ def _api_key() -> str | None:
 
 def _services(case: GoldenCase, provider: str) -> Services:
     settings = Settings(
+        thresholds=Settings().thresholds.model_copy(update=case.thresholds),
         database_url="sqlite://",
         blob_store="memory://",
         budgets=Budgets(**case.budgets),

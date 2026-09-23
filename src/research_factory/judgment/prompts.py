@@ -43,6 +43,19 @@ questions. Your verdict is the memo's recommendation: "approve", "reject" or
 "needs_more_evidence". A human approver records the actual decision.""",
 }
 
+NO_TOOLS_PREFACE = """In this step you cannot call tools. Where the procedure below says to call a tool or read a
+resource, use the structured inputs you were given instead: they are those tools' outputs,
+with evidence IDs. If an input the procedure needs is missing, say NEEDS_EVIDENCE."""
+
+_skills_enabled = True
+
+
+def set_skills_enabled(enabled: bool) -> None:
+    """Turn Skill text in judgment prompts on or off (for A/B evaluation, RSF-034)."""
+    global _skills_enabled
+    _skills_enabled = enabled
+
+
 SKILL_FOR_STEP = {
     "economic_rationale": "signal-red-team",
     "implementation_review": "financial-research-statistics",
@@ -71,10 +84,10 @@ def skill_text(name: str) -> str:
 
 
 def system_prompt(step_slug: str) -> str:
-    skill = skill_text(SKILL_FOR_STEP.get(step_slug, ""))
+    skill = skill_text(SKILL_FOR_STEP.get(step_slug, "")) if _skills_enabled else ""
     parts = [COMMON_RULES, STEP_PROMPTS[step_slug]]
     if skill:
-        parts.append(f"Procedure to follow (Agent Skill):\n{skill}")
+        parts.append(f"{NO_TOOLS_PREFACE}\n\nProcedure to follow (Agent Skill):\n{skill}")
     return "\n\n".join(parts)
 
 
@@ -83,5 +96,7 @@ def prompt_version(step_slug: str) -> str:
 
 
 def skill_version(step_slug: str) -> str:
+    if not _skills_enabled:
+        return "disabled"
     text = skill_text(SKILL_FOR_STEP.get(step_slug, ""))
     return sha256_hex(text.encode("utf-8"))[:16] if text else "none"

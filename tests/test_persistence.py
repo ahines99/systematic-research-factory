@@ -85,6 +85,14 @@ def test_append_only_tables_reject_update_and_delete(repos: Repositories, engine
         conn.execute(text(f"UPDATE {table} SET {first_column} = {value}"))
 
 
+def test_truncate_is_blocked_on_postgres(repos: Repositories, engine: Engine) -> None:
+    if engine.dialect.name != "postgresql":
+        pytest.skip("TRUNCATE triggers are PostgreSQL-specific; SQLite has no TRUNCATE")
+    _seed(repos)
+    with pytest.raises(DBAPIError, match="append-only"), engine.begin() as conn:
+        conn.execute(text("TRUNCATE audit_events CASCADE"))
+
+
 def _seed(repos: Repositories) -> WorkflowRun:
     from research_factory.domain.project_models import ExperimentRecord
 

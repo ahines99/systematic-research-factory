@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..domain.clock import Clock
-from ..domain.errors import ConflictError, ForbiddenError, NotFoundError
+from ..domain.errors import ConflictError, ForbiddenError, InvalidInputError, NotFoundError
 from ..domain.models import Finding, Severity
 from ..domain.project_models import ApprovalDecision, ApprovalRecord, RunStatus
 from ..persistence.repositories import Repositories
@@ -91,6 +91,8 @@ class ApprovalService:
                 f"cannot approve: the gate recommends {gate.recommendation} ({' '.join(gate.reasons)})",
                 details={"gate": gate.to_dict()},
             )
+        if len(reason.strip()) < 3:
+            raise InvalidInputError("a decision needs a reason of at least 3 characters")
         record = ApprovalRecord(
             approval_id=f"apr_{uuid.uuid4().hex[:20]}",
             run_id=run_id,

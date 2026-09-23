@@ -132,7 +132,7 @@ def scenarios() -> list[Scenario]:
     ]
 
 
-def _freeze_prior_trials(services: Services, scenario: Scenario) -> None:
+def _freeze_prior_trials(services: Services, scenario: Scenario, requester: str = DEMO_REQUESTER) -> None:
     for k in range(scenario.prior_trials):
         variant = demo_experiment(
             f"variant-{k:03d}",
@@ -140,7 +140,7 @@ def _freeze_prior_trials(services: Services, scenario: Scenario) -> None:
             dataset=scenario.experiment.hypothesis.universe.dataset,
             delay=31 + k,
         )
-        services.ledger.freeze(variant, DEMO_REQUESTER)
+        services.ledger.freeze(variant, requester)
 
 
 @dataclass
@@ -164,20 +164,23 @@ def artifact_hashes(services: Services, run_id: str, limit: int = DETERMINISTIC_
     return out
 
 
-async def run_scenario(services: Services, scenario: Scenario) -> ScenarioResult:
-    _freeze_prior_trials(services, scenario)
-    record, _ = services.ledger.freeze(scenario.experiment, DEMO_REQUESTER)
+async def run_scenario(
+    services: Services, scenario: Scenario, requester: str = DEMO_REQUESTER, decide: bool | None = None
+) -> ScenarioResult:
+    """Run one scenario exactly as designed: prior trials are frozen first, so trial counts match."""
+    _freeze_prior_trials(services, scenario, requester)
+    record, _ = services.ledger.freeze(scenario.experiment, requester)
     saved = list(services.faults.rules)
     services.faults.rules.extend(FaultRule.parse(f) for f in scenario.faults)
     try:
         engine = primary_engine(services)
-        run = await engine.start(record.experiment_id, DEMO_REQUESTER)
+        run = await engine.start(record.experiment_id, requester)
     finally:
         services.faults.rules[:] = saved
     gate = None
     if run.current_step == "Research committee" and (run.status_reason or "").startswith("APPROVAL_REQUIRED"):
         gate = services.approvals.pending_gate(run.run_id)
-        if scenario.decide:
+        if scenario.decide if decide is None else decide:
             decision = (
                 ApprovalDecision.APPROVE
                 if gate.recommendation is ApprovalDecision.APPROVE
@@ -241,10 +244,20 @@ async def replay_run(services: Services, run_id: str, actor: str = "replay") -> 
     return ReplayResult(run_id, replay.run_id, all(a == b for a, b in compared.values()), compared)
 
 
+def platform_key() -> str:
+    """Artifact hashes are exact only on the same platform (floating point can differ in the last bit)."""
+    import platform
+
+    import numpy
+
+    return f"{platform.system()}-{platform.machine()}-py{platform.python_version_tuple()[0]}.{platform.python_version_tuple()[1]}-numpy{numpy.__version__}"
+
+
 def manifest(results: list[ScenarioResult]) -> dict[str, Any]:
     """What a release archives: expected outcomes and artifact hashes for each scenario."""
     return {
-        "format": "rsf-demo-manifest/1",
+        "format": "rsf-demo-manifest/2",
+        "platform": platform_key(),
         "scenarios": {
             r.scenario: {
                 "status": r.status,

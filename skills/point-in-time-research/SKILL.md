@@ -19,7 +19,7 @@ says `NEEDS_EVIDENCE`.
 |---|---|---|
 | Period end (`reportDate`, XBRL `end`) | Last day of the fiscal period | **No.** Nobody outside the company knows the numbers yet. Using it is `timing_basis: period_end`, a look-ahead leak |
 | `filingDate` | EDGAR, date only | **No.** It has no time of day, and after 17:30 ET it rolls to the next business day, so it can come before *or* after the real knowledge time |
-| `acceptanceDateTime` | EDGAR submissions API, down to the second | **Yes.** This is `timing_basis: acceptance`. Convert to a timezone-aware Eastern time |
+| `acceptanceDateTime` | EDGAR submissions API, down to the second | **Yes.** This is `timing_basis: acceptance`. The value is UTC; keep it timezone-aware and convert to Eastern only to compare with the 16:00 close |
 | XBRL `filed` (companyfacts) | Date only | **No.** Join `accn` to the submissions API to get the acceptance time |
 | "Latest value" of a fact | Most recent filing that reports that period | **No.** This is `timing_basis: latest_restated`, a restatement look-ahead |
 | `decision_ts` | Backtest schedule (e.g. 16:00 ET close) | The time the value is used |
@@ -70,8 +70,10 @@ More detail, including the EDGAR API fields, time zones, amendments and fair-acc
   null and missing values are expected (`--allow-empty-null`).
 
 ### 4. Leakage audit
-- Run `audit_leakage`. It checks feature knowledge time against decision time, that the execution
-  delay was applied, point-in-time universe membership, and that the target is not a feature.
+- Run `audit_leakage`. It checks that every feature value has lineage, recomputes each value from
+  the evidence its lineage cites, checks feature knowledge time against decision time, that the
+  execution delay was applied, point-in-time universe membership, and that the target is not a
+  feature. A builder that reports honest-looking lineage for values it computed some other way fails.
 - **A blocking leakage finding ends the run.** No rationale, statistic or committee vote overrides
   it. The only way forward is a corrected hypothesis under a new experiment ID.
 - When you report a finding, cite its evidence IDs and give a concrete example: the row's

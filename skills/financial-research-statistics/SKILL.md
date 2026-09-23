@@ -41,6 +41,7 @@ The values below are defaults. The live values are configuration: read them from
 | `min_deflated_sharpe` | 0.95 | DSR ≥ 0.95. DSR is a *probability*, not a Sharpe ratio | Failed statistical threshold (the gate rejects) |
 | `bootstrap_confidence` | 0.95 | Two-sided confidence level of the bootstrap interval | Not a test on its own; it sets the level of the next row |
 | `require_ci_lower_above_zero` | True | The lower bound of the block-bootstrap interval of the annualized Sharpe ratio is > 0 | Failed statistical threshold (the gate rejects) |
+| `max_delay_sharpe_decay` | 0.5 | Sharpe lost with one extra session of execution delay ≤ 50% | High-severity fragility finding (the gate asks for more evidence) |
 
 **How findings map to the committee gate:** the deterministic rubric is authoritative. In
 `research-committee`, any blocking finding leads to a reject recommendation, and any
@@ -77,7 +78,8 @@ Passing all the thresholds is **necessary, not sufficient.** The distrust checks
   - [ ] SR, SR0 and V[SR] are in **per-period** units (not annualized), and T counts periods.
   - [ ] Kurtosis in the formula is **non-excess** (3 for a normal distribution). Mixing it up with
     excess kurtosis changes the denominator.
-  - [ ] N matches the ledger. The formula needs N ≥ 2; with N = 1, DSR is PSR(0).
+  - [ ] N is stated twice: the trial count at freeze (`n_trials` in `get_statistics`) and the related trials that exist at review (the committee step reports both and gates on the larger). The formula needs N ≥ 2; with N = 1, DSR is PSR(0).
+  - [ ] V[SR] never falls below the sampling variance (1 + SR²/2)/T, so near-duplicate trials cannot switch deflation off.
   - [ ] V[SR] is the variance of Sharpe ratios *across the family's trials*. If the tool used a
     fallback (for example the null sampling variance), say so under assumptions.
 - High PSR(0) with low DSR is the classic sign of multiple testing: the result is significant on
@@ -117,7 +119,7 @@ Passing all the thresholds is **necessary, not sufficient.** The distrust checks
 
 | Concern | Evidence to ask for | Red flag |
 |---|---|---|
-| Short sample | observations, minimum track record length | observations < MinTRL at 95% against SR\* = 0 (and against SR0) |
+| Short sample | observations, `min_track_record_length` from `get_statistics` (against SR\* = 0) | observations < MinTRL at 95% against SR\* = 0 (and against SR0) |
 | Negative skew, fat tails | skewness, kurtosis, worst days | skew < −1 or kurtosis > 10 (option-like payoffs: the Sharpe hides crash risk) |
 | Overlapping holds / autocorrelation | Newey-West lag, autocorrelations | annualizing by sqrt(252) with positive autocorrelation understates volatility (Lo 2002, "The Statistics of Sharpe Ratios") |
 | Costs | gross vs net, turnover, cost assumption | net Sharpe < 50% of gross, or a break-even cost close to realistic costs |

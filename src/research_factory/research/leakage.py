@@ -12,7 +12,10 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
-from ..data.calendar import close_utc
+import numpy as np
+
+from ..data.calendar import EASTERN, close_utc
+from ..data.fundamentals import yoy_change
 from ..data.world import MarketDataset
 from ..domain.models import Severity
 
@@ -183,6 +186,111 @@ def check_target(input_sources: frozenset[str], feature: str) -> AuditCheck:
     )
 
 
+def _price_session(dataset: MarketDataset, locator: str) -> int:
+    return dataset.session_index(date.fromisoformat(locator.rpartition(":")[2]))
+
+
+def recompute(
+    feature: str, row: dict[str, Any], eps: dict[str, float], dataset: MarketDataset
+) -> float | None:
+    """Recompute a feature value from the evidence its lineage cites. None = cannot recompute."""
+    locators = [inp["locator"] for inp in row["inputs"]]
+    returns = dataset.adjusted_returns
+    i = dataset.index.get(row["security_id"])
+    try:
+        if feature == "eps_yoy_change":
+            current, prior = (loc.removeprefix("filing:") for loc in locators)
+            return yoy_change(eps[current], eps[prior])
+        if feature == "momentum_60_5" and i is not None:
+            start, end = (_price_session(dataset, loc) for loc in locators)
+            return float(np.prod(1.0 + returns[start + 1 : end + 1, i]) - 1.0)
+        if feature == "forward_return_20d" and i is not None:
+            end = _price_session(dataset, locators[0])
+            return float(np.prod(1.0 + returns[end - 19 : end + 1, i]) - 1.0)
+    except (KeyError, ValueError, IndexError):
+        return None
+    return None
+
+
+def check_lineage_complete(feature_doc: dict[str, Any]) -> AuditCheck:
+    """Every feature value needs exactly one lineage row that cites at least one input (audit Q4)."""
+    rows: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in feature_doc["lineage"]["rows"]:
+        day = datetime.fromisoformat(row["decision_ts"]).astimezone(EASTERN).date().isoformat()
+        rows.setdefault((row["security_id"], day), []).append(row)
+    problems = 0
+    examples: list[dict[str, Any]] = []
+    for r, session in enumerate(feature_doc["sessions"]):
+        for sid, value in zip(feature_doc["security_ids"], feature_doc["values"][r], strict=True):
+            if value is None:
+                continue
+            matches = rows.get((sid, session), [])
+            ok = len(matches) == 1 and matches[0]["inputs"] and matches[0]["value"] == value
+            if not ok:
+                problems += 1
+                if len(examples) < MAX_EXAMPLES:
+                    examples.append({"security_id": sid, "session": session, "lineage_rows": len(matches)})
+    if problems == 0:
+        return AuditCheck(
+            "lineage_complete",
+            True,
+            Severity.BLOCKING,
+            "Every feature value has exactly one lineage row with inputs.",
+        )
+    return AuditCheck(
+        "lineage_complete",
+        False,
+        Severity.BLOCKING,
+        f"{problems} feature values have missing, duplicated, empty or mismatched lineage, so they cannot be audited.",
+        problems,
+        examples,
+    )
+
+
+def check_values_reproduce(
+    feature_doc: dict[str, Any], filings_doc: list[dict[str, Any]], dataset: MarketDataset
+) -> AuditCheck:
+    """Recompute each value from its cited inputs; a builder that used other data is caught (audit Q4)."""
+    eps = {f["accession"]: float(f["eps"]) for f in filings_doc}
+    mismatched = 0
+    unreproducible = 0
+    examples: list[dict[str, Any]] = []
+    for row in feature_doc["lineage"]["rows"]:
+        expected = recompute(feature_doc["feature"], row, eps, dataset)
+        if expected is None:
+            unreproducible += 1
+        elif abs(expected - row["value"]) > 1e-9 * max(1.0, abs(expected)):
+            mismatched += 1
+        else:
+            continue
+        if len(examples) < MAX_EXAMPLES:
+            examples.append(
+                {
+                    "security_id": row["security_id"],
+                    "decision_ts": row["decision_ts"],
+                    "value": row["value"],
+                    "recomputed": expected,
+                }
+            )
+    total = mismatched + unreproducible
+    if total == 0:
+        return AuditCheck(
+            "values_reproduce",
+            True,
+            Severity.BLOCKING,
+            f"All {len(feature_doc['lineage']['rows'])} feature values were recomputed from their cited inputs.",
+        )
+    return AuditCheck(
+        "values_reproduce",
+        False,
+        Severity.BLOCKING,
+        f"{mismatched} feature values differ from a recomputation from their cited inputs"
+        f"{f' and {unreproducible} could not be recomputed' if unreproducible else ''}.",
+        total,
+        examples,
+    )
+
+
 def audit_leakage(
     *,
     feature_doc: dict[str, Any],
@@ -194,6 +302,8 @@ def audit_leakage(
     accepted = {f["accession"]: datetime.fromisoformat(f["accepted_at"]) for f in filings_doc}
     return LeakageReport(
         [
+            check_lineage_complete(feature_doc),
+            check_values_reproduce(feature_doc, filings_doc, dataset),
             check_knowledge_times(feature_doc["lineage"]["rows"], accepted),
             check_execution_delay(backtest_doc),
             check_universe(backtest_doc, dataset),

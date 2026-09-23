@@ -92,6 +92,8 @@ workflow_runs = Table(
     Column("status_reason", Text),
     Column("created_at", UTCDateTime, nullable=False),
     Column("updated_at", UTCDateTime, nullable=False),
+    Column("lease_owner", String(64)),
+    Column("lease_expires_at", UTCDateTime),
     Index("ix_workflow_runs_requested_by_created", "requested_by", "created_at"),
 )
 
@@ -143,6 +145,7 @@ findings = Table(
     Column("assumptions", JSON, nullable=False),
     Column("metadata", JSON, nullable=False),
     Column("created_at", UTCDateTime, nullable=False),
+    Column("superseded_at", UTCDateTime),  # set when the step that produced it is re-executed
     Index("ix_findings_run", "run_id"),
 )
 
@@ -178,6 +181,7 @@ approvals = Table(
     Column("decision", String(32), nullable=False),
     Column("reason", Text, nullable=False),
     Column("created_at", UTCDateTime, nullable=False),
+    Index("uq_approvals_run_step", "run_id", "step", unique=True),  # one decision per committee pause
 )
 
 api_keys = Table(

@@ -68,6 +68,30 @@ def probabilistic_sharpe(sr: float, sr_benchmark: float, n: int, skew: float, ku
     return _N.cdf((sr - sr_benchmark) * math.sqrt(n - 1) / math.sqrt(denom))
 
 
+def null_sharpe_variance(sr: float, n: int) -> float:
+    """Asymptotic variance of a per-period Sharpe estimate: (1 + SR^2 / 2) / T."""
+    return (1 + 0.5 * sr**2) / max(n, 1)
+
+
+def min_track_record_length(sr: float, skew: float, kurt: float, confidence: float = 0.95) -> float | None:
+    """Periods needed for PSR(0) to reach ``confidence`` (Bailey & López de Prado 2012)."""
+    if sr <= 0:
+        return None
+    z = _N.inv_cdf(confidence)
+    return 1 + (1 - skew * sr + (kurt - 1) / 4 * sr**2) * (z / sr) ** 2
+
+
+def deflated_sharpe_at(stats: dict[str, Any], n_trials: int) -> float:
+    """Recompute the deflated Sharpe from a statistics artifact at a different trial count."""
+    return probabilistic_sharpe(
+        stats["sharpe_per_period"],
+        expected_max_sharpe(n_trials, stats["var_sr"]),
+        stats["n_obs"],
+        stats["skew"],
+        stats["kurtosis"],
+    )
+
+
 def expected_max_sharpe(n_trials: int, var_sr: float) -> float:
     """Expected maximum of ``n_trials`` per-period Sharpe estimates under the null."""
     if n_trials <= 1 or var_sr <= 0:
@@ -135,6 +159,7 @@ class StatisticalReport:
     cost_drag_annualized: float
     delay_sharpe_annualized: float | None
     delay_decay: float | None
+    min_track_record_length: float | None = None
     checks: list[Check] = field(default_factory=list)
 
     @property
@@ -172,11 +197,18 @@ def statistical_review(
 
     # Variance of Sharpe estimates across trials: use the ledger if it has enough results,
     # otherwise the asymptotic variance of a Sharpe estimate under the null, (1 + SR^2/2) / T.
+    # Floor: near-duplicate trials must not shrink V[SR] towards zero and switch deflation off.
+    null_var = null_sharpe_variance(sr, n)
     if len(trial_sharpes) >= 5:
-        var_sr = float(np.var(trial_sharpes, ddof=1))
-        source = f"ledger ({len(trial_sharpes)} recorded trials)"
+        ledger_var = float(np.var(trial_sharpes, ddof=1))
+        var_sr = max(ledger_var, null_var)
+        source = (
+            f"ledger ({len(trial_sharpes)} recorded trials)"
+            if ledger_var >= null_var
+            else f"asymptotic null variance (floor; the ledger's {len(trial_sharpes)} trials vary less than sampling noise)"
+        )
     else:
-        var_sr = (1 + 0.5 * sr**2) / max(n, 1)
+        var_sr = null_var
         source = "asymptotic null variance (fewer than 5 recorded trials)"
     trials = max(1, n_trials)
     sr0 = expected_max_sharpe(trials, var_sr)
@@ -258,5 +290,6 @@ def statistical_review(
         cost_drag_annualized=cost_drag,
         delay_sharpe_annualized=delay_sr,
         delay_decay=decay,
+        min_track_record_length=min_track_record_length(sr, skew, kurt, thresholds.bootstrap_confidence),
         checks=checks,
     )

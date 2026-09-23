@@ -22,9 +22,15 @@ the execution delay was not applied.
    either no filing or the previous one.
 4. Confirm the forward-return window starts at `decision_ts + execution_delay_minutes`.
 
-**Failure signatures:** IC far above what's plausible for the signal type (above ~0.10 for a
-fundamental signal); performance that collapses with a one-session delay (attack 5); returns
+**Failure signatures:** IC far above what's plausible for the signal type (for real-world
+fundamental signals, a rebalance IC above ~0.10 deserves scrutiny; the synthetic worlds plant
+stronger effects on purpose, so compare against the dataset's documented planted strength rather
+than this rule of thumb); performance that collapses with a one-session delay (attack 5); returns
 concentrated on the days *before* filing acceptance.
+
+**Placebos:** a price-based feature such as `momentum_60_5` is not a clean placebo in these
+datasets: the planted acceptance-day jump itself creates price momentum, so momentum can look as
+strong as the EPS signal. Use the `synthetic:v1:null` world as the placebo instead.
 
 **Not a refutation:** "the audit passed" when lineage rows have no inputs; "the spec says
 `acceptance`" when no lineage was checked.

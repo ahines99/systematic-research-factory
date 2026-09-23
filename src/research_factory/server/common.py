@@ -9,14 +9,16 @@ from __future__ import annotations
 
 import json
 from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 
 from mcp.server.mcpserver import Context
 from mcp.server.mcpserver.exceptions import ToolError
+from pydantic import ValidationError
 
 from ..auth import GUEST, LOCAL_OPERATOR, ApiKeyService, Principal, bearer_token
-from ..domain.errors import DomainError, ErrorCode, ForbiddenError
+from ..domain.errors import DomainError, ErrorCode, ForbiddenError, InvalidInputError
 from ..domain.identity import canonical_json, sha256_hex
 from ..domain.policies import require
 from ..observability import bind, get_logger, unbind
@@ -25,6 +27,10 @@ from ..services.container import Services
 log = get_logger(__name__)
 
 DEMO_REQUESTERS = frozenset({"demo-researcher", "guest"})
+
+# Set by the HTTP middleware for every request: the verified caller, or GUEST. MCP resource
+# handlers do not receive request headers, so they rely on this.
+HTTP_PRINCIPAL: ContextVar[Principal | None] = ContextVar("rsf_http_principal", default=None)
 
 
 @dataclass
@@ -48,7 +54,8 @@ def resolve_principal(deps: ServerDeps, ctx: Context[Any, Any] | None) -> Princi
         except (LookupError, ValueError, AttributeError):
             headers = None
     if headers is None:
-        return deps.local_principal
+        from_http = HTTP_PRINCIPAL.get()
+        return from_http if from_http is not None else deps.local_principal
     token = bearer_token(headers.get("authorization"))
     if token is None:
         return GUEST
@@ -99,9 +106,12 @@ async def governed[T](
         raise ToolError(error_payload(exc)) from None
     except ToolError:
         raise
+    except ValidationError as exc:
+        problems = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors()[:5])
+        raise ToolError(error_payload(InvalidInputError(f"invalid input: {problems}"))) from None
     except Exception:
         log.exception("tool_crashed", tool=tool)
-        raise ToolError(error_payload(DomainError("internal error", code=ErrorCode.INVALID_INPUT))) from None
+        raise ToolError(error_payload(DomainError("internal error", code=ErrorCode.INTERNAL))) from None
     finally:
         unbind("tool_name")
 

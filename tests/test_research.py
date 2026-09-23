@@ -13,7 +13,7 @@ from hypothesis import strategies as st
 from research_factory.config import StatisticalThresholds
 from research_factory.data.pit import PointInTimeData
 from research_factory.data.registry import get_dataset
-from research_factory.data.world import MarketDataset
+from research_factory.data.world import MarketDataset, filing_to_dict
 from research_factory.domain.models import Severity
 from research_factory.domain.project_models import TimingBasis, UniverseMode
 from research_factory.research.backtest import run_backtest, spearman
@@ -197,7 +197,7 @@ def test_spearman_handles_ties() -> None:
 
 def test_leakage_audit_passes_clean_and_catches_each_trap(view: MarketDataset) -> None:
     spec = make_experiment().backtest
-    filings = [{"accession": f.accession, "accepted_at": f.accepted_at.isoformat()} for f in view.filings]
+    filings = [filing_to_dict(f) for f in view.filings]
 
     def audit(timing: str = "acceptance", mode: str = "point_in_time") -> dict[str, bool]:
         table = _table(view, timing, mode)
@@ -215,6 +215,87 @@ def test_leakage_audit_passes_clean_and_catches_each_trap(view: MarketDataset) -
     assert audit("period_end")["knowledge_time"] is False
     assert audit("latest_restated")["knowledge_time"] is False
     assert audit(mode="current_constituents")["universe"] is False
+
+
+def _audit_doc(view: MarketDataset, table: FeatureTable) -> dict:  # type: ignore[type-arg]
+    spec = make_experiment().backtest
+    bt = run_backtest(view, table, spec).to_document(view)
+    rep = audit_leakage(
+        feature_doc=table.to_document(view),
+        backtest_doc=bt,
+        filings_doc=[filing_to_dict(f) for f in view.filings],
+        dataset=view,
+        input_sources=frozenset({"filing"}),
+    )
+    return {c.check: c for c in rep.checks}
+
+
+def test_q4_leaky_values_with_honest_lineage_are_caught(view: MarketDataset) -> None:
+    """Audit Q4: period-end values paired with acceptance-timed lineage used to pass."""
+    honest, leaky = _table(view), _table(view, "period_end")
+    forged = FeatureTable(
+        honest.feature,
+        honest.timing_basis,
+        honest.universe_mode,
+        honest.sessions,
+        honest.security_ids,
+        leaky.values,
+        honest.universe,
+        honest.lineage,
+    )
+    checks = _audit_doc(view, forged)
+    assert checks["knowledge_time"].passed  # the timestamps look fine...
+    assert not checks["lineage_complete"].passed  # ...but the values are not the ones the lineage describes
+
+
+def test_q4_values_without_lineage_are_caught(view: MarketDataset) -> None:
+    honest = _table(view)
+    stripped = FeatureTable(
+        honest.feature,
+        honest.timing_basis,
+        honest.universe_mode,
+        honest.sessions,
+        honest.security_ids,
+        honest.values,
+        honest.universe,
+        [],
+    )
+    checks = _audit_doc(view, stripped)
+    assert not checks["lineage_complete"].passed and checks["lineage_complete"].violations > 1000
+
+
+def test_q4_values_that_differ_from_their_cited_inputs_are_caught(view: MarketDataset) -> None:
+    """A builder that reports consistent values and lineage, but used different data, fails recomputation."""
+    from datetime import datetime as _dt
+
+    from research_factory.data.calendar import EASTERN
+
+    honest = _table(view)
+    rows = [dict(r) for r in honest.lineage]
+    rows[0]["value"] = rows[0]["value"] + 0.5
+    session = _dt.fromisoformat(rows[0]["decision_ts"]).astimezone(EASTERN).date()
+    r = honest.sessions.index(view.session_index(session))
+    i = honest.security_ids.index(rows[0]["security_id"])
+    values = honest.values.copy()
+    values[r, i] = rows[0]["value"]
+    tampered = FeatureTable(
+        honest.feature,
+        honest.timing_basis,
+        honest.universe_mode,
+        honest.sessions,
+        honest.security_ids,
+        values,
+        honest.universe,
+        rows,
+    )
+    checks = _audit_doc(view, tampered)
+    assert checks["lineage_complete"].passed
+    assert not checks["values_reproduce"].passed and checks["values_reproduce"].violations == 1
+
+
+def test_q4_momentum_values_reproduce(view: MarketDataset) -> None:
+    checks = _audit_doc(view, _table(view, feature="momentum_60_5"))
+    assert checks["values_reproduce"].passed and checks["lineage_complete"].passed
 
 
 def test_audit_trusts_evidence_not_claimed_timestamps() -> None:
@@ -368,18 +449,59 @@ def test_many_trials_deflate_a_weak_result() -> None:
     assert many.expected_max_sharpe_per_period > 0
 
 
-def test_ledger_variance_used_when_enough_trials() -> None:
+def test_ledger_variance_used_when_trials_vary_more_than_noise() -> None:
     x = np.random.default_rng(4).normal(0.001, 0.01, 500)
+    spread = [0.0, 0.1, 0.2, 0.3, 0.4]
     rep = statistical_review(
         x,
         x,
         hold_days=5,
         ic_values=[],
         turnover=[],
-        trial_sharpes=[0.01, 0.02, 0.03, 0.04, 0.05],
+        trial_sharpes=spread,
         n_trials=6,
         thresholds=StatisticalThresholds(),
     )
-    assert rep.var_sr_source.startswith("ledger") and rep.var_sr == pytest.approx(
-        np.var([0.01, 0.02, 0.03, 0.04, 0.05], ddof=1)
+    assert rep.var_sr_source.startswith("ledger")
+    assert rep.var_sr == pytest.approx(np.var(spread, ddof=1))
+
+
+def test_near_duplicate_trials_cannot_switch_deflation_off() -> None:
+    """Audit Q1: 99 identical trial Sharpes gave V[SR]~0, so the DSR collapsed to the undeflated PSR."""
+    x = np.random.default_rng(4).normal(0.0006, 0.01, 1150)
+    fallback = statistical_review(
+        x,
+        x,
+        hold_days=20,
+        ic_values=[],
+        turnover=[],
+        trial_sharpes=[],
+        n_trials=100,
+        thresholds=StatisticalThresholds(),
+    )
+    duplicates = statistical_review(
+        x,
+        x,
+        hold_days=20,
+        ic_values=[],
+        turnover=[],
+        trial_sharpes=[0.0933] * 99,
+        n_trials=100,
+        thresholds=StatisticalThresholds(),
+    )
+    assert "floor" in duplicates.var_sr_source
+    assert duplicates.deflated_sharpe == pytest.approx(fallback.deflated_sharpe)
+    assert duplicates.deflated_sharpe < 0.95
+
+
+def test_min_track_record_length() -> None:
+    from research_factory.research.statistics import min_track_record_length
+
+    assert min_track_record_length(0.0, 0.0, 3.0) is None
+    short = min_track_record_length(0.2, 0.0, 3.0)
+    long = min_track_record_length(0.05, 0.0, 3.0)
+    assert short is not None and long is not None and long > short > 1
+    # Normal returns: 1 + (1 + SR^2/2) (z/SR)^2
+    assert min_track_record_length(0.1, 0.0, 3.0) == pytest.approx(
+        1 + (1 + 0.005) * (1.6448536 / 0.1) ** 2, rel=1e-6
     )

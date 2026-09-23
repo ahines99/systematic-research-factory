@@ -156,8 +156,7 @@ def check(doc: Any, *, allow_empty_null: bool = False) -> Report:
 
 def _check_row(idx: int, row: Any, *, allow_empty_null: bool) -> list[Violation]:
     if not isinstance(row, dict):
-        return [Violation("malformed_row", idx, None, None,
-                          f"row is {type(row).__name__}, expected object")]
+        return [Violation("malformed_row", idx, None, None, f"row is {type(row).__name__}, expected object")]
 
     sec = row.get("security_id")
     sec_id = sec if isinstance(sec, str) else None
@@ -204,26 +203,33 @@ def _check_row(idx: int, row: Any, *, allow_empty_null: bool) -> list[Violation]
         k_str = raw_k if isinstance(raw_k, str) else None
         known, kerr = _parse_ts(raw_k)
         if kerr:
-            add("malformed_row", f"inputs[{j}].knowledge_ts: {kerr}",
-                evidence_id=ev_id, knowledge_ts=k_str)
+            add("malformed_row", f"inputs[{j}].knowledge_ts: {kerr}", evidence_id=ev_id, knowledge_ts=k_str)
             continue
         assert known is not None
         if _is_naive(known):
-            add("naive_timestamp", f"inputs[{j}].knowledge_ts has no UTC offset",
-                evidence_id=ev_id, knowledge_ts=k_str)
+            add(
+                "naive_timestamp",
+                f"inputs[{j}].knowledge_ts has no UTC offset",
+                evidence_id=ev_id,
+                knowledge_ts=k_str,
+            )
             continue
         if decision is not None and known > decision:
             lead = (known - decision).total_seconds()
-            add("lookahead",
+            add(
+                "lookahead",
                 f"inputs[{j}] known {_fmt_duration(lead)} after decision",
-                evidence_id=ev_id, knowledge_ts=k_str, lead_seconds=lead)
+                evidence_id=ev_id,
+                knowledge_ts=k_str,
+                lead_seconds=lead,
+            )
     return out
 
 
 def _fmt_duration(seconds: float) -> str:
     if not math.isfinite(seconds):
         return str(seconds)
-    s = int(round(seconds))
+    s = round(seconds)
     days, rem = divmod(s, 86400)
     hours, rem = divmod(rem, 3600)
     minutes, secs = divmod(rem, 60)
@@ -267,13 +273,15 @@ def render_json(report: Report) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Report point-in-time violations in a feature lineage export.")
-    parser.add_argument("path", nargs="?", default="-",
-                        help="lineage JSON file, or '-' / omitted for stdin")
-    parser.add_argument("--json", action="store_true",
-                        help="print machine-readable JSON instead of text")
-    parser.add_argument("--allow-empty-null", action="store_true",
-                        help="do not flag rows that have no inputs and a null value")
+        description="Report point-in-time violations in a feature lineage export."
+    )
+    parser.add_argument("path", nargs="?", default="-", help="lineage JSON file, or '-' / omitted for stdin")
+    parser.add_argument("--json", action="store_true", help="print machine-readable JSON instead of text")
+    parser.add_argument(
+        "--allow-empty-null",
+        action="store_true",
+        help="do not flag rows that have no inputs and a null value",
+    )
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:  # argparse exits 2 on bad args, 0 on --help

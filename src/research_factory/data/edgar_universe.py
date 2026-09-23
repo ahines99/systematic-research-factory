@@ -18,7 +18,16 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from ..domain.identity import canonical_json
-from .edgar import EdgarClient, EpsFact, FilingMeta, parse_eps_facts, parse_submissions
+from .edgar import (
+    NET_INCOME_CONCEPTS,
+    SHARE_CONCEPTS,
+    EdgarClient,
+    EpsFact,
+    FilingMeta,
+    parse_concept_facts,
+    parse_eps_facts,
+    parse_submissions,
+)
 from .world import Filing, Security, TickerInterval
 
 WINDOW_START = date(2019, 1, 2)
@@ -94,7 +103,8 @@ UNIVERSE: tuple[Member, ...] = (
     Member(877890, "CITRIX", (_t("CTXS"),), "taken_private"),
 )
 
-EXIT_RETURNS = {"acquired": 0.0, "taken_private": 0.0, "failed": -0.9}
+# Exits are price-neutral: the only planted effect is the acceptance-timed signal (audit Q7).
+EXIT_RETURNS = {"acquired": 0.0, "taken_private": 0.0, "failed": 0.0}
 
 
 def _next_weekday(d: date) -> date:
@@ -150,91 +160,230 @@ def listing_window(filings: list[FilingMeta], member: Member) -> tuple[date, dat
     return listed_from, listed_to, "; ".join(how) or "listed throughout the window"
 
 
-def _quarter_number(fp: str | None) -> int | None:
-    return {"Q1": 1, "Q2": 2, "Q3": 3, "FY": 4}.get(fp or "")
+QUARTER_DAYS = (80, 100)
+ANNUAL_DAYS = (350, 380)
+
+
+def period_label(end: date) -> str:
+    """Quarters are identified by their period end, not by companyfacts' fy/fp labels (audit Q3).
+
+    Ten days are subtracted so 52/53-week quarters ending in the first days of a month
+    (e.g. 2022-01-02 or 2022-01-30 for a January year end) keep a stable month.
+    """
+    return (end - timedelta(days=10)).strftime("P%Y-%m")
+
+
+def _within(fact: EpsFact, bounds: tuple[int, int]) -> bool:
+    return fact.days is not None and bounds[0] <= fact.days <= bounds[1]
+
+
+def classify_revision(old: float, new: float) -> str | None:
+    """None for rounding noise; "split_adjusted" for integer re-basing; otherwise "restated" (audit Q6)."""
+    if abs(new - old) <= max(0.015, 0.01 * abs(old)):
+        return None
+    if old and new:
+        for ratio in (old / new, new / old):
+            k = round(ratio)
+            if k >= 2 and abs(ratio - k) <= 0.03 * k:
+                return "split_adjusted"
+    return "restated"
 
 
 @dataclass
-class _Known:
-    label_by_end: dict[date, str] = field(default_factory=dict)
-    value: dict[str, float] = field(default_factory=dict)
-    original: dict[str, str] = field(default_factory=dict)  # label -> accession of first version
+class ExtractionReport:
+    counts: dict[str, int] = field(default_factory=dict)
+
+    def bump(self, key: str) -> None:
+        self.counts[key] = self.counts.get(key, 0) + 1
 
 
-def extract_filings(cik: int, filings: list[FilingMeta], facts: list[EpsFact]) -> list[Filing]:
+def extract_with_report(
+    cik: int,
+    filings: list[FilingMeta],
+    eps: list[EpsFact],
+    net_income: list[EpsFact] = (),  # type: ignore[assignment]
+    shares: list[EpsFact] = (),  # type: ignore[assignment]
+) -> tuple[list[Filing], ExtractionReport]:
     """Point-in-time quarterly EPS versions from periodic filings.
 
-    * a 10-Q's own three-month EPS is the original value of its fiscal quarter;
-    * a 10-K's fiscal Q4 is derived as annual EPS minus Q1-Q3 known at acceptance;
-    * three-month comparatives in later filings are new versions when they differ
-      (restatements) or when the period was unknown before (e.g. pre-IPO quarters).
+    * Quarters are keyed by period end (``period_label``).
+    * Three-month comparatives in a filing are processed first: they introduce unknown
+      periods (e.g. pre-IPO quarters) and re-based or restated versions of known ones.
+    * A 10-Q's own three-month EPS is the original value of its quarter.
+    * Fiscal Q4: the 10-K's own three-month EPS when reported; otherwise Q4 net income
+      (annual minus the three known quarters) over the year's weighted-average shares.
+      Net income is additive and unaffected by stock splits, unlike EPS (audit Q2).
+      Only when net income is unavailable is EPS subtracted, with a plausibility check.
+    * After a split, the 10-K's prior-year comparatives re-base the prior year's Q4.
     """
     sid = f"CIK{cik:010d}"
-    facts_by_acc: dict[str, list[EpsFact]] = {}
-    for fact in facts:
-        facts_by_acc.setdefault(fact.accession, []).append(fact)
-    known = _Known()
+    report = ExtractionReport()
+
+    def group(facts: list[EpsFact]) -> dict[str, list[EpsFact]]:
+        out: dict[str, list[EpsFact]] = {}
+        for fact in facts:
+            out.setdefault(fact.accession, []).append(fact)
+        return out
+
+    eps_by, ni_by, sh_by = group(eps), group(list(net_income)), group(list(shares))
+    known_eps: dict[str, float] = {}
+    known_end: dict[str, date] = {}
+    original: dict[str, str] = {}
+    known_ni: dict[tuple[date | None, date], float] = {}
+    used_accessions: set[str] = set()
     out: list[Filing] = []
 
-    def add(label: str, end: date, value: float, meta: FilingMeta, comparative: bool) -> None:
+    def add(end: date, value: float, meta: FilingMeta, comparative: bool) -> None:
+        label = period_label(end)
         value = round(value, 4)
-        previous = known.value.get(label)
-        if previous is not None and abs(previous - value) < 0.005:
+        previous = known_eps.get(label)
+        kind = "original" if previous is None else classify_revision(previous, value)
+        if kind is None:
+            if previous is not None and previous != value:
+                report.bump("rounding_ignored")
             return
-        accession = meta.accession if not comparative else f"{meta.accession}#{label}"
-        form = meta.form if not comparative else f"{meta.form} comparative"
-        amends = known.original.get(label) if previous is not None else None
+        accession = f"{meta.accession}#{label}" if comparative else meta.accession
+        if accession in used_accessions:
+            return
+        used_accessions.add(accession)
+        amends = original.get(label) if previous is not None else None
         if previous is None:
-            known.original[label] = accession
-        known.value[label] = value
-        known.label_by_end[end] = label
+            original[label] = accession
+        known_eps[label] = value
+        known_end[label] = end
+        report.bump(kind)
         out.append(
             Filing(
                 accession=accession,
                 security_id=sid,
-                form=form,
+                form=f"{meta.form} comparative" if comparative else meta.form,
                 fiscal_period=label,
                 period_end=end,
                 filed_date=meta.filing_date,
                 accepted_at=meta.accepted_at,
                 eps=value,
                 amends=amends,
+                revision=kind,
             )
         )
 
+    def quarters_of_year(start: date, end: date) -> list[tuple[date, float]]:
+        """Known quarterly net income inside a fiscal year, excluding its last quarter."""
+        found: dict[date, float] = {}
+        for (q_start, q_end), value in known_ni.items():
+            if q_start is None or not 80 <= (q_end - q_start).days <= 100:
+                continue
+            if q_start >= start - timedelta(days=7) and q_end <= end - timedelta(days=60):
+                found[q_end] = value
+        return sorted(found.items())
+
+    def derive_q4(
+        annual_ni: EpsFact | None, annual_sh: EpsFact | None, annual_eps: EpsFact | None
+    ) -> tuple[float, str] | None:
+        if (
+            annual_ni is not None
+            and annual_sh is not None
+            and annual_ni.start is not None
+            and annual_sh.value > 0
+        ):
+            implied = annual_ni.value / annual_sh.value
+            # Units guard: some filers tag shares in millions. Net income over shares must match
+            # the reported annual EPS, or the net-income path is not trusted.
+            consistent = annual_eps is None or abs(implied - annual_eps.value) <= 0.1 * max(
+                abs(annual_eps.value), 0.1
+            )
+            quarters = quarters_of_year(annual_ni.start, annual_ni.end)
+            if consistent and len(quarters) == 3:
+                return (annual_ni.value - sum(v for _, v in quarters)) / annual_sh.value, "q4_from_net_income"
+            if not consistent:
+                report.bump("q4_net_income_inconsistent")
+        if annual_eps is not None and annual_eps.start is not None:
+            parts = [
+                known_eps[label]
+                for label, q_end in known_end.items()
+                if annual_eps.start < q_end <= annual_eps.end - timedelta(days=60)
+            ]
+            if len(parts) == 3:
+                q4 = annual_eps.value - sum(parts)
+                plausible = (
+                    abs(q4) <= 3 * max(abs(p) for p in parts) + 0.5
+                    and abs(q4) <= 2 * abs(annual_eps.value) + 0.5
+                )
+                if plausible:
+                    return q4, "q4_from_eps"
+        return None
+
+    last_useful = datetime.combine(WINDOW_END + timedelta(days=7), datetime.min.time(), tzinfo=UTC)
     for meta in filings:
         if meta.form not in PERIODIC or meta.report_date is None or meta.report_date < HISTORY_START:
             continue
-        own = facts_by_acc.get(meta.accession, [])
-        current = [f for f in own if f.end == meta.report_date]
-        quarter = next((f for f in current if f.days is not None and 80 <= f.days <= 100), None)
-        annual = next((f for f in current if f.days is not None and 350 <= f.days <= 380), None)
-        primary = quarter or annual
-        q = _quarter_number(primary.fp) if primary else None
-        fy = primary.fy if primary else None
-        if meta.form.startswith("10-Q") and quarter is not None and q in (1, 2, 3) and fy:
-            add(f"{fy}Q{q}", quarter.end, quarter.value, meta, comparative=False)
-        elif meta.form.startswith("10-K") and annual is not None and fy:
-            parts = [known.value.get(f"{fy}Q{n}") for n in (1, 2, 3)]
-            if all(p is not None for p in parts):
-                add(f"{fy}Q4", annual.end, annual.value - sum(parts), meta, comparative=False)  # type: ignore[arg-type]
-        # Three-month comparatives for earlier quarters reported in this filing.
-        for fact in own:
-            if fact.end == meta.report_date or fact.days is None or not 80 <= fact.days <= 100:
-                continue
-            label = known.label_by_end.get(fact.end)
-            same_quarter_last_year = abs((meta.report_date - fact.end).days - 365) <= 10
-            if label is None and quarter is not None and fy and q and same_quarter_last_year:
-                label = f"{fy - 1}Q{q}"
-            if label is not None:
-                add(label, fact.end, fact.value, meta, comparative=True)
-    return out
+        if meta.accepted_at > last_useful:
+            break  # knowable only after the sample ends
+        here_eps = eps_by.get(meta.accession, [])
+        here_ni = ni_by.get(meta.accession, [])
+        here_sh = sh_by.get(meta.accession, [])
+        for fact in here_ni:
+            if _within(fact, QUARTER_DAYS) or _within(fact, ANNUAL_DAYS):
+                known_ni[(fact.start, fact.end)] = fact.value
+
+        for fact in sorted(here_eps, key=lambda f: f.end):  # comparatives first
+            if _within(fact, QUARTER_DAYS) and fact.end != meta.report_date:
+                add(fact.end, fact.value, meta, comparative=True)
+
+        own_quarter = next(
+            (f for f in here_eps if _within(f, QUARTER_DAYS) and f.end == meta.report_date), None
+        )
+        if meta.form.startswith("10-Q"):
+            if own_quarter is not None:
+                add(own_quarter.end, own_quarter.value, meta, comparative=False)
+            continue
+
+        # 10-K / 10-K/A
+        if own_quarter is not None:
+            add(own_quarter.end, own_quarter.value, meta, comparative=False)
+            report.bump("q4_reported")
+        else:
+
+            def annual(facts: list[EpsFact], end: date) -> EpsFact | None:
+                return next(
+                    (f for f in facts if _within(f, ANNUAL_DAYS) and abs((f.end - end).days) <= 3), None
+                )
+
+            derived = derive_q4(
+                annual(here_ni, meta.report_date),
+                annual(here_sh, meta.report_date),
+                annual(here_eps, meta.report_date),
+            )
+            if derived is None:
+                report.bump("q4_skipped")
+            else:
+                add(meta.report_date, derived[0], meta, comparative=False)
+                report.bump(derived[1])
+            # Re-base last year's Q4 with this 10-K's prior-year comparatives (they reflect any split).
+            prior_end = meta.report_date - timedelta(days=364)
+            prior_ni, prior_sh = annual(here_ni, prior_end), annual(here_sh, prior_end)
+            if prior_ni is not None and prior_sh is not None and period_label(prior_ni.end) in known_eps:
+                rebased = derive_q4(prior_ni, prior_sh, None)
+                if rebased is not None:
+                    add(prior_ni.end, rebased[0], meta, comparative=True)
+    return out, report
+
+
+def extract_filings(
+    cik: int,
+    filings: list[FilingMeta],
+    facts: list[EpsFact],
+    net_income: list[EpsFact] = (),  # type: ignore[assignment]
+    shares: list[EpsFact] = (),  # type: ignore[assignment]
+) -> list[Filing]:
+    return extract_with_report(cik, filings, facts, net_income, shares)[0]
 
 
 def build_universe(client: EdgarClient, members: tuple[Member, ...] = UNIVERSE) -> dict[str, Any]:
     securities: list[dict[str, Any]] = []
     filings: list[dict[str, Any]] = []
     provenance: list[dict[str, Any]] = []
+    extraction: dict[str, int] = {}
     for m in members:
         pages = client.submissions(str(m.cik))
         facts_doc = client.companyfacts(str(m.cik))
@@ -246,7 +395,16 @@ def build_universe(client: EdgarClient, members: tuple[Member, ...] = UNIVERSE) 
         name = matching[0]  # the name the company traded under, even if EDGAR has renamed the entity
         metas = parse_submissions([p.json() for p in pages])
         listed_from, listed_to, how = listing_window(metas, m)
-        extracted = extract_filings(m.cik, metas, parse_eps_facts(facts_doc.json()))
+        facts_json = facts_doc.json()
+        extracted, rep = extract_with_report(
+            m.cik,
+            metas,
+            parse_eps_facts(facts_json),
+            parse_concept_facts(facts_json, NET_INCOME_CONCEPTS, "USD"),
+            parse_concept_facts(facts_json, SHARE_CONCEPTS, "shares"),
+        )
+        for key, value in rep.counts.items():
+            extraction[key] = extraction.get(key, 0) + value
         sid = f"CIK{m.cik:010d}"
         tickers = []
         for ticker, start, end in m.tickers:
@@ -280,6 +438,7 @@ def build_universe(client: EdgarClient, members: tuple[Member, ...] = UNIVERSE) 
                 "accepted_at": f.accepted_at.isoformat(),
                 "eps": f.eps,
                 "amends": f.amends,
+                "revision": f.revision,
             }
             for f in extracted
         )
@@ -293,11 +452,15 @@ def build_universe(client: EdgarClient, members: tuple[Member, ...] = UNIVERSE) 
         "securities": securities,
         "filings": sorted(filings, key=lambda f: (f["accepted_at"], f["accession"])),
         "provenance": provenance,
+        "extraction": dict(sorted(extraction.items())),
         "notes": [
             "EPS is the XBRL basic EPS (falling back to diluted) for three-month periods.",
-            "Fiscal Q4 EPS is derived as annual EPS minus Q1-Q3 as known when the 10-K was accepted.",
-            "Comparative three-month values in later filings are recorded as new versions when they differ.",
-            "Tickers are curated; EDGAR reports only current tickers.",
+            "Quarters are keyed by period end (label PYYYY-MM), not by companyfacts fy/fp.",
+            "Fiscal Q4 EPS is the reported three-month value when present; otherwise Q4 net income "
+            "(annual minus Q1-Q3 known at the 10-K) over the year's weighted-average basic shares.",
+            "Later three-month comparatives create versions tagged split_adjusted or restated; "
+            "differences within one cent or 1% are treated as rounding.",
+            "Exits are price-neutral; tickers are curated because EDGAR reports only current tickers.",
         ],
     }
 

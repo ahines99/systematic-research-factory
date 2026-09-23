@@ -31,6 +31,9 @@ BUILDERS: dict[str, Callable[[], MarketDataset]] = {
     "synthetic:v1:null": _synthetic("synthetic:v1:null", jump_beta=0.0, drift_gamma=0.0),
     # A weak signal: significant on its own, not after honest multiple-testing correction.
     "synthetic:v1:weak": _synthetic("synthetic:v1:weak", jump_beta=0.02, drift_gamma=0.018),
+    # Fast drift (two sessions): with daily rebalancing, one more session of delay costs about
+    # a quarter of the Sharpe ratio (EPS persistence keeps the rest). Used for fragility tests.
+    "synthetic:v1:fast": _synthetic("synthetic:v1:fast", jump_beta=0.02, drift_gamma=0.04, drift_days=2),
     # Real SEC EDGAR filings with semi-synthetic prices (ADR-0003).
     "edgar-semi:v1": _edgar_semi,
 }

@@ -15,6 +15,7 @@ from __future__ import annotations
 import html
 import time
 from collections import defaultdict, deque
+from dataclasses import replace
 from typing import Any
 
 from mcp.server.transport_security import TransportSecuritySettings
@@ -24,28 +25,40 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
 
 from . import __version__
+from .auth import GUEST as GUEST_PRINCIPAL
 from .auth import ApiKeyService, bearer_token
-from .demo import DEMO_REQUESTER, scenarios
+from .demo import DEMO_REQUESTER, run_scenario, scenarios
 from .domain.errors import BudgetExceededError, DomainError
+from .judgment.providers import RulesProvider
 from .report import build_run_report, render_html
 from .server import create_server
+from .server.common import HTTP_PRINCIPAL
 from .services.budget import GUEST
 from .services.container import Services
-from .workflows.primary import primary_engine
 
 LIVE_SCENARIOS = {"clean-approved", "leak-caught", "overfit-rejected"}
 
 
 class RateLimiter:
-    """Sliding-window limiter per client key (IP for guests)."""
+    """Sliding-window limiter per client key (IP for guests). Memory is bounded."""
+
+    MAX_KEYS = 10_000
 
     def __init__(self, per_minute: int, clock: Any = time.monotonic):
         self.per_minute = per_minute
         self.clock = clock
         self.hits: dict[str, deque[float]] = defaultdict(deque)
 
+    def _prune(self, now: float) -> None:
+        for key in [k for k, w in self.hits.items() if not w or now - w[-1] > 60]:
+            del self.hits[key]
+        while len(self.hits) >= self.MAX_KEYS:  # still full of active keys: drop the oldest
+            del self.hits[next(iter(self.hits))]
+
     def allow(self, key: str) -> bool:
         now = self.clock()
+        if key not in self.hits and len(self.hits) >= self.MAX_KEYS:
+            self._prune(now)
         window = self.hits[key]
         while window and now - window[0] > 60:
             window.popleft()
@@ -56,10 +69,13 @@ class RateLimiter:
 
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: Any, keys: ApiKeyService, limiter: RateLimiter):
+    def __init__(
+        self, app: Any, keys: ApiKeyService, limiter: RateLimiter, trust_proxy_headers: bool = False
+    ):
         super().__init__(app)
         self.keys = keys
         self.limiter = limiter
+        self.trust_proxy_headers = trust_proxy_headers
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if request.url.path == "/healthz":
@@ -70,21 +86,32 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
                 {"error": {"code": "FORBIDDEN", "message": "use 'Authorization: Bearer <key>'"}}, 401
             )
         if token is not None:
-            if self.keys.verify(token) is None:
+            principal = self.keys.verify(token)
+            if principal is None:
                 return JSONResponse(
                     {"error": {"code": "FORBIDDEN", "message": "invalid or revoked API key"}}, 401
                 )
-            return await call_next(request)
-        client = request.headers.get("fly-client-ip") or (
-            request.client.host if request.client else "unknown"
-        )
+            return await self._with_principal(principal, request, call_next)
+        forwarded = request.headers.get("fly-client-ip") if self.trust_proxy_headers else None
+        client = forwarded or (request.client.host if request.client else "unknown")
         if not self.limiter.allow(client):
             return JSONResponse(
                 {"error": {"code": "RATE_LIMITED", "message": "too many guest requests"}},
                 429,
                 headers={"Retry-After": "60"},
             )
-        return await call_next(request)
+        return await self._with_principal(GUEST_PRINCIPAL, request, call_next)
+
+    @staticmethod
+    async def _with_principal(
+        principal: Any, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        """Tell the MCP layer who this request is from (resources get no headers of their own)."""
+        token = HTTP_PRINCIPAL.set(principal)
+        try:
+            return await call_next(request)
+        finally:
+            HTTP_PRINCIPAL.reset(token)
 
 
 def _page(title: str, body: str) -> HTMLResponse:
@@ -100,7 +127,7 @@ a{{color:inherit}}li{{margin:10px 0}}.muted{{color:var(--muted)}}code{{font-size
 def create_app(services: Services) -> Starlette:
     settings = services.settings
     keys = ApiKeyService(services.repos.api_keys, services.clock)
-    mcp = create_server(services)
+    mcp = create_server(services, local_principal=GUEST_PRINCIPAL)  # fail closed: unknown caller = guest
 
     @mcp.custom_route("/healthz", methods=["GET"])
     async def healthz(_: Request) -> Response:
@@ -167,10 +194,14 @@ def create_app(services: Services) -> Starlette:
             return JSONResponse({"error": exc.to_dict()}, 429)
         scenario = next(s for s in scenarios() if s.name == name)
         try:
-            record, _ = services.ledger.freeze(scenario.experiment, GUEST)
-            run = await primary_engine(services).start(record.experiment_id, GUEST)
+            # Same path as the recorded demo (prior trials frozen first), reviewed by the free,
+            # deterministic rules provider so guests never spend model budget.
+            guest_services = replace(services, provider=RulesProvider())
+            result = await run_scenario(guest_services, scenario, requester=GUEST, decide=False)
         except DomainError as exc:
             return JSONResponse({"error": exc.to_dict()}, 400)
+        run = services.repos.runs.get(result.run_id)
+        assert run is not None
         return JSONResponse(
             {
                 "run_id": run.run_id,
@@ -191,5 +222,10 @@ def create_app(services: Services) -> Starlette:
             allowed_origins=list(settings.http_allowed_origins),
         ),
     )
-    app.add_middleware(ApiKeyMiddleware, keys=keys, limiter=RateLimiter(settings.guest_requests_per_minute))
+    app.add_middleware(
+        ApiKeyMiddleware,
+        keys=keys,
+        limiter=RateLimiter(settings.guest_requests_per_minute),
+        trust_proxy_headers=settings.trust_proxy_headers,
+    )
     return app

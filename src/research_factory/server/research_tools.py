@@ -13,15 +13,14 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
 from pydantic import BaseModel, Field
 
-from ..auth import Principal
-from ..domain.errors import NotFoundError
+from ..auth import Principal, Role
+from ..domain.errors import ForbiddenError, NotFoundError
 from ..domain.project_models import ApprovalDecision, BacktestSpec, Experiment, Hypothesis
 from ..report import build_run_report
 from ..workflows.engine import WorkflowEngine
-from ..workflows.primary import primary_engine, primary_steps
+from ..workflows.primary import ANALYSIS_STEPS, engine_for_run, primary_engine, primary_steps
 from .common import DEMO_REQUESTERS, ServerDeps, governed
 
-ANALYSIS_STEPS = {"build_features": 3, "run_backtest": 4, "audit_leakage": 5, "get_statistics": 6}
 ARTIFACT_STEP = {
     "build_features": "Feature build",
     "run_backtest": "Backtest",
@@ -116,6 +115,14 @@ def lean_artifact(artifact: dict[str, Any] | None) -> dict[str, Any] | None:
 def register(mcp: MCPServer, deps: ServerDeps) -> None:
     services = deps.services
 
+    def _owned_or_approver(principal: Principal, run_id: str) -> Any:
+        run = services.repos.runs.get(run_id)
+        if run is None:
+            raise NotFoundError(f"run {run_id} not found")
+        if principal.role is not Role.APPROVER and run.requested_by != principal.name:
+            raise ForbiddenError("only the run's requester or an approver may do this")
+        return run
+
     @mcp.tool(
         description="Freeze a hypothesis and backtest spec as an immutable experiment in the research ledger."
     )
@@ -152,7 +159,7 @@ def register(mcp: MCPServer, deps: ServerDeps) -> None:
             async def body(principal: Principal) -> AnalysisResult:
                 steps = primary_steps()[: ANALYSIS_STEPS[name]]
                 run = await WorkflowEngine(services, steps).start(
-                    experiment_id, principal.name, project_type="analysis"
+                    experiment_id, principal.name, project_type=f"analysis:{name}"
                 )
                 step = ARTIFACT_STEP[name]
                 result = services.repos.steps.get(run.run_id, step)
@@ -202,9 +209,22 @@ def register(mcp: MCPServer, deps: ServerDeps) -> None:
     )
     async def resume_run(run_id: str, ctx: Context[Any, Any] | None = None) -> RunSummary:
         async def body(principal: Principal) -> RunSummary:
-            return _summary(await primary_engine(services).advance(run_id, principal.name))
+            run = _owned_or_approver(principal, run_id)
+            return _summary(await engine_for_run(services, run).advance(run_id, principal.name))
 
         return await governed(deps, ctx, "resume_run", "resume_run", {"run_id": run_id}, body)
+
+    @mcp.tool(
+        description="End a paused run for good, with a reason (the requester, or an approver). It cannot be resumed after."
+    )
+    async def cancel_run(
+        run_id: str, reason: str = Field(min_length=3, max_length=2000), ctx: Context[Any, Any] | None = None
+    ) -> RunSummary:
+        async def body(principal: Principal) -> RunSummary:
+            run = _owned_or_approver(principal, run_id)
+            return _summary(engine_for_run(services, run).cancel(run_id, principal.name, reason))
+
+        return await governed(deps, ctx, "cancel_run", "cancel_run", {"run_id": run_id}, body)
 
     @mcp.tool(
         description="Structured report for a run: steps, findings with evidence, gate, approvals, audit trail."
@@ -224,9 +244,8 @@ def register(mcp: MCPServer, deps: ServerDeps) -> None:
         limit: int = Field(default=20, ge=1, le=100), ctx: Context[Any, Any] | None = None
     ) -> RunList:
         async def body(principal: Principal) -> RunList:
-            runs = [r for r in services.repos.runs.list(limit=limit * 3) if can_read_run(principal, r)][
-                :limit
-            ]
+            visible = sorted(DEMO_REQUESTERS) if principal.is_guest else None
+            runs = services.repos.runs.list(limit=limit, requested_by_in=visible)
             return RunList(runs=[_summary(r) for r in runs])
 
         return await governed(deps, ctx, "list_runs", "read_demo_runs", {"limit": limit}, body)

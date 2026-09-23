@@ -12,6 +12,7 @@ from typing import Any
 
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
+from mcp.server.mcpserver.exceptions import ResourceError, ToolError
 from pydantic import BaseModel
 
 from .. import __version__
@@ -35,6 +36,15 @@ approver with approve_run. There are no trading tools."""
 class Health(BaseModel):
     status: str
     version: str
+
+
+async def governed_resource(*args: Any) -> str:
+    """Resources report policy errors as ResourceError with the same typed JSON body as tools."""
+    try:
+        result: str = await governed(*args)
+    except ToolError as exc:
+        raise ResourceError(str(exc)) from None
+    return result
 
 
 def create_server(services: Services, *, local_principal: Principal | None = None) -> MCPServer:
@@ -74,7 +84,7 @@ def create_server(services: Services, *, local_principal: Principal | None = Non
                 raise NotFoundError(f"run {run_id} not found")
             return json.dumps(build_run_report(services, run_id), indent=1)
 
-        return await governed(deps, ctx, "run://", "read_demo_runs", {"run_id": run_id}, body)
+        return await governed_resource(deps, ctx, "run://", "read_demo_runs", {"run_id": run_id}, body)
 
     @mcp.resource(
         "evidence://{evidence_id}",
@@ -92,7 +102,9 @@ def create_server(services: Services, *, local_principal: Principal | None = Non
                     doc["content"] = None
             return json.dumps(doc, indent=1)
 
-        return await governed(deps, ctx, "evidence://", "read_evidence", {"evidence_id": evidence_id}, body)
+        return await governed_resource(
+            deps, ctx, "evidence://", "read_evidence", {"evidence_id": evidence_id}, body
+        )
 
     @mcp.resource(
         "ledger://{research_family}", mime_type="application/json", description="Trials in a research family."
@@ -112,7 +124,7 @@ def create_server(services: Services, *, local_principal: Principal | None = Non
                 indent=1,
             )
 
-        return await governed(
+        return await governed_resource(
             deps, ctx, "ledger://", "read_ledger", {"research_family": research_family}, body
         )
 

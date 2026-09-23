@@ -93,5 +93,23 @@ class ResearchLedger:
         )
         return record.trial_number, sharpes
 
+    def review_trial_count(self, experiment_id: str) -> tuple[int, str]:
+        """Related trials that exist *now* (ADR-0008).
+
+        The larger of: trials in the experiment's research family, and trials anywhere that
+        test the same feature on the same dataset. Renaming a family cannot reset the count.
+        """
+        record = self.get(experiment_id)
+        hyp = record.experiment.hypothesis
+        family = self.repo.count_in_family(record.research_family)
+        related = sum(
+            1
+            for r in self.repo.list_all()
+            if r.experiment.hypothesis.feature.name == hyp.feature.name
+            and r.experiment.hypothesis.universe.dataset == hyp.universe.dataset
+        )
+        detail = f"{family} in family '{record.research_family}', {related} testing {hyp.feature.name} on {hyp.universe.dataset}"
+        return max(family, related), detail
+
     def record_result(self, experiment_id: str, sharpe_per_period: float, n_obs: int) -> None:
         self.repo.record_result(experiment_id, sharpe_per_period, n_obs, self.clock.now())

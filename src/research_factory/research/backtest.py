@@ -13,6 +13,13 @@ Conventions (documented, tested):
   execution session.
 * Returns are split-adjusted. A delisting return is realized on the last listed session;
   afterwards the position earns nothing (cash) until the next rebalance.
+
+Simplifications, deliberately conservative or neutral (audit Q11):
+
+* Constant weights imply small daily rebalancing trades whose costs are not charged.
+* Removing a delisted name at the next rebalance is charged as turnover, although no trade
+  is possible after delisting.
+* No cost is charged for unwinding the final positions at the end of the sample.
 """
 
 from __future__ import annotations

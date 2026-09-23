@@ -39,6 +39,12 @@ class Principal:
 GUEST = Principal("guest", Role.GUEST)
 LOCAL_OPERATOR = Principal("local-operator", Role.RESEARCHER)
 
+# Identities the system uses itself. Keys may not be issued in these names: runs requested
+# by some of them are public demo runs.
+RESERVED_OWNERS = frozenset(
+    {"guest", "demo-researcher", "demo-approver", "local-operator", "replay", "unauthenticated"}
+)
+
 
 def hash_key(key: str) -> str:
     return sha256_hex(key.encode("utf-8"))
@@ -56,6 +62,8 @@ class ApiKeyService:
             raise InvalidInputError("guest access needs no key")
         if not owner or len(owner) > 120:
             raise InvalidInputError("owner must be 1-120 characters")
+        if owner.strip().lower() in RESERVED_OWNERS:
+            raise InvalidInputError(f"{owner!r} is a reserved identity")
         key_id = secrets.token_hex(6)
         key = f"rsf_{key_id}_{secrets.token_urlsafe(32)}"
         self.repo.add(key_id, hash_key(key), owner, str(role), self.clock.now())

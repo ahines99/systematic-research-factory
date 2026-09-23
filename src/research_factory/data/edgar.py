@@ -30,6 +30,8 @@ from ..domain.identity import sha256_hex
 
 BASE = "https://data.sec.gov"
 EPS_CONCEPTS = ("EarningsPerShareBasic", "EarningsPerShareBasicAndDiluted", "EarningsPerShareDiluted")
+NET_INCOME_CONCEPTS = ("NetIncomeLossAvailableToCommonStockholdersBasic", "NetIncomeLoss")
+SHARE_CONCEPTS = ("WeightedAverageNumberOfSharesOutstandingBasic",)
 
 
 def check_source_uri(uri: str, allowed_hosts: tuple[str, ...]) -> None:
@@ -188,12 +190,12 @@ class EpsFact:
         return (self.end - self.start).days if self.start else None
 
 
-def parse_eps_facts(companyfacts: dict[str, Any]) -> list[EpsFact]:
-    """EPS facts merged across concepts; for the same filing and period, basic EPS wins."""
+def parse_concept_facts(companyfacts: dict[str, Any], concepts: tuple[str, ...], unit: str) -> list[EpsFact]:
+    """Facts merged across concepts; for the same filing and period, earlier concepts win."""
     gaap = companyfacts.get("facts", {}).get("us-gaap", {})
     merged: dict[tuple[str, str | None, str], EpsFact] = {}
-    for concept in reversed(EPS_CONCEPTS):  # later (preferred) concepts overwrite earlier ones
-        for r in gaap.get(concept, {}).get("units", {}).get("USD/shares", []):
+    for concept in reversed(concepts):  # later (preferred) concepts overwrite earlier ones
+        for r in gaap.get(concept, {}).get("units", {}).get(unit, []):
             fact = EpsFact(
                 accession=r["accn"],
                 start=date.fromisoformat(r["start"]) if r.get("start") else None,
@@ -205,3 +207,8 @@ def parse_eps_facts(companyfacts: dict[str, Any]) -> list[EpsFact]:
             )
             merged[(fact.accession, r.get("start"), r["end"])] = fact
     return sorted(merged.values(), key=lambda f: (f.accession, f.end, f.start or f.end))
+
+
+def parse_eps_facts(companyfacts: dict[str, Any]) -> list[EpsFact]:
+    """EPS facts; for the same filing and period, basic EPS wins."""
+    return parse_concept_facts(companyfacts, EPS_CONCEPTS, "USD/shares")

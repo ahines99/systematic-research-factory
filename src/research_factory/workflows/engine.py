@@ -1,20 +1,27 @@
 """The workflow state machine (RSF-022, RSF-042 to RSF-045; ADR-0005).
 
 * Status transitions are validated against ``RUN_TRANSITIONS``.
+* One worker at a time: ``advance`` takes a lease on the run (compare-and-set) and renews it
+  before each step. A crashed worker's lease expires and another worker can resume.
 * Each step's result is persisted before the next step starts.
 * A completed step is never executed again for the same run: resuming reuses its stored
   artifact (idempotency key = experiment + step + prior artifacts).
-* Transient failures are retried with backoff inside a timeout; validation and policy
-  errors are not retried. Every attempt, retry and transition is audited.
+* Re-executing a step that previously paused or failed supersedes that attempt's findings,
+  so the committee gate only sees findings from each step's current result.
+* Transient failures (including database and storage outages) are retried with backoff
+  inside a timeout; validation and policy errors are not retried. Anything unexpected
+  pauses the run for review instead of leaving it stuck. Everything is audited.
 """
 
 from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 import anyio
+from sqlalchemy.exc import DBAPIError, OperationalError
 
 from ..domain.errors import (
     BudgetExceededError,
@@ -23,6 +30,7 @@ from ..domain.errors import (
     ErrorCode,
     NotFoundError,
     StepTimeoutError,
+    UpstreamUnavailableError,
 )
 from ..domain.identity import content_id
 from ..domain.project_models import (
@@ -48,6 +56,21 @@ PAUSE_CODES = {
     ErrorCode.TIMEOUT,
     ErrorCode.BUDGET_EXCEEDED,
 }
+
+
+def _infrastructure_errors() -> tuple[type[BaseException], ...]:
+    """Exceptions that mean a dependency (database, storage, network) is unavailable."""
+    errors: list[type[BaseException]] = [OperationalError, DBAPIError, ConnectionError, TimeoutError, OSError]
+    try:
+        from botocore.exceptions import BotoCoreError, ClientError
+
+        errors += [BotoCoreError, ClientError]
+    except ImportError:  # the s3 extra is optional
+        pass
+    return tuple(errors)
+
+
+INFRASTRUCTURE_ERRORS = _infrastructure_errors()
 
 
 def idempotency_key(experiment_id: str, step: str, prior: Sequence[str]) -> str:
@@ -133,22 +156,69 @@ class WorkflowEngine:
             raise NotFoundError(f"run {run_id} not found")
         return run
 
+    def cancel(self, run_id: str, actor: str, reason: str) -> WorkflowRun:
+        """End a paused run for good (e.g. a run paused on its budget that should not continue)."""
+        run = self.get_run(run_id)
+        if run.status is not RunStatus.NEEDS_REVIEW:
+            raise ConflictError(f"only a paused run can be cancelled; this one is {run.status}")
+        owner = f"{actor}:{uuid.uuid4().hex[:12]}"
+        if not self.services.repos.runs.claim(run_id, owner, self.services.clock.now(), self._lease_until()):
+            raise ConflictError("this run is being advanced by another worker")
+        try:
+            return self._transition(run, RunStatus.FAILED, actor, reason=f"CANCELLED by {actor}: {reason}")
+        finally:
+            self.services.repos.runs.release(run_id, owner)
+
     # ----------------------------------------------------------------- execution
+
+    def _lease_until(self) -> Any:
+        return self.services.clock.now() + timedelta(seconds=self.services.settings.lease_seconds)
 
     async def advance(self, run_id: str, actor: str) -> WorkflowRun:
         """Run (or resume) a workflow until it completes, fails, or needs a human."""
         run = self.get_run(run_id)
         if run.status.terminal:
             return run
+        owner = f"{actor}:{uuid.uuid4().hex[:12]}"
+        if not self.services.repos.runs.claim(run_id, owner, self.services.clock.now(), self._lease_until()):
+            raise ConflictError("this run is being advanced by another worker; try again when it pauses")
         record = self.services.ledger.get(run.experiment_id)
-        run = self._transition(run, RunStatus.RUNNING, actor)
         bind(run_id=run_id, experiment_id=run.experiment_id)
         try:
-            return await self._advance(run, record, actor)
+            run = self._transition(self.get_run(run_id), RunStatus.RUNNING, actor)
+            return await self._advance(run, record, actor, owner)
+        except DomainError:
+            raise
+        except Exception as exc:  # anything unexpected outside a step: pause, never leave it "running"
+            log.exception("engine_error", error_type=type(exc).__name__)
+            return self._pause_after_error(run_id, actor, exc)
         finally:
-            unbind("run_id", "experiment_id", "step")
+            try:
+                self.services.repos.runs.release(run_id, owner)
+            finally:
+                unbind("run_id", "experiment_id", "step")
 
-    async def _advance(self, run: WorkflowRun, record: Any, actor: str) -> WorkflowRun:
+    def _pause_after_error(self, run_id: str, actor: str, exc: Exception) -> WorkflowRun:
+        infra = isinstance(exc, INFRASTRUCTURE_ERRORS)
+        code = "UPSTREAM_UNAVAILABLE" if infra else "INTERNAL"
+        self.services.audit.append(
+            run_id=run_id,
+            step="run",
+            event_type="engine_error",
+            actor=actor,
+            payload={"error_type": type(exc).__name__},
+        )
+        current = self.get_run(run_id)
+        if current.status is RunStatus.RUNNING:
+            return self._transition(
+                current,
+                RunStatus.NEEDS_REVIEW,
+                actor,
+                reason=f"{code}: the run stopped unexpectedly ({type(exc).__name__}); resume to retry",
+            )
+        return current
+
+    async def _advance(self, run: WorkflowRun, record: Any, actor: str, owner: str) -> WorkflowRun:
         run_id = run.run_id
         artifacts: dict[str, str] = {}
         prior: list[str] = []
@@ -171,6 +241,20 @@ class WorkflowEngine:
                 )
                 continue
 
+            if not self.services.repos.runs.renew(run_id, owner, self._lease_until()):
+                raise ConflictError("the run's lease was taken over by another worker")
+            if existing is not None:
+                superseded = self.services.repos.findings.supersede_step(
+                    run_id, step.name, self.services.clock.now()
+                )
+                if superseded:
+                    self.services.audit.append(
+                        run_id=run_id,
+                        step=step.name,
+                        event_type="findings_superseded",
+                        actor=actor,
+                        payload={"count": superseded, "previous_status": str(existing.status)},
+                    )
             run = self._transition(run, RunStatus.RUNNING, actor, current_step=step.name)
             bind(step=step.name)
             ctx = StepContext(run=run, record=record, services=self.services, artifacts=dict(artifacts))
@@ -228,6 +312,8 @@ class WorkflowEngine:
                 )
             except DomainError as exc:
                 error = exc
+            except INFRASTRUCTURE_ERRORS as exc:  # database, storage or network trouble: retryable
+                error = UpstreamUnavailableError(f"a dependency was unavailable ({type(exc).__name__})")
             except Exception as exc:  # unexpected: fail closed without leaking internals
                 log.exception("step_crashed", run_id=ctx.run.run_id, step=step.name)
                 self.services.audit.append(

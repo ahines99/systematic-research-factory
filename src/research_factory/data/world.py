@@ -60,6 +60,7 @@ class Filing:
     accepted_at: datetime  # UTC; the knowledge time
     eps: float
     amends: str | None = None  # accession of the original filing this amends
+    revision: str = "original"  # original | restated | split_adjusted
 
     @property
     def is_amendment(self) -> bool:
@@ -67,6 +68,11 @@ class Filing:
 
 
 def fiscal_period_minus(period: str, quarters: int) -> str:
+    """Step back ``quarters`` quarters. Labels are "YYYYQn" (synthetic) or "PYYYY-MM" (EDGAR period ends)."""
+    if period.startswith("P"):
+        year, month = int(period[1:5]), int(period[6:8])
+        index = year * 12 + (month - 1) - 3 * quarters
+        return f"P{index // 12:04d}-{index % 12 + 1:02d}"
     year, q = int(period[:4]), int(period[5])
     index = year * 4 + (q - 1) - quarters
     return f"{index // 4}Q{index % 4 + 1}"
@@ -235,6 +241,7 @@ def filing_to_dict(f: Filing) -> dict[str, Any]:
         "accepted_at": f.accepted_at.astimezone(UTC).isoformat(),
         "eps": f.eps,
         "amends": f.amends,
+        "revision": f.revision,
     }
 
 
@@ -252,4 +259,5 @@ def filing_from_dict(d: dict[str, Any]) -> Filing:
         accepted_at=accepted.astimezone(UTC),
         eps=float(d["eps"]),
         amends=d.get("amends"),
+        revision=d.get("revision", "restated" if d.get("amends") else "original"),
     )

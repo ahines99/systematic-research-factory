@@ -82,7 +82,9 @@ def build_services(
     audit = AuditLog(repos.audit, clock)
     if provider is None:
         key = settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else None
-        provider = provider_from_settings(settings.model_provider, settings.anthropic_model, key)
+        provider = provider_from_settings(
+            settings.model_provider, settings.anthropic_model, key, settings.retry.timeout_seconds
+        )
     return Services(
         settings=settings,
         clock=clock,

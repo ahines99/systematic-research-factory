@@ -1,0 +1,15 @@
+id: 30-delay-fragile-signal
+title: A signal that fades with one more session of delay needs more evidence
+dimensions:
+- uncertainty_calibration
+- calculation_fidelity
+experiment:
+  dataset: synthetic:v1:fast
+  hold: 1
+  cost: 1.0
+thresholds:
+  max_delay_sharpe_decay: 0.2
+expect:
+  gate: needs_more_evidence
+  finding_types_include:
+  - fragility

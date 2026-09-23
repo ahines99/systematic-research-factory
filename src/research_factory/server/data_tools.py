@@ -33,7 +33,9 @@ class FilingRecord(BaseModel):
 class FilingsResult(BaseModel):
     dataset: str
     as_of: str
-    evidence_id: str
+    evidence_id: str | None = Field(
+        description="Stored evidence ID; null for guest queries, which are not stored"
+    )
     count: int
     filings: list[FilingRecord]
 
@@ -49,7 +51,9 @@ class PriceRecord(BaseModel):
 class PricesResult(BaseModel):
     dataset: str
     as_of: str
-    evidence_id: str
+    evidence_id: str | None = Field(
+        description="Stored evidence ID; null for guest queries, which are not stored"
+    )
     prices_simulated: bool
     count: int
     prices: list[PriceRecord]
@@ -66,12 +70,18 @@ class SecurityRecord(BaseModel):
 class UniverseResult(BaseModel):
     dataset: str
     as_of: str
-    evidence_id: str
+    evidence_id: str | None = Field(
+        description="Stored evidence ID; null for guest queries, which are not stored"
+    )
     count: int
     securities: list[SecurityRecord]
 
 
-def _record(deps: ServerDeps, value: Any, *, dataset: str, kind: str, as_of: datetime) -> str:
+def _record(
+    deps: ServerDeps, principal: Any, value: Any, *, dataset: str, kind: str, as_of: datetime
+) -> str | None:
+    if principal.is_guest:
+        return None  # anonymous queries must not grow storage
     ref = deps.services.evidence.record_json(
         value, source_uri=f"rsf://datasets/{dataset}/{kind}", source_type=f"query:{kind}", as_of=as_of
     )
@@ -95,12 +105,17 @@ def register(mcp: MCPServer, deps: ServerDeps) -> None:
         form: str | None = None,
         ctx: Context[Any, Any] | None = None,
     ) -> FilingsResult:
-        async def body(_: Any) -> FilingsResult:
+        async def body(principal: Any) -> FilingsResult:
             ts = require_as_of(as_of)
             rows = _pit(dataset).filings_as_of(ts, {security_id}, form)
             docs = [filing_to_dict(f) for f in rows]
             ev = _record(
-                deps, {"security_id": security_id, "filings": docs}, dataset=dataset, kind="filings", as_of=ts
+                deps,
+                principal,
+                {"security_id": security_id, "filings": docs},
+                dataset=dataset,
+                kind="filings",
+                as_of=ts,
             )
             return FilingsResult(
                 dataset=dataset,
@@ -129,12 +144,13 @@ def register(mcp: MCPServer, deps: ServerDeps) -> None:
         dataset: str = "edgar-semi:v1",
         ctx: Context[Any, Any] | None = None,
     ) -> PricesResult:
-        async def body(_: Any) -> PricesResult:
+        async def body(principal: Any) -> PricesResult:
             ts = require_as_of(as_of)
             pit = _pit(dataset)
             rows = [r.to_dict() for r in pit.prices_as_of(security_ids, start, ts)]
             ev = _record(
                 deps,
+                principal,
                 {"security_ids": security_ids, "start": start.isoformat(), "rows": rows},
                 dataset=dataset,
                 kind="prices",
@@ -166,7 +182,7 @@ def register(mcp: MCPServer, deps: ServerDeps) -> None:
         dataset: str = "edgar-semi:v1",
         ctx: Context[Any, Any] | None = None,
     ) -> UniverseResult:
-        async def body(_: Any) -> UniverseResult:
+        async def body(principal: Any) -> UniverseResult:
             ts = require_as_of(as_of)
             pit = _pit(dataset)
             day = pit.dataset.day(max(pit.last_session_index(ts), 0))
@@ -180,7 +196,9 @@ def register(mcp: MCPServer, deps: ServerDeps) -> None:
                 )
                 for s in pit.universe_as_of(ts)
             ]
-            ev = _record(deps, [s.model_dump() for s in secs], dataset=dataset, kind="universe", as_of=ts)
+            ev = _record(
+                deps, principal, [s.model_dump() for s in secs], dataset=dataset, kind="universe", as_of=ts
+            )
             return UniverseResult(
                 dataset=dataset, as_of=ts.isoformat(), evidence_id=ev, count=len(secs), securities=secs
             )

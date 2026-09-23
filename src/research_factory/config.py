@@ -33,7 +33,7 @@ class RetryPolicy(BaseModel):
 class Budgets(BaseModel):
     max_tokens_per_run: int = 60_000
     max_cost_usd_per_run: float = 1.00
-    max_cost_usd_per_day: float = 10.00
+    max_cost_usd_per_day: float = 3.00
     max_guest_live_runs_per_day: int = 3
     step_latency_target_seconds: float = 60.0
 
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     s3_secret_access_key: SecretStr | None = None
 
     model_provider: str = Field(default="rules", description="'rules' (deterministic, no API) or 'anthropic'")
-    anthropic_model: str = "claude-sonnet-5"
+    anthropic_model: str = "claude-opus-5"
     anthropic_api_key: SecretStr | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
 
     sec_user_agent: str | None = Field(
@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     http_allowed_hosts: tuple[str, ...] = ("127.0.0.1:*", "localhost:*")
     http_allowed_origins: tuple[str, ...] = ("http://127.0.0.1:*", "http://localhost:*")
     guest_requests_per_minute: int = 30
+    trust_proxy_headers: bool = False  # set true only behind Fly's proxy (fly-client-ip)
+    lease_seconds: float = 900.0  # how long a worker may hold a run before another may take over
     public_base_url: str = "http://127.0.0.1:8000"
 
 

@@ -26,9 +26,14 @@ from ..research.backtest import run_backtest
 from ..research.features import FeatureTable, build_features, get_feature, rebalance_sessions
 from ..research.leakage import audit_leakage
 from ..research.quality import check_dataset, corrupt, scan_untrusted_text, stale
-from ..research.statistics import PERIODS_PER_YEAR, statistical_review
+from ..research.statistics import PERIODS_PER_YEAR, deflated_sharpe_at, statistical_review
 from ..services.approvals import APPROVAL_REQUIRED, COMMITTEE_STEP, compute_gate
 from .base import StepContext, StepOutcome
+
+
+async def run_blocking(fn: Any, *args: Any) -> Any:
+    """Run CPU- or IO-bound work in a thread that a step timeout can abandon (RSF-045)."""
+    return await anyio.to_thread.run_sync(fn, *args, abandon_on_cancel=True)
 
 
 def make_finding(
@@ -140,7 +145,7 @@ class DataAcquisitionStep:
             view = s.snapshot(pinned)
             dataset_id = view.dataset_id
         else:
-            dataset = await anyio.to_thread.run_sync(s.dataset, name)
+            dataset = await run_blocking(s.dataset, name)
             if s.faults.should_corrupt("data_source"):
                 dataset = corrupt(dataset)
             if s.faults.should_stale("data_source"):
@@ -254,7 +259,7 @@ class FeatureBuildStep:
                 prices_evidence_id=acq["snapshot_evidence_id"],
             )
 
-        table = await anyio.to_thread.run_sync(build)
+        table = await run_blocking(build)
         eligible = int(table.universe.sum())
         valued = int(np.isfinite(table.values).sum())
         if valued == 0:
@@ -296,7 +301,7 @@ class BacktestStep:
     async def execute(self, ctx: StepContext) -> StepOutcome:
         view, table = _load_table(ctx)
         hyp, spec = ctx.experiment.hypothesis, ctx.experiment.backtest
-        result = await anyio.to_thread.run_sync(lambda: run_backtest(view, table, spec, hyp.expected_sign))
+        result = await run_blocking(lambda: run_backtest(view, table, spec, hyp.expected_sign))
         n = len(result.net)
         if n == 0:
             raise NeedsEvidenceError("the backtest produced no returns: too few decision dates or securities")
@@ -408,7 +413,7 @@ class StatisticalReviewStep:
         hyp, spec = ctx.experiment.hypothesis, ctx.experiment.backtest
         bt = ctx.artifact(BacktestStep.name)
         net, gross = np.array(bt["net"]), np.array(bt["gross"])
-        delayed = await anyio.to_thread.run_sync(
+        delayed = await run_blocking(
             lambda: run_backtest(view, table, spec, hyp.expected_sign, extra_lag_sessions=1)
         )
         n_trials, sharpes = s.ledger.trial_context(ctx.record.experiment_id)
@@ -500,6 +505,10 @@ class JudgmentStep:
     def payload(self, ctx: StepContext) -> dict[str, Any]:
         raise NotImplementedError
 
+    def extra_problems(self, verdict: str, payload: dict[str, Any]) -> list[str]:
+        """Step-specific rules on top of the shared contract."""
+        return []
+
     def evidence_catalog(self, ctx: StepContext) -> list[dict[str, str]]:
         return [
             {"evidence_id": ref.evidence_id, "source_type": ref.source_type, "step": step}
@@ -531,7 +540,7 @@ class JudgmentStep:
         problems: list[str] = []
         for _ in range(self.max_attempts):
             s.budget.check(ctx.run.run_id)
-            response = await anyio.to_thread.run_sync(s.provider.judge, request)
+            response = await run_blocking(s.provider.judge, request)
             s.budget.record(
                 run_id=ctx.run.run_id,
                 step=self.name,
@@ -546,6 +555,9 @@ class JudgmentStep:
             stamp["cost_usd"] += response.cost_usd
             try:
                 output = validate_output(response.raw, verdicts=self.verdicts, allowed_evidence=allowed)
+                extra = self.extra_problems(output.verdict, payload)
+                if extra:
+                    raise JudgmentValidationError(extra)
             except JudgmentValidationError as exc:
                 problems = exc.problems
                 request = request.with_feedback(problems)
@@ -709,6 +721,50 @@ class ResearchCommitteeStep(JudgmentStep):
     slug = "research-committee"
     verdicts: ClassVar[list[str]] = ["approve", "reject", "needs_more_evidence"]
 
+    PERMISSIVENESS: ClassVar[dict[str, int]] = {"reject": 0, "needs_more_evidence": 1, "approve": 2}
+
+    def extra_problems(self, verdict: str, payload: dict[str, Any]) -> list[str]:
+        gate = payload["gate"]["recommendation"]
+        if self.PERMISSIVENESS[verdict] > self.PERMISSIVENESS[gate]:
+            return [
+                f"the memo recommends '{verdict}' but the gate recommends '{gate}'; a memo may not be more permissive"
+            ]
+        return []
+
+    def review_time_check(self, ctx: StepContext) -> Finding | None:
+        """Deflated Sharpe at today's trial count (ADR-0008). Gates on the honest, review-time N."""
+        s = ctx.services
+        stats = ctx.artifact(StatisticalReviewStep.name)
+        n_review, detail = s.ledger.review_trial_count(ctx.record.experiment_id)
+        n_freeze = int(stats["n_trials"])
+        if n_review <= n_freeze or not stats.get("n_obs"):
+            return None
+        dsr = deflated_sharpe_at(stats, n_review)
+        threshold = s.settings.thresholds.min_deflated_sharpe
+        cited = [ctx.artifacts[StatisticalReviewStep.name]]
+        if dsr >= threshold:
+            return make_finding(
+                ctx,
+                self.name,
+                "review_time_trials",
+                "Deflated Sharpe holds at today's trial count",
+                f"{n_review} related trials exist now ({detail}); at that count the deflated Sharpe is {dsr:.3f} "
+                f"(threshold {threshold}). At freeze it was {stats['deflated_sharpe']:.3f} over {n_freeze}.",
+                Severity.INFO,
+                cited,
+            )
+        return make_finding(
+            ctx,
+            self.name,
+            "statistical_threshold",
+            "Failed: deflated sharpe at today's trial count",
+            f"{n_review} related trials exist now ({detail}); at that count the deflated Sharpe is {dsr:.3f}, "
+            f"below the threshold of {threshold}. At freeze it was {stats['deflated_sharpe']:.3f} over {n_freeze}.",
+            Severity.HIGH,
+            cited,
+            metadata={"check": "deflated_sharpe_review_time", "n_trials": n_review},
+        )
+
     def payload(self, ctx: StepContext) -> dict[str, Any]:
         findings = ctx.services.repos.findings.list_for_run(ctx.run.run_id)
         gate = compute_gate(findings)
@@ -731,11 +787,19 @@ class ResearchCommitteeStep(JudgmentStep):
 
     async def execute(self, ctx: StepContext) -> StepOutcome:
         s = ctx.services
+        review = self.review_time_check(ctx)
+        if review is not None:
+            s.repos.findings.add(
+                ctx.run.run_id, review, s.clock.now()
+            )  # visible to the gate and the approver
         gate = compute_gate(s.repos.findings.list_for_run(ctx.run.run_id))
         previous = s.repos.steps.get(ctx.run.run_id, self.name)
         stamp: dict[str, Any] = {}
         if previous is not None and previous.artifact_evidence_id:
-            memo_artifact = s.evidence.load_json(previous.artifact_evidence_id)  # reuse the drafted memo
+            memo_artifact = {
+                **s.evidence.load_json(previous.artifact_evidence_id),  # reuse the drafted memo
+                "gate": gate.to_dict(),
+            }
         else:
             drafted, findings, stamp = await self.judge(ctx)
             if drafted is None:
@@ -752,6 +816,7 @@ class ResearchCommitteeStep(JudgmentStep):
             return StepOutcome(
                 StepStatus.NEEDS_REVIEW,
                 artifact=memo_artifact,
+                findings=[review] if review else [],
                 reason=f"awaiting a committee decision; the gate recommends {gate.recommendation}",
                 reason_code=APPROVAL_REQUIRED,
                 audit={**stamp, "gate": gate.to_dict()},
@@ -782,7 +847,7 @@ class ResearchCommitteeStep(JudgmentStep):
         return StepOutcome(
             StepStatus.COMPLETED,
             artifact=final,
-            findings=[finding],
+            findings=[finding, *([review] if review else [])],
             run_decision=str(decision.decision),
             audit={
                 "decision": str(decision.decision),

@@ -90,6 +90,8 @@ class Experiment(BaseModel):
     def _check_link(self) -> Self:
         if self.backtest.hypothesis_id != self.hypothesis.hypothesis_id:
             raise ValueError("backtest.hypothesis_id must match hypothesis.hypothesis_id")
+        if self.backtest.hold_days != self.hypothesis.horizon_days:
+            raise ValueError("backtest.hold_days must equal the frozen hypothesis.horizon_days")
         return self
 
     @computed_field  # type: ignore[prop-decorator]

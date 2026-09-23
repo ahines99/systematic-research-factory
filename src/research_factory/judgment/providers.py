@@ -272,12 +272,19 @@ class ScriptedProvider:
 class AnthropicProvider:
     name = "anthropic"
 
-    def __init__(self, model: str = "claude-opus-5", api_key: str | None = None, client: Any = None):
+    def __init__(
+        self,
+        model: str = "claude-opus-5",
+        api_key: str | None = None,
+        client: Any = None,
+        timeout: float = 100.0,
+    ):
         self.model = model
         if client is None:
             import anthropic
 
-            client = anthropic.Anthropic(api_key=api_key, max_retries=2, timeout=300.0)
+            # One retry inside the SDK; the workflow engine owns further retries and the step timeout.
+            client = anthropic.Anthropic(api_key=api_key, max_retries=1, timeout=timeout)
         self.client = client
 
     def judge(self, request: JudgmentRequest) -> JudgmentResponse:
@@ -333,9 +340,12 @@ class AnthropicProvider:
         )
 
 
-def provider_from_settings(provider: str, model: str, api_key: str | None) -> JudgmentProvider:
+def provider_from_settings(
+    provider: str, model: str, api_key: str | None, step_timeout_seconds: float = 120.0
+) -> JudgmentProvider:
     if provider == "rules":
         return RulesProvider()
     if provider == "anthropic":
-        return AnthropicProvider(model=model, api_key=api_key)
+        # Two SDK attempts must fit inside one step timeout, or the step would outlive it.
+        return AnthropicProvider(model=model, api_key=api_key, timeout=max(10.0, step_timeout_seconds * 0.45))
     raise ValueError(f"unknown model provider {provider!r}")

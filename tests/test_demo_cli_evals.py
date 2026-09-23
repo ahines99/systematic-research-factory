@@ -40,24 +40,29 @@ def test_demo_scenarios_reach_their_designed_outcomes(demo) -> None:  # type: ig
     assert outcome["real-filings"][0] == "complete"
 
 
-def test_demo_outcomes_match_the_committed_manifest(demo) -> None:  # type: ignore[no-untyped-def]
-    """Outcomes are compared everywhere; byte-identity is proven by the replay test below.
+def test_demo_matches_the_committed_manifest(demo) -> None:  # type: ignore[no-untyped-def]
+    """RSF-077: outcomes match everywhere; artifact hashes match exactly on the platform that produced them.
 
-    Artifact hashes are platform-sensitive in the last floating-point bit, so the committed
-    manifest's hashes are informational outside the platform that produced them.
+    Floating point can differ in the last bit across CPU architectures and numpy builds, so
+    on another platform only outcomes are compared (the CI replay test below proves byte identity).
     """
+    from research_factory.demo import platform_key
+
     _, results = demo
-    committed = json.loads(MANIFEST.read_text(encoding="utf-8"))["scenarios"]
+    committed = json.loads(MANIFEST.read_text(encoding="utf-8"))
     current = manifest(results)["scenarios"]
-    for name, expected in committed.items():
+    same_platform = committed["platform"] == platform_key()
+    for name, expected in committed["scenarios"].items():
         for key in ("status", "current_step", "decision", "gate"):
             assert current[name][key] == expected[key], (name, key)
+        if same_platform:
+            assert current[name]["artifacts"] == expected["artifacts"], name
 
 
 def test_replay_from_archived_snapshot_is_byte_identical(demo) -> None:  # type: ignore[no-untyped-def]
     services, results = demo
     for r in results:
-        if r.scenario in ("clean-approved", "real-filings", "leak-caught"):
+        if True:  # all six scenarios (RSF-082)
             replay = anyio.run(replay_run, services, r.run_id)
             assert replay.identical, (r.scenario, replay.compared)
             assert replay.compared
@@ -240,3 +245,26 @@ def test_cli_eval_accepts_provider_after_subcommand(
         main(["eval", "--provider", "rules", "--cases", str(cases), "--out", str(tmp_path / "s.json")]) == 0
     )
     assert "1/1 cases passed" in capsys.readouterr().out
+
+
+def test_replay_in_a_separate_process_is_byte_identical(tmp_path: Path) -> None:
+    """RSF-077: an archived run replays identically in a new process, from storage alone."""
+    import os
+
+    from research_factory.config import Settings
+    from research_factory.services.container import build_services
+
+    db, blobs = f"sqlite:///{tmp_path / 'archive.db'}", f"file://{tmp_path / 'blobs'}"
+    services = build_services(Settings(database_url=db, blob_store=blobs))
+    run_id = anyio.run(record_demo, services, ["clean-approved"])[0].run_id
+    services.engine.dispose()
+    env = {k: v for k, v in os.environ.items() if not k.startswith("RSF_")} | {"RSF_BLOB_STORE": blobs}
+    proc = subprocess.run(
+        [sys.executable, "-m", "research_factory.cli", "--database-url", db, "replay", run_id],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert json.loads(proc.stdout)["identical"] is True

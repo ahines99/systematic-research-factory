@@ -118,7 +118,7 @@ Dissent D<n>
 - [ ] The gate recommendation is quoted with its evidence ID, and the memo is not more permissive.
 - [ ] Every number is in Calculations, with a tool name and evidence ID. There is no model arithmetic.
 - [ ] Facts, assumptions and recommendation are in separate sections. There are no uncited claims.
-- [ ] Trial count N and the DSR are both stated, and N matches the ledger.
+- [ ] The trial count at freeze and at review, and the DSR at each, are stated; the gate uses the review-time count.
 - [ ] The leakage audit result is stated explicitly (clean, or blocking with evidence IDs).
 - [ ] The red-team table is included, and every high or blocking attack that wasn't tested is
   listed under Open questions.

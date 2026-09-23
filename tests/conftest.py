@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
@@ -19,6 +20,12 @@ from research_factory.domain.project_models import (
     UniverseSpec,
 )
 from research_factory.services.container import Services, build_services
+
+# Tests never read a developer's .env or RSF_* variables: settings come only from code.
+Settings.model_config["env_file"] = None
+for _name in list(os.environ):
+    if _name.startswith("RSF_") or _name == "ANTHROPIC_API_KEY":
+        del os.environ[_name]
 
 RATIONALE = (
     "Investors under-react to earnings news, so prices drift in the direction of the surprise "

@@ -16,7 +16,7 @@ from .errors import ForbiddenError
 READ_ACTIONS = frozenset(
     {"healthcheck", "read_data", "read_runs", "read_evidence", "read_ledger", "read_policies"}
 )
-RESEARCH_ACTIONS = frozenset({"freeze_hypothesis", "run_analysis", "start_run", "resume_run"})
+RESEARCH_ACTIONS = frozenset({"freeze_hypothesis", "run_analysis", "start_run", "resume_run", "cancel_run"})
 APPROVAL_ACTIONS = frozenset({"approve_run"})
 GUEST_ACTIONS = frozenset({"healthcheck", "read_data", "read_demo_runs", "read_policies"})
 
@@ -24,7 +24,7 @@ PERMISSIONS: dict[Role, frozenset[str]] = {
     Role.GUEST: GUEST_ACTIONS,
     Role.VIEWER: READ_ACTIONS | {"read_demo_runs"},
     Role.RESEARCHER: READ_ACTIONS | RESEARCH_ACTIONS | {"read_demo_runs"},
-    Role.APPROVER: READ_ACTIONS | APPROVAL_ACTIONS | {"read_demo_runs", "resume_run"},
+    Role.APPROVER: READ_ACTIONS | APPROVAL_ACTIONS | {"read_demo_runs", "resume_run", "cancel_run"},
 }
 
 # Deliberately absent, for every role: placing orders, routing trades, connecting to a

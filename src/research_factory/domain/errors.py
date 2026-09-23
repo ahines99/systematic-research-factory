@@ -18,6 +18,7 @@ class ErrorCode(StrEnum):
     BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
     CONFLICT = "CONFLICT"
     TIMEOUT = "TIMEOUT"
+    INTERNAL = "INTERNAL"
 
 
 class DomainError(Exception):

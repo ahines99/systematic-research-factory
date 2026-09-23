@@ -183,6 +183,7 @@ def generate_synthetic_world(
             accepted_at=_accepted_at(rng, filed),
             eps=round(original.eps + delta, 2),
             amends=original.accession,
+            revision="restated",
         )
         filings.append(amendment)
         restated.append(amendment.accession)

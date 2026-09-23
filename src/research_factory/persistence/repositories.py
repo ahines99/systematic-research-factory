@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Protocol
 
-from sqlalchemy import Engine, and_, func, insert, select, update
+from sqlalchemy import Connection, Engine, Table, and_, func, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
 from ..domain.errors import ConflictError, NotFoundError
@@ -35,6 +35,7 @@ class ExperimentRepository(Protocol):
     def get(self, experiment_id: str) -> ExperimentRecord | None: ...
     def count_in_family(self, research_family: str) -> int: ...
     def list_family(self, research_family: str) -> list[ExperimentRecord]: ...
+    def list_all(self) -> list[ExperimentRecord]: ...
     def record_result(
         self, experiment_id: str, sharpe_per_period: float, n_obs: int, at: datetime
     ) -> None: ...
@@ -47,8 +48,13 @@ class RunRepository(Protocol):
     def add(self, run: WorkflowRun) -> None: ...
     def get(self, run_id: str) -> WorkflowRun | None: ...
     def update(self, run: WorkflowRun, *, expected_status: RunStatus) -> None: ...
-    def list(self, limit: int = 50, requested_by: str | None = None) -> list[WorkflowRun]: ...
+    def list(
+        self, limit: int = 50, requested_by: str | None = None, requested_by_in: Sequence[str] | None = None
+    ) -> list[WorkflowRun]: ...
     def count_created_since(self, requested_by: str, since: datetime) -> int: ...
+    def claim(self, run_id: str, owner: str, now: datetime, expires_at: datetime) -> bool: ...
+    def release(self, run_id: str, owner: str) -> None: ...
+    def renew(self, run_id: str, owner: str, expires_at: datetime) -> bool: ...
 
 
 class StepResultRepository(Protocol):
@@ -66,7 +72,8 @@ class EvidenceRepository(Protocol):
 
 class FindingRepository(Protocol):
     def add(self, run_id: str, finding: Finding, created_at: datetime) -> None: ...
-    def list_for_run(self, run_id: str) -> list[Finding]: ...
+    def list_for_run(self, run_id: str, include_superseded: bool = False) -> list[Finding]: ...
+    def supersede_step(self, run_id: str, step: str, at: datetime) -> int: ...
 
 
 class AuditRepository(Protocol):
@@ -103,6 +110,24 @@ class UsageRepository(Protocol):
 
 
 # --------------------------------------------------------------------------- SQL impl
+
+
+def insert_ignore(conn: Connection, table: Table, values: dict[str, Any], keys: Sequence[str]) -> bool:
+    """Insert a row unless one with the same key exists. Returns True if a row was inserted.
+
+    Uses ON CONFLICT DO NOTHING, so concurrent writers never raise IntegrityError.
+    """
+    if conn.dialect.name == "postgresql":
+        from sqlalchemy.dialects import postgresql
+
+        stmt: Any = (
+            postgresql.insert(table).values(**values).on_conflict_do_nothing(index_elements=list(keys))
+        )
+    else:
+        from sqlalchemy.dialects import sqlite
+
+        stmt = sqlite.insert(table).values(**values).on_conflict_do_nothing(index_elements=list(keys))
+    return bool(conn.execute(stmt).rowcount)
 
 
 class SqlExperimentRepository:
@@ -161,6 +186,15 @@ class SqlExperimentRepository:
             .select_from(s.experiments.outerjoin(s.trial_results))
             .where(s.experiments.c.research_family == research_family)
             .order_by(s.experiments.c.trial_number)
+        )
+        with self.engine.connect() as conn:
+            return [self._row(r, r.sharpe_per_period) for r in conn.execute(q)]
+
+    def list_all(self) -> list[ExperimentRecord]:
+        q = (
+            select(s.experiments, s.trial_results.c.sharpe_per_period)
+            .select_from(s.experiments.outerjoin(s.trial_results))
+            .order_by(s.experiments.c.created_at, s.experiments.c.experiment_id)
         )
         with self.engine.connect() as conn:
             return [self._row(r, r.sharpe_per_period) for r in conn.execute(q)]
@@ -247,12 +281,36 @@ class SqlRunRepository:
         if result.rowcount != 1:
             raise ConflictError(f"run {run.run_id} is no longer in status {expected_status}")
 
-    def list(self, limit: int = 50, requested_by: str | None = None) -> list[WorkflowRun]:
+    def list(
+        self, limit: int = 50, requested_by: str | None = None, requested_by_in: Sequence[str] | None = None
+    ) -> list[WorkflowRun]:
         q = select(s.workflow_runs).order_by(s.workflow_runs.c.created_at.desc()).limit(limit)
         if requested_by is not None:
             q = q.where(s.workflow_runs.c.requested_by == requested_by)
+        if requested_by_in is not None:
+            q = q.where(s.workflow_runs.c.requested_by.in_(list(requested_by_in)))
         with self.engine.connect() as conn:
             return [_run_from_row(r) for r in conn.execute(q)]
+
+    def claim(self, run_id: str, owner: str, now: datetime, expires_at: datetime) -> bool:
+        return _claim(self.engine, run_id, owner, now, expires_at)
+
+    def renew(self, run_id: str, owner: str, expires_at: datetime) -> bool:
+        with self.engine.begin() as conn:
+            result = conn.execute(
+                update(s.workflow_runs)
+                .where(and_(s.workflow_runs.c.run_id == run_id, s.workflow_runs.c.lease_owner == owner))
+                .values(lease_expires_at=expires_at)
+            )
+        return result.rowcount == 1
+
+    def release(self, run_id: str, owner: str) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(
+                update(s.workflow_runs)
+                .where(and_(s.workflow_runs.c.run_id == run_id, s.workflow_runs.c.lease_owner == owner))
+                .values(lease_owner=None, lease_expires_at=None)
+            )
 
     def count_created_since(self, requested_by: str, since: datetime) -> int:
         q = (
@@ -264,6 +322,26 @@ class SqlRunRepository:
         )
         with self.engine.connect() as conn:
             return int(conn.execute(q).scalar_one())
+
+
+def _claimable(now: datetime) -> Any:
+    """Not terminal, and no live lease held by another worker (an expired lease can be taken over)."""
+    runs = s.workflow_runs.c
+    return and_(
+        runs.status.in_([str(RunStatus.PENDING), str(RunStatus.NEEDS_REVIEW), str(RunStatus.RUNNING)]),
+        or_(runs.lease_owner.is_(None), runs.lease_expires_at.is_(None), runs.lease_expires_at < now),
+    )
+
+
+def _claim(engine: Engine, run_id: str, owner: str, now: datetime, expires_at: datetime) -> bool:
+    """Atomically take the run's lease. Fails if another worker holds a live lease."""
+    with engine.begin() as conn:
+        result = conn.execute(
+            update(s.workflow_runs)
+            .where(and_(s.workflow_runs.c.run_id == run_id, _claimable(now)))
+            .values(lease_owner=owner, lease_expires_at=expires_at)
+        )
+    return result.rowcount == 1
 
 
 class SqlStepResultRepository:
@@ -369,17 +447,12 @@ class SqlEvidenceRepository:
 
     def link(self, run_id: str, evidence_id: str, step: str) -> None:
         with self.engine.begin() as conn:
-            exists = conn.execute(
-                select(s.run_evidence).where(
-                    and_(
-                        s.run_evidence.c.run_id == run_id,
-                        s.run_evidence.c.evidence_id == evidence_id,
-                        s.run_evidence.c.step == step,
-                    )
-                )
-            ).first()
-            if exists is None:
-                conn.execute(insert(s.run_evidence).values(run_id=run_id, evidence_id=evidence_id, step=step))
+            insert_ignore(
+                conn,
+                s.run_evidence,
+                {"run_id": run_id, "evidence_id": evidence_id, "step": step},
+                ("run_id", "evidence_id", "step"),
+            )
 
     def list_for_run(self, run_id: str) -> list[tuple[str, EvidenceRef]]:
         q = (
@@ -398,13 +471,10 @@ class SqlFindingRepository:
 
     def add(self, run_id: str, finding: Finding, created_at: datetime) -> None:
         with self.engine.begin() as conn:
-            exists = conn.execute(
-                select(s.findings.c.finding_id).where(s.findings.c.finding_id == finding.finding_id)
-            ).first()
-            if exists is not None:
-                return  # findings are content-addressed; re-adding is a no-op
-            conn.execute(
-                insert(s.findings).values(
+            inserted = insert_ignore(
+                conn,
+                s.findings,
+                dict(
                     finding_id=finding.finding_id,
                     run_id=run_id,
                     step=finding.step,
@@ -416,22 +486,47 @@ class SqlFindingRepository:
                     assumptions=list(finding.assumptions),
                     metadata=finding.metadata,
                     created_at=created_at,
-                )
+                ),
+                ("finding_id",),
             )
-            for evidence_id in dict.fromkeys(finding.evidence_ids):
+            if not inserted:
+                # Content-addressed: the same finding again. Re-activate it if a retry had superseded it.
                 conn.execute(
-                    insert(s.finding_evidence).values(
-                        finding_id=finding.finding_id, evidence_id=evidence_id, relation="supports"
-                    )
+                    update(s.findings)
+                    .where(s.findings.c.finding_id == finding.finding_id)
+                    .values(superseded_at=None)
+                )
+                return
+            for evidence_id in dict.fromkeys(finding.evidence_ids):
+                insert_ignore(
+                    conn,
+                    s.finding_evidence,
+                    {"finding_id": finding.finding_id, "evidence_id": evidence_id, "relation": "supports"},
+                    ("finding_id", "evidence_id", "relation"),
                 )
 
-    def list_for_run(self, run_id: str) -> list[Finding]:
+    def supersede_step(self, run_id: str, step: str, at: datetime) -> int:
+        """Mark a step's active findings as superseded (the step is being executed again)."""
+        with self.engine.begin() as conn:
+            result = conn.execute(
+                update(s.findings)
+                .where(
+                    and_(
+                        s.findings.c.run_id == run_id,
+                        s.findings.c.step == step,
+                        s.findings.c.superseded_at.is_(None),
+                    )
+                )
+                .values(superseded_at=at)
+            )
+        return int(result.rowcount)
+
+    def list_for_run(self, run_id: str, include_superseded: bool = False) -> list[Finding]:
+        q = select(s.findings).where(s.findings.c.run_id == run_id)
+        if not include_superseded:
+            q = q.where(s.findings.c.superseded_at.is_(None))
         with self.engine.connect() as conn:
-            rows = conn.execute(
-                select(s.findings)
-                .where(s.findings.c.run_id == run_id)
-                .order_by(s.findings.c.created_at, s.findings.c.finding_id)
-            ).all()
+            rows = conn.execute(q.order_by(s.findings.c.created_at, s.findings.c.finding_id)).all()
             links = conn.execute(
                 select(s.finding_evidence.c.finding_id, s.finding_evidence.c.evidence_id)
                 .select_from(s.finding_evidence.join(s.findings))
@@ -452,7 +547,10 @@ class SqlFindingRepository:
                 confidence=Confidence(r.confidence),
                 evidence_ids=tuple(by_finding.get(r.finding_id, [])),
                 assumptions=tuple(r.assumptions),
-                metadata=r.metadata,
+                metadata={
+                    **r.metadata,
+                    **({"superseded_at": r.superseded_at.isoformat()} if r.superseded_at else {}),
+                },
             )
             for r in rows
         ]
@@ -509,8 +607,11 @@ class SqlApprovalRepository:
     def add(self, record: ApprovalRecord) -> None:
         values = record.model_dump(mode="python")
         values["decision"] = str(record.decision)
-        with self.engine.begin() as conn:
-            conn.execute(insert(s.approvals).values(**values))
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(insert(s.approvals).values(**values))
+        except IntegrityError as exc:
+            raise ConflictError("a decision has already been recorded for this committee pause") from exc
 
     def list_for_run(self, run_id: str) -> list[ApprovalRecord]:
         with self.engine.connect() as conn:

@@ -32,6 +32,7 @@ EXPECTED_TOOLS = {
     "list_runs",
     "approve_run",
     "get_ledger",
+    "cancel_run",
 }
 AS_OF = "2023-12-30T00:00:00Z"
 

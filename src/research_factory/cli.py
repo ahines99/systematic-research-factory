@@ -19,7 +19,7 @@ from .observability import configure_logging
 from .report import build_run_report, render_html, render_markdown
 from .services.container import Services, build_services
 from .workflows.faults import FaultRule
-from .workflows.primary import primary_engine
+from .workflows.primary import engine_for_run, primary_engine
 
 
 def _services(args: argparse.Namespace) -> Services:
@@ -76,8 +76,29 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_resume(args: argparse.Namespace) -> int:
     services = _services(args)
-    run = anyio.run(primary_engine(services).advance, args.run_id, args.actor)
+    engine = engine_for_run(services, primary_engine(services).get_run(args.run_id))
+    run = anyio.run(engine.advance, args.run_id, args.actor)
     _print(_summary(run))
+    return 0
+
+
+def cmd_cancel(args: argparse.Namespace) -> int:
+    services = _services(args)
+    engine = engine_for_run(services, primary_engine(services).get_run(args.run_id))
+    _print(_summary(engine.cancel(args.run_id, args.actor, args.reason)))
+    return 0
+
+
+def cmd_usage(args: argparse.Namespace) -> int:
+    """Model spend today and per run, so budget pauses can be explained without SQL."""
+    services = _services(args)
+    budgets = services.settings.budgets
+    print(f"spent today (UTC): ${services.budget.spent_today():.4f} of ${budgets.max_cost_usd_per_day:.2f}")
+    print(f"guest live runs left today: {services.budget.guest_runs_remaining()}")
+    for run in services.repos.runs.list(limit=args.limit):
+        tokens, cost = services.repos.usage.totals_for_run(run.run_id)
+        if tokens or cost:
+            print(f"{run.run_id}  {tokens:>8} tokens  ${cost:.4f}  {run.status}")
     return 0
 
 
@@ -188,7 +209,9 @@ def cmd_keys(args: argparse.Namespace) -> int:
 
 def cmd_eval(args: argparse.Namespace) -> int:
     from .evals import run_eval_suite, write_scorecard
+    from .judgment import prompts
 
+    prompts.set_skills_enabled(not args.no_skills)
     scorecard = anyio.run(run_eval_suite, Path(args.cases), args.provider or Settings().model_provider)
     write_scorecard(scorecard, Path(args.out))
     print(f"{scorecard['passed']}/{scorecard['total']} cases passed; scorecard written to {args.out}")
@@ -258,6 +281,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_id")
     s.add_argument("--actor", default="local-researcher")
     s.set_defaults(func=cmd_resume)
+    s = sub.add_parser("cancel", help="end a paused run for good")
+    s.add_argument("run_id")
+    s.add_argument("--reason", required=True)
+    s.add_argument("--actor", default="local-researcher")
+    s.set_defaults(func=cmd_cancel)
+    s = sub.add_parser("usage", help="model spend today and per run")
+    s.add_argument("--limit", type=int, default=50)
+    s.set_defaults(func=cmd_usage)
     s = sub.add_parser("approve", help="record a committee decision and resume")
     s.add_argument("run_id")
     s.add_argument("--decision", required=True, choices=[d.value for d in ApprovalDecision])
@@ -296,6 +327,9 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("eval", help="run the golden evaluation suite")
     s.add_argument("--provider", choices=["rules", "anthropic"], default=argparse.SUPPRESS)
     s.add_argument("--cases", default="evals/golden")
+    s.add_argument(
+        "--no-skills", action="store_true", help="omit Agent Skills from judgment prompts (A/B test)"
+    )
     s.add_argument("--out", default="var/scorecard.json")
     s.set_defaults(func=cmd_eval)
     s = sub.add_parser("serve", help="serve MCP over Streamable HTTP with API-key auth and the guest demo")

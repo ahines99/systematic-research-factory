@@ -137,7 +137,9 @@ bar). Gate outcome: blocking statistical finding.
 ```python
 from math import sqrt, e
 from statistics import NormalDist
-N01 = NormalDist(); g = 0.5772156649015329
+
+N01 = NormalDist()
+g = 0.5772156649015329
 T, sr, sk, ku, N = 1260, 1.5 / sqrt(252), -0.5, 6.0, 20
 sqrtV = 0.5 / sqrt(252)
 den = sqrt(1 - sk * sr + (ku - 1) / 4 * sr**2)
