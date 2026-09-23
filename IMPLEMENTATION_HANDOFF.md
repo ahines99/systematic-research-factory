@@ -43,7 +43,7 @@ The demonstration shows a complete end-to-end run with both a successful path an
 | Area | State |
 |---|---|
 | Package | `src/research_factory`, built with hatchling, locked with `uv.lock`; Python 3.12+ |
-| Quality gates | ruff, `ruff format`, strict mypy, 186 pytest tests (on 3.12 and 3.14; the PostgreSQL tests also verified against PostgreSQL 16.9), 30 golden eval cases |
+| Quality gates | ruff, `ruff format`, strict mypy, 187 pytest tests (on 3.12 and 3.14; the PostgreSQL tests also verified against PostgreSQL 16.9), 30 golden eval cases |
 | Data | Synthetic worlds with planted effects, plus real SEC EDGAR filings for 44 companies with simulated prices |
 | Workflow | All nine steps, persisted, resumable, idempotent, with retries, timeouts, fault injection, approvals, run leases and cancellation |
 | MCP | 16 tools, 4 resources, 2 prompts over stdio or Streamable HTTP with API keys and roles |
@@ -273,7 +273,7 @@ Cross-cutting:
 3. Deploy with [docs/deployment.md](docs/deployment.md): Fly.io, Neon, and R2 with a bucket lock rule (RSF-065, RSF-067, RSF-079).
 4. Run the restore drill in [docs/runbook.md](docs/runbook.md) (RSF-068).
 5. Set `ANTHROPIC_API_KEY` and record a Claude baseline, with and without Skills: `rsf eval --provider anthropic`, then `rsf eval --provider anthropic --no-skills` (RSF-034, RSF-039).
-6. Record the demo with [docs/demo-script.md](docs/demo-script.md) (RSF-052), then tag `v1.0.0` (RSF-078, RSF-080).
+6. Record the demo with [docs/demo-script.md](docs/demo-script.md) (RSF-052). Then bump the version to `1.0.0` in `pyproject.toml` and `__init__.py`, and tag `v1.0.0` (RSF-078, RSF-080). The release workflow refuses a tag that doesn't match the version.
 
 ## Handoff note to the coding agent
 Don't broaden scope until the first vertical slice is demonstrably correct, auditable and restartable. Prefer boring deterministic code over agent autonomy. Every time a model is introduced, document why a deterministic rule is not enough, and define an evaluation for that model-dependent decision.

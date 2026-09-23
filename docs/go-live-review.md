@@ -15,7 +15,7 @@ Reviewed 2026-09-23 against the production criteria in [ROADMAP.md](ROADMAP.md#w
 
 ## Verification performed
 
-- 186 automated tests pass on Python 3.14 (dev) and on Python 3.12 using the locked dependencies (`uv.lock`).
+- 187 automated tests pass on Python 3.14 (dev) and on Python 3.12 using the locked dependencies (`uv.lock`), including from a fresh clone.
 - The PostgreSQL tests (migrations, append-only and TRUNCATE triggers, a full workflow, concurrent runs) pass against a local PostgreSQL 16.9: 35 passed in the persistence, workflow and PostgreSQL modules. CI runs them again in its `postgres` job.
 - `ruff`, `ruff format --check` and `mypy --strict` are clean over 66 source files.
 - `rsf serve` was run as a real process: health, demo pages, guest and keyed MCP calls, a 401 for a bad key, a guest live run and JSON step logs were all checked with curl.
@@ -31,7 +31,7 @@ Reviewed 2026-09-23 against the production criteria in [ROADMAP.md](ROADMAP.md#w
 | Container build (RSF-061) | No Docker on the build machine | `docker compose up --build`, or let the release workflow build it |
 | Fly.io + Neon + R2 deployment (RSF-065, RSF-067, RSF-079) | Needs the owner's accounts and secrets | Follow [deployment.md](deployment.md), including the R2 bucket lock |
 | Restore drill (RSF-068) | Needs a Neon project | Follow [runbook.md](runbook.md#restoring-from-backup-rsf-068) and record the time here |
-| First tagged release (RSF-078) and demo recording (RSF-052) | Needs a GitHub remote and a person at the keyboard | Tag `v1.0.0` after the items above; record using [demo-script.md](demo-script.md) |
+| First tagged release (RSF-078) and demo recording (RSF-052) | Needs a GitHub remote and a person at the keyboard | Bump the version to `1.0.0`, then tag `v1.0.0` after the items above; record using [demo-script.md](demo-script.md) |
 
 ## Audit follow-up
 

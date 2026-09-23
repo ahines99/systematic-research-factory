@@ -28,9 +28,9 @@ Target: Fly.io (app), Neon (PostgreSQL), Cloudflare R2 (evidence blobs), per [AD
 
 ## Releasing
 
-Tag `vX.Y.Z` and push the tag. `.github/workflows/release.yml` then:
+Bump the version in `pyproject.toml` and `src/research_factory/__init__.py` (a test keeps them equal) and commit. Then tag `vX.Y.Z` and push the tag. `.github/workflows/release.yml` then:
 
-1. runs the tests and the golden evaluation suite;
+1. checks that the tag matches the package version, then runs the tests and the golden evaluation suite;
 2. builds the image and scans it (failing on high-severity issues that have a fix) **before** pushing it to GHCR;
 3. generates a CycloneDX SBOM and attaches it to the GitHub release;
 4. deploys with a rolling strategy and smoke-tests `/healthz` on the app named in `fly.toml`.

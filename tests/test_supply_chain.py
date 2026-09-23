@@ -62,3 +62,13 @@ def test_dependencies_are_locked() -> None:
     lock = (ROOT / "uv.lock").read_text(encoding="utf-8")
     for package in ("mcp", "pydantic", "sqlalchemy", "anthropic", "numpy"):
         assert f'name = "{package}"' in lock
+
+
+def test_package_version_is_declared_once() -> None:
+    """The release workflow checks the tag against pyproject; the server reports __version__."""
+    import tomllib
+
+    import research_factory
+
+    declared = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    assert research_factory.__version__ == declared

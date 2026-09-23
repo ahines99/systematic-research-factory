@@ -2,7 +2,7 @@
 
 A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM assists only at judgment steps, can't compute numbers, and can't make decisions.
 
-> **Status:** v1.0 implemented, audited and fixed; deployment waits on the owner's accounts ([go-live review](docs/go-live-review.md)). 186 tests (plus 3 PostgreSQL-only tests, verified on PostgreSQL 16.9), strict typing and 30 golden evaluation cases all pass. A three-agent audit's findings are fixed, each with a regression test ([tests/test_audit_regressions.py](tests/test_audit_regressions.py)).
+> **Status:** v1.0 implemented, audited and fixed; deployment waits on the owner's accounts ([go-live review](docs/go-live-review.md)). 187 tests (plus 3 PostgreSQL-only tests, verified on PostgreSQL 16.9), strict typing and 30 golden evaluation cases all pass. A three-agent audit's findings are fixed, each with a regression test ([tests/test_audit_regressions.py](tests/test_audit_regressions.py)).
 
 ## The problem
 
