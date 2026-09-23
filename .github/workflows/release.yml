@@ -1,7 +1,9 @@
 name: release
 
-# Tag vX.Y.Z to release: test, build and scan the image, publish it with an SBOM,
-# then deploy to Fly.io (RSF-078). Needs the FLY_API_TOKEN repository secret.
+# Tag vX.Y.Z to release (RSF-078): verify, build and scan the image *before* publishing it,
+# publish it with an SBOM, then deploy to Fly.io. Fly builds from the Dockerfile itself
+# (--remote-only), so the GHCR package can stay private.
+# Needs the FLY_API_TOKEN repository secret and a `production` environment.
 on:
   push:
     tags: ["v*.*.*"]
@@ -14,8 +16,8 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           version: "0.12.18"
       - run: uv sync --locked --all-extras --python 3.12
@@ -25,33 +27,36 @@ jobs:
   image:
     needs: verify
     runs-on: ubuntu-24.04
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - id: meta
         run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@v4.4.1
+      - name: build (not pushed yet)
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
-          push: true
+          load: true
           tags: ${{ steps.meta.outputs.image }}
-      - uses: anchore/sbom-action@v0
-        with:
-          image: ${{ steps.meta.outputs.image }}
-          format: cyclonedx-json
-          output-file: sbom.cdx.json
-      - uses: anchore/scan-action@v6
+      - name: scan before publishing
+        uses: anchore/scan-action@v7.4.2
         with:
           image: ${{ steps.meta.outputs.image }}
           fail-build: true
           severity-cutoff: high
-      - uses: softprops/action-gh-release@v2
+          only-fixed: true
+      - uses: anchore/sbom-action@v0.24.2
+        with:
+          image: ${{ steps.meta.outputs.image }}
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+      - uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: docker push "${{ steps.meta.outputs.image }}"
+      - uses: softprops/action-gh-release@v3.0.3
         with:
           files: sbom.cdx.json
           generate_release_notes: true
@@ -61,12 +66,12 @@ jobs:
     runs-on: ubuntu-24.04
     environment: production
     steps:
-      - uses: actions/checkout@v7
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --image ${{ needs.image.outputs.image }} --strategy rolling
+      - uses: actions/checkout@v7.0.1
+      - uses: superfly/flyctl-actions/setup-flyctl@1.5
+      - run: flyctl deploy --remote-only --strategy rolling
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - name: smoke test
-        run: curl --fail --retry 5 --retry-delay 5 "https://$(flyctl info --json | jq -r .Hostname)/healthz"
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          app=$(python3 -c "import tomllib; print(tomllib.load(open('fly.toml','rb'))['app'])")
+          curl --fail --retry 10 --retry-delay 6 --retry-all-errors "https://${app}.fly.dev/healthz"

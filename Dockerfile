@@ -13,7 +13,7 @@ COPY skills ./skills
 RUN uv sync --locked --no-dev --no-editable --extra postgres --extra s3
 
 FROM ${PYTHON_IMAGE}
-RUN useradd --create-home --uid 10001 rsf
+RUN useradd --create-home --uid 10001 rsf \n    && mkdir -p /home/rsf/blobs && chown rsf:rsf /home/rsf/blobs  # volume mount point owned by the app user
 WORKDIR /app
 COPY --from=build --chown=rsf:rsf /app/.venv /app/.venv
 ENV PATH=/app/.venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 RSF_ENVIRONMENT=production
