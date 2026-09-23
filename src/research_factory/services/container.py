@@ -37,6 +37,7 @@ class Services:
     budget: BudgetGuard
     provider: JudgmentProvider
     faults: FaultInjector
+    pinned_snapshots: dict[str, str] = field(default_factory=dict)  # dataset name -> snapshot evidence ID
     _snapshots: dict[str, MarketDataset] = field(default_factory=dict)
 
     def dataset(self, name: str) -> MarketDataset:

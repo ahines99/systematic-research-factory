@@ -72,6 +72,12 @@ class Settings(BaseSettings):
 
     allowed_source_hosts: tuple[str, ...] = ("data.sec.gov", "www.sec.gov")
 
+    # HTTP serving (ADR-0004, ADR-0006). Hosts/origins guard against DNS rebinding.
+    http_allowed_hosts: tuple[str, ...] = ("127.0.0.1:*", "localhost:*")
+    http_allowed_origins: tuple[str, ...] = ("http://127.0.0.1:*", "http://localhost:*")
+    guest_requests_per_minute: int = 30
+    public_base_url: str = "http://127.0.0.1:8000"
+
 
 def get_settings() -> Settings:
     return Settings()

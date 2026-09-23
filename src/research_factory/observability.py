@@ -7,6 +7,7 @@ OpenTelemetry export is optional (RSF-070) and not required for v1.0 (ADR-0007).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 from collections.abc import MutableMapping
@@ -52,6 +53,20 @@ def redact_processor(
     return event_dict
 
 
+class _StderrLogger(structlog.PrintLogger):
+    """Writes to whatever ``sys.stderr`` is at call time, and never raises."""
+
+    def msg(self, message: str) -> None:
+        with contextlib.suppress(ValueError, OSError):  # stderr closed or redirected away
+            print(message, file=sys.stderr, flush=True)
+
+    log = debug = info = warn = warning = err = error = critical = exception = fatal = msg
+
+
+def _stderr_logger(*_: Any) -> _StderrLogger:
+    return _StderrLogger()
+
+
 def configure_logging(level: str = "INFO", json: bool = True) -> None:
     global _configured
     logging.basicConfig(
@@ -70,7 +85,7 @@ def configure_logging(level: str = "INFO", json: bool = True) -> None:
             renderer,
         ],
         wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, level.upper(), logging.INFO)),
-        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
+        logger_factory=_stderr_logger,
         cache_logger_on_first_use=False,
     )
     _configured = True

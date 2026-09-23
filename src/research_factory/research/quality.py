@@ -165,6 +165,17 @@ def check_dataset(ds: MarketDataset) -> list[QualityIssue]:
     return issues
 
 
+def stale(ds: MarketDataset, sessions: int = 15) -> MarketDataset:
+    """Simulate a feed that stopped updating one security's price."""
+    from dataclasses import replace
+
+    closes = ds.raw_close.copy()
+    mid = len(closes) // 2
+    listed = int(np.flatnonzero(ds.listed_mask[mid : mid + sessions].all(axis=0))[0])
+    closes[mid : mid + sessions, listed] = closes[mid, listed]
+    return replace(ds, raw_close=closes)
+
+
 def corrupt(ds: MarketDataset) -> MarketDataset:
     """Simulate a malformed upstream response: gaps and a duplicated filing."""
     from dataclasses import replace

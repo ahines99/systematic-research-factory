@@ -25,7 +25,7 @@ from ..judgment.providers import JudgmentRequest
 from ..research.backtest import run_backtest
 from ..research.features import FeatureTable, build_features, get_feature, rebalance_sessions
 from ..research.leakage import audit_leakage
-from ..research.quality import check_dataset, corrupt, scan_untrusted_text
+from ..research.quality import check_dataset, corrupt, scan_untrusted_text, stale
 from ..research.statistics import PERIODS_PER_YEAR, statistical_review
 from ..services.approvals import APPROVAL_REQUIRED, COMMITTEE_STEP, compute_gate
 from .base import StepContext, StepOutcome
@@ -116,8 +116,6 @@ class HypothesisFreezeStep:
             "experiment_id": rec.experiment_id,
             "research_family": rec.research_family,
             "trial_number": rec.trial_number,
-            "frozen_at": rec.created_at.isoformat(),
-            "frozen_by": rec.created_by,
             "hypothesis": exp.hypothesis.model_dump(mode="json"),
             "backtest": exp.backtest.model_dump(mode="json"),
             "untrusted_text_flags": flags,
@@ -136,17 +134,26 @@ class DataAcquisitionStep:
         s = ctx.services
         spec = ctx.experiment.backtest
         name = ctx.experiment.hypothesis.universe.dataset
-        dataset = await anyio.to_thread.run_sync(s.dataset, name)
-        if s.faults.should_corrupt("data_source"):
-            dataset = corrupt(dataset)
-        view = PointInTimeData(dataset).view_as_of(spec.as_of)
+        pinned = s.pinned_snapshots.get(name)
+        if pinned is not None:
+            # Replay: read the archived snapshot, never live data (RSF-059, RSF-077).
+            view = s.snapshot(pinned)
+            dataset_id = view.dataset_id
+        else:
+            dataset = await anyio.to_thread.run_sync(s.dataset, name)
+            if s.faults.should_corrupt("data_source"):
+                dataset = corrupt(dataset)
+            if s.faults.should_stale("data_source"):
+                dataset = stale(dataset)
+            view = PointInTimeData(dataset).view_as_of(spec.as_of)
+            dataset_id = dataset.dataset_id
         snapshot = s.evidence.record_bytes(
             view.to_bytes(),
-            source_uri=f"rsf://datasets/{dataset.dataset_id}",
+            source_uri=f"rsf://datasets/{dataset_id}",
             source_type="dataset_snapshot",
             as_of=spec.as_of,
             metadata={
-                "dataset_id": dataset.dataset_id,
+                "dataset_id": dataset_id,
                 "content_hash": view.content_hash,
                 "prices_simulated": view.prices_simulated,
             },
@@ -155,10 +162,10 @@ class DataAcquisitionStep:
         )
         filings = s.evidence.record_json(
             [filing_to_dict(f) for f in view.filings],
-            source_uri=f"rsf://datasets/{dataset.dataset_id}/filings",
+            source_uri=f"rsf://datasets/{dataset_id}/filings",
             source_type="filings",
             as_of=spec.as_of,
-            metadata={"dataset_id": dataset.dataset_id, "count": len(view.filings)},
+            metadata={"dataset_id": dataset_id, "count": len(view.filings)},
             run_id=ctx.run.run_id,
             step=self.name,
         )
@@ -192,7 +199,7 @@ class DataAcquisitionStep:
             )
         artifact = {
             "format": "rsf-data-acquisition/1",
-            "dataset_id": dataset.dataset_id,
+            "dataset_id": dataset_id,
             "dataset_content_hash": view.content_hash,
             "snapshot_evidence_id": snapshot.evidence_id,
             "filings_evidence_id": filings.evidence_id,
@@ -418,9 +425,12 @@ class StatisticalReviewStep:
         )
         cited = [ctx.artifacts[BacktestStep.name]]
         findings = []
+        too_short = any(c.name == "min_observations" and not c.passed for c in report.checks)
         for c in report.checks:
             if c.passed:
                 continue
+            if too_short and c.name != "min_observations":
+                continue  # on too short a sample the other statistics are not evidence either way
             if c.name == "min_observations":
                 findings.append(
                     make_finding(

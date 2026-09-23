@@ -26,7 +26,12 @@ from research_factory.data.fundamentals import FilingIndex
 from research_factory.data.pit import PointInTimeData
 from research_factory.data.registry import get_dataset
 from research_factory.data.semi_synthetic import SNAPSHOT, load_edgar_semi_synthetic
-from research_factory.domain.errors import DomainError, ForbiddenError, NotFoundError, UpstreamUnavailableError
+from research_factory.domain.errors import (
+    DomainError,
+    ForbiddenError,
+    NotFoundError,
+    UpstreamUnavailableError,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures" / "edgar"
 UA = "SystematicResearchFactory/0.1 tests"
@@ -48,8 +53,12 @@ def _transport(status: int = 200) -> httpx.MockTransport:
 
 
 def _client(tmp_path: Path | None = None, status: int = 200) -> EdgarClient:
-    return EdgarClient(UA, cache_dir=tmp_path, http=httpx.Client(transport=_transport(status)),
-                       limiter=RateLimiter(1000, sleep=lambda s: None))
+    return EdgarClient(
+        UA,
+        cache_dir=tmp_path,
+        http=httpx.Client(transport=_transport(status)),
+        limiter=RateLimiter(1000, sleep=lambda s: None),
+    )
 
 
 def test_user_agent_and_rate_limit_are_required() -> None:
@@ -61,8 +70,14 @@ def test_user_agent_and_rate_limit_are_required() -> None:
 
 def test_ssrf_allowlist() -> None:
     check_source_uri("https://data.sec.gov/submissions/CIK1.json", ("data.sec.gov",))
-    for bad in ("http://data.sec.gov/x", "https://evil.example/x", "https://data.sec.gov.evil.example/x",
-                "https://user@data.sec.gov/x", "https://data.sec.gov:8443/x", "file:///etc/passwd"):
+    for bad in (
+        "http://data.sec.gov/x",
+        "https://evil.example/x",
+        "https://data.sec.gov.evil.example/x",
+        "https://user@data.sec.gov/x",
+        "https://data.sec.gov:8443/x",
+        "file:///etc/passwd",
+    ):
         with pytest.raises(ForbiddenError):
             check_source_uri(bad, ("data.sec.gov",))
 
@@ -89,7 +104,10 @@ def test_fetch_caches_and_hashes(tmp_path: Path) -> None:
     assert first.content_hash == second.content_hash and len(first.content_hash) == 64
 
 
-@pytest.mark.parametrize(("status", "error"), [(404, NotFoundError), (429, UpstreamUnavailableError), (503, UpstreamUnavailableError)])
+@pytest.mark.parametrize(
+    ("status", "error"),
+    [(404, NotFoundError), (429, UpstreamUnavailableError), (503, UpstreamUnavailableError)],
+)
 def test_http_errors_are_typed(status: int, error: type[Exception]) -> None:
     with pytest.raises(error):
         _client(status=status).companyfacts("98246")
@@ -109,7 +127,9 @@ def _parsed() -> tuple[list, list]:  # type: ignore[type-arg]
 
 def test_listing_window_uses_delisting_notice() -> None:
     metas, _ = _parsed()
-    listed_from, listed_to, how = listing_window(metas, Member(98246, "TIFFANY", (("TIF", None, None),), "acquired"))
+    listed_from, listed_to, how = listing_window(
+        metas, Member(98246, "TIFFANY", (("TIF", None, None),), "acquired")
+    )
     notice = min(m.filing_date for m in metas if m.form == "25-NSE")
     assert listed_from == date(2019, 1, 2)
     assert listed_to is not None and listed_to < notice and "Form 25" in how
@@ -121,7 +141,9 @@ def test_extracted_filings_are_point_in_time_versions() -> None:
     accepted = {m.accession: m.accepted_at for m in metas}
     assert filings
     for f in filings:
-        assert f.accepted_at == accepted[f.accession.split("#")[0]]  # knowledge time = the filing's acceptance
+        assert (
+            f.accepted_at == accepted[f.accession.split("#")[0]]
+        )  # knowledge time = the filing's acceptance
         assert f.accepted_at.date() >= f.period_end
     periods = {f.fiscal_period for f in filings}
     assert any(p.endswith("Q4") for p in periods)  # derived from the 10-K

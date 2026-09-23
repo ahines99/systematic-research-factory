@@ -35,12 +35,22 @@ EPS_CONCEPTS = ("EarningsPerShareBasic", "EarningsPerShareBasicAndDiluted", "Ear
 def check_source_uri(uri: str, allowed_hosts: tuple[str, ...]) -> None:
     """SSRF guard: only HTTPS URLs on allowlisted hosts may be fetched."""
     parsed = urlparse(uri)
-    if parsed.scheme != "https" or parsed.hostname not in allowed_hosts or parsed.username or parsed.port not in (None, 443):
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname not in allowed_hosts
+        or parsed.username
+        or parsed.port not in (None, 443)
+    ):
         raise ForbiddenError(f"fetching {uri!r} is not allowed")
 
 
 class RateLimiter:
-    def __init__(self, per_second: float, clock: Callable[[], float] = time.monotonic, sleep: Callable[[float], None] = time.sleep):
+    def __init__(
+        self,
+        per_second: float,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ):
         self.interval = 1.0 / per_second
         self.clock = clock
         self.sleep = sleep
@@ -83,7 +93,9 @@ class EdgarClient:
                 code=ErrorCode.INVALID_INPUT,
             )
         if requests_per_second > 10:
-            raise DomainError("SEC fair access allows at most 10 requests per second", code=ErrorCode.INVALID_INPUT)
+            raise DomainError(
+                "SEC fair access allows at most 10 requests per second", code=ErrorCode.INVALID_INPUT
+            )
         self.user_agent = user_agent
         self.cache_dir = cache_dir
         self.allowed_hosts = allowed_hosts

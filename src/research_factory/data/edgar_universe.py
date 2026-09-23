@@ -45,7 +45,12 @@ UNIVERSE: tuple[Member, ...] = (
     Member(789019, "MICROSOFT", (_t("MSFT"),)),
     Member(1018724, "AMAZON", (_t("AMZN"),)),
     Member(1652044, "Alphabet", (_t("GOOGL"),)),
-    Member(1326801, "Meta Platforms", (_t("FB", None, "2022-06-08"), _t("META", "2022-06-09")), note="ticker change FB -> META"),
+    Member(
+        1326801,
+        "Meta Platforms",
+        (_t("FB", None, "2022-06-08"), _t("META", "2022-06-09")),
+        note="ticker change FB -> META",
+    ),
     Member(1045810, "NVIDIA", (_t("NVDA"),)),
     Member(19617, "JPMORGAN", (_t("JPM"),)),
     Member(200406, "JOHNSON & JOHNSON", (_t("JNJ"),)),
@@ -107,7 +112,11 @@ def _prev_weekday(d: date) -> date:
 def listing_window(filings: list[FilingMeta], member: Member) -> tuple[date, date | None, str]:
     """(listed_from, listed_to, how) derived from the filing history."""
     how = []
-    prospectus = [f.filing_date for f in filings if f.form == "424B4" and f.filing_date >= WINDOW_START - timedelta(days=30)]
+    prospectus = [
+        f.filing_date
+        for f in filings
+        if f.form == "424B4" and f.filing_date >= WINDOW_START - timedelta(days=30)
+    ]
     periodic = [f for f in filings if f.form in PERIODIC]
     listed_from = WINDOW_START
     if prospectus:
@@ -119,8 +128,14 @@ def listing_window(filings: list[FilingMeta], member: Member) -> tuple[date, dat
         how.append("listed about 45 days before the first periodic report (no prospectus)")
     listed_to: date | None = None
     if member.exit_kind:
-        delist = [f.filing_date for f in filings if f.form in ("25", "25-NSE") and f.filing_date >= WINDOW_START]
-        dereg = [f.filing_date for f in filings if f.form in ("15-12B", "15-12G", "15-15D") and f.filing_date >= WINDOW_START]
+        delist = [
+            f.filing_date for f in filings if f.form in ("25", "25-NSE") and f.filing_date >= WINDOW_START
+        ]
+        dereg = [
+            f.filing_date
+            for f in filings
+            if f.form in ("15-12B", "15-12G", "15-15D") and f.filing_date >= WINDOW_START
+        ]
         if delist:
             listed_to = _prev_weekday(min(delist) - timedelta(days=1))
             how.append("delisted the day before the Form 25 delisting notice")
@@ -174,8 +189,17 @@ def extract_filings(cik: int, filings: list[FilingMeta], facts: list[EpsFact]) -
         known.value[label] = value
         known.label_by_end[end] = label
         out.append(
-            Filing(accession=accession, security_id=sid, form=form, fiscal_period=label, period_end=end,
-                   filed_date=meta.filing_date, accepted_at=meta.accepted_at, eps=value, amends=amends)
+            Filing(
+                accession=accession,
+                security_id=sid,
+                form=form,
+                fiscal_period=label,
+                period_end=end,
+                filed_date=meta.filing_date,
+                accepted_at=meta.accepted_at,
+                eps=value,
+                amends=amends,
+            )
         )
 
     for meta in filings:
@@ -185,8 +209,9 @@ def extract_filings(cik: int, filings: list[FilingMeta], facts: list[EpsFact]) -
         current = [f for f in own if f.end == meta.report_date]
         quarter = next((f for f in current if f.days is not None and 80 <= f.days <= 100), None)
         annual = next((f for f in current if f.days is not None and 350 <= f.days <= 380), None)
-        q = _quarter_number((quarter or annual).fp) if (quarter or annual) else None
-        fy = (quarter or annual).fy if (quarter or annual) else None
+        primary = quarter or annual
+        q = _quarter_number(primary.fp) if primary else None
+        fy = primary.fy if primary else None
         if meta.form.startswith("10-Q") and quarter is not None and q in (1, 2, 3) and fy:
             add(f"{fy}Q{q}", quarter.end, quarter.value, meta, comparative=False)
         elif meta.form.startswith("10-K") and annual is not None and fy:
@@ -198,9 +223,9 @@ def extract_filings(cik: int, filings: list[FilingMeta], facts: list[EpsFact]) -
             if fact.end == meta.report_date or fact.days is None or not 80 <= fact.days <= 100:
                 continue
             label = known.label_by_end.get(fact.end)
-            if label is None and quarter is not None and fy and q:
-                if abs((meta.report_date - fact.end).days - 365) <= 10:  # same quarter, prior year
-                    label = f"{fy - 1}Q{q}"
+            same_quarter_last_year = abs((meta.report_date - fact.end).days - 365) <= 10
+            if label is None and quarter is not None and fy and q and same_quarter_last_year:
+                label = f"{fy - 1}Q{q}"
             if label is not None:
                 add(label, fact.end, fact.value, meta, comparative=True)
     return out
@@ -227,7 +252,9 @@ def build_universe(client: EdgarClient, members: tuple[Member, ...] = UNIVERSE) 
         for ticker, start, end in m.tickers:
             t_start = date.fromisoformat(start) if start else listed_from
             t_end = date.fromisoformat(end) if end else listed_to
-            tickers.append({"ticker": ticker, "start": t_start.isoformat(), "end": t_end.isoformat() if t_end else None})
+            tickers.append(
+                {"ticker": ticker, "start": t_start.isoformat(), "end": t_end.isoformat() if t_end else None}
+            )
         securities.append(
             {
                 "security_id": sid,
@@ -244,10 +271,15 @@ def build_universe(client: EdgarClient, members: tuple[Member, ...] = UNIVERSE) 
         )
         filings.extend(
             {
-                "accession": f.accession, "security_id": f.security_id, "form": f.form,
-                "fiscal_period": f.fiscal_period, "period_end": f.period_end.isoformat(),
-                "filed_date": f.filed_date.isoformat(), "accepted_at": f.accepted_at.isoformat(),
-                "eps": f.eps, "amends": f.amends,
+                "accession": f.accession,
+                "security_id": f.security_id,
+                "form": f.form,
+                "fiscal_period": f.fiscal_period,
+                "period_end": f.period_end.isoformat(),
+                "filed_date": f.filed_date.isoformat(),
+                "accepted_at": f.accepted_at.isoformat(),
+                "eps": f.eps,
+                "amends": f.amends,
             }
             for f in extracted
         )
@@ -292,7 +324,11 @@ def securities_and_filings(doc: dict[str, Any]) -> tuple[tuple[Security, ...], t
             listed_to=date.fromisoformat(s["listed_to"]) if s["listed_to"] else None,
             delisting_return=s["delisting_return"],
             tickers=tuple(
-                TickerInterval(t["ticker"], date.fromisoformat(t["start"]), date.fromisoformat(t["end"]) if t["end"] else None)
+                TickerInterval(
+                    t["ticker"],
+                    date.fromisoformat(t["start"]),
+                    date.fromisoformat(t["end"]) if t["end"] else None,
+                )
                 for t in s["tickers"]
             ),
         )

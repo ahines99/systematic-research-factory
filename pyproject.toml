@@ -83,6 +83,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "DTZ", "PT018"]
 "skills/**" = ["S", "T201"]
+"src/research_factory/server/**" = ["B008"]  # MCP tool parameters declare constraints with Field()
 
 [tool.mypy]
 python_version = "3.12"
@@ -94,3 +95,7 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = ["yaml.*", "boto3.*", "botocore.*", "opentelemetry.*", "psycopg.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["research_factory.http_app"]
+disallow_untyped_decorators = false  # MCPServer.custom_route is untyped

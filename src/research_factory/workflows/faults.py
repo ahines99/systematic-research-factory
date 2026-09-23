@@ -12,6 +12,7 @@ class FaultKind(StrEnum):
     TIMEOUT = "timeout"  # the dependency does not answer in time (transient)
     OUTAGE = "outage"  # the dependency is down (transient; persistent if times is large)
     MALFORMED = "malformed"  # the dependency answers with corrupt data
+    STALE = "stale"  # the dependency answers with stale (unchanging) prices
 
 
 @dataclass
@@ -53,6 +54,9 @@ class FaultInjector:
 
     def should_corrupt(self, target: str) -> bool:
         return self._take(target, (FaultKind.MALFORMED,)) is not None
+
+    def should_stale(self, target: str) -> bool:
+        return self._take(target, (FaultKind.STALE,)) is not None
 
 
 NO_FAULTS = FaultInjector()

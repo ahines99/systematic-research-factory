@@ -24,7 +24,9 @@ def load_edgar_semi_synthetic(path: Path = SNAPSHOT, params: PriceSimParams | No
     doc = read_snapshot(path)
     securities, filings = securities_and_filings(doc)
     days = trading_days(WINDOW_START, WINDOW_END)
-    prices = simulate_prices(days, close_epochs(days), securities, filings, params or PriceSimParams(seed=SEED, n_splits=0))
+    prices = simulate_prices(
+        days, close_epochs(days), securities, filings, params or PriceSimParams(seed=SEED, n_splits=0)
+    )
     return MarketDataset(
         dataset_id="edgar-semi:v1",
         description="Real SEC EDGAR filings (44 companies, 2019-2023) with simulated prices",

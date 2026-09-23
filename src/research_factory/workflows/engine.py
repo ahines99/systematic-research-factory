@@ -61,12 +61,15 @@ class WorkflowEngine:
 
     # ----------------------------------------------------------------- lifecycle
 
-    def create_run(self, experiment_id: str, requested_by: str) -> WorkflowRun:
+    def create_run(
+        self, experiment_id: str, requested_by: str, project_type: str = "systematic_research"
+    ) -> WorkflowRun:
         record = self.services.ledger.get(experiment_id)
         now = self.services.clock.now()
         run = WorkflowRun(
             run_id=f"run_{uuid.uuid4().hex[:20]}",
             experiment_id=record.experiment_id,
+            project_type=project_type,
             status=RunStatus.PENDING,
             requested_by=requested_by,
             created_at=now,
@@ -78,12 +81,18 @@ class WorkflowEngine:
             step="run",
             event_type="run_created",
             actor=requested_by,
-            payload={"experiment_id": experiment_id, "trial_number": record.trial_number},
+            payload={
+                "experiment_id": experiment_id,
+                "trial_number": record.trial_number,
+                "project_type": project_type,
+            },
         )
         return run
 
-    async def start(self, experiment_id: str, requested_by: str) -> WorkflowRun:
-        run = self.create_run(experiment_id, requested_by)
+    async def start(
+        self, experiment_id: str, requested_by: str, project_type: str = "systematic_research"
+    ) -> WorkflowRun:
+        run = self.create_run(experiment_id, requested_by, project_type)
         return await self.advance(run.run_id, actor=requested_by)
 
     def _transition(
