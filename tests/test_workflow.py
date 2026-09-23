@@ -289,3 +289,21 @@ async def test_step_timeout_is_enforced(clock) -> None:
     run = await WorkflowEngine(s, [Slow()]).start(rec.experiment_id, "alice")
     assert run.status is RunStatus.NEEDS_REVIEW and run.status_reason.startswith("TIMEOUT")  # type: ignore[union-attr]
     assert len(_events(s, run.run_id, "step_retry")) == 1
+
+
+async def test_structured_logs_carry_context_and_redact(clock, capsys: pytest.CaptureFixture[str]) -> None:
+    import json as _json
+
+    from research_factory.observability import configure_logging, get_logger
+
+    configure_logging("INFO", json=True)
+    s = _services(clock)
+    _, run_id = await _start(s)
+    get_logger("test").info("probe", api_key="sk-secret-value", nested={"password": "hunter2"})
+    lines = [_json.loads(line) for line in capsys.readouterr().err.splitlines() if line.startswith("{")]
+    steps = [line for line in lines if line.get("event") == "step_finished"]
+    assert {line["run_id"] for line in steps} == {run_id}
+    assert {line["step"] for line in steps} >= {"Backtest", "Leakage audit"}
+    probe = next(line for line in lines if line.get("event") == "probe")
+    assert probe["api_key"] == "[REDACTED]" and probe["nested"]["password"] == "[REDACTED]"
+    configure_logging("WARNING", json=False)

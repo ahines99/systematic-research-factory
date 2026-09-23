@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import anyio
 
@@ -33,7 +33,7 @@ from ..domain.project_models import (
     StepStatus,
     WorkflowRun,
 )
-from ..observability import get_logger
+from ..observability import bind, get_logger, unbind
 from .base import Step, StepContext, StepOutcome
 
 if TYPE_CHECKING:
@@ -142,6 +142,14 @@ class WorkflowEngine:
             return run
         record = self.services.ledger.get(run.experiment_id)
         run = self._transition(run, RunStatus.RUNNING, actor)
+        bind(run_id=run_id, experiment_id=run.experiment_id)
+        try:
+            return await self._advance(run, record, actor)
+        finally:
+            unbind("run_id", "experiment_id", "step")
+
+    async def _advance(self, run: WorkflowRun, record: Any, actor: str) -> WorkflowRun:
+        run_id = run.run_id
         artifacts: dict[str, str] = {}
         prior: list[str] = []
 
@@ -164,6 +172,7 @@ class WorkflowEngine:
                 continue
 
             run = self._transition(run, RunStatus.RUNNING, actor, current_step=step.name)
+            bind(step=step.name)
             ctx = StepContext(run=run, record=record, services=self.services, artifacts=dict(artifacts))
             outcome, attempts = await self._execute(step, ctx, actor)
             artifact_id = self._persist(run, step, key, outcome, attempts, actor)
@@ -285,6 +294,19 @@ class WorkflowEngine:
                 error_message=outcome.reason if outcome.status is not StepStatus.COMPLETED else None,
                 created_at=now,
             )
+        )
+        log.info(
+            "step_finished",
+            status=str(outcome.status),
+            attempts=attempts,
+            reason_code=outcome.reason_code,
+            artifact_evidence_id=artifact_id,
+            findings=len(outcome.findings),
+            **{
+                k: v
+                for k, v in outcome.audit.items()
+                if k in ("model", "input_tokens", "output_tokens", "cost_usd")
+            },
         )
         services.audit.append(
             run_id=run.run_id,

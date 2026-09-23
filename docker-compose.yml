@@ -1,0 +1,30 @@
+# Local production-like stack: the app and PostgreSQL. `docker compose up --build`
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: rsf
+      POSTGRES_PASSWORD: rsf-local-only
+      POSTGRES_DB: rsf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rsf"]
+      interval: 5s
+      retries: 10
+    volumes: [pgdata:/var/lib/postgresql/data]
+  app:
+    build: .
+    depends_on:
+      db: {condition: service_healthy}
+    environment:
+      RSF_DATABASE_URL: postgresql+psycopg://rsf:rsf-local-only@db:5432/rsf
+      RSF_BLOB_STORE: file:///home/rsf/blobs
+      RSF_MODEL_PROVIDER: ${RSF_MODEL_PROVIDER:-rules}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      RSF_HTTP_ALLOWED_HOSTS: '["localhost:*","127.0.0.1:*"]'
+    ports: ["8000:8000"]
+    command: ["sh", "-c", "rsf init-db && rsf demo && rsf serve --host 0.0.0.0 --port 8000"]
+    volumes: [blobs:/home/rsf/blobs]
+  # Optional (RSF-070): an OpenTelemetry collector is not required for v1.0 (ADR-0007).
+volumes:
+  pgdata: {}
+  blobs: {}

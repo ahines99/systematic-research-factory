@@ -33,3 +33,6 @@ var/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Extra local environments
+.venv*/

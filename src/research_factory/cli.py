@@ -202,6 +202,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
     from .http_app import create_app
 
+    settings = Settings()
+    configure_logging(settings.log_level, json=settings.log_json)
     uvicorn.run(
         create_app(_services(args)), host=args.host, port=args.port, proxy_headers=True, log_config=None
     )
@@ -292,6 +294,7 @@ def build_parser() -> argparse.ArgumentParser:
     ks.add_parser("list")
     s.set_defaults(func=cmd_keys)
     s = sub.add_parser("eval", help="run the golden evaluation suite")
+    s.add_argument("--provider", choices=["rules", "anthropic"], default=argparse.SUPPRESS)
     s.add_argument("--cases", default="evals/golden")
     s.add_argument("--out", default="var/scorecard.json")
     s.set_defaults(func=cmd_eval)

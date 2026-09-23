@@ -1,0 +1,72 @@
+name: release
+
+# Tag vX.Y.Z to release: test, build and scan the image, publish it with an SBOM,
+# then deploy to Fly.io (RSF-078). Needs the FLY_API_TOKEN repository secret.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: "0.12.18"
+      - run: uv sync --locked --all-extras --python 3.12
+      - run: uv run pytest
+      - run: uv run rsf eval --provider rules --out var/scorecard.json
+
+  image:
+    needs: verify
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: meta
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.image }}
+      - uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.image }}
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+      - uses: anchore/scan-action@v6
+        with:
+          image: ${{ steps.meta.outputs.image }}
+          fail-build: true
+          severity-cutoff: high
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: sbom.cdx.json
+          generate_release_notes: true
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --image ${{ needs.image.outputs.image }} --strategy rolling
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: smoke test
+        run: curl --fail --retry 5 --retry-delay 5 "https://$(flyctl info --json | jq -r .Hostname)/healthz"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

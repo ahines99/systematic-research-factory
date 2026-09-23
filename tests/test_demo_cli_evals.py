@@ -226,3 +226,17 @@ def test_harness_detects_a_wrong_expectation() -> None:
     )
     result = anyio.run(run_case, case, "rules")
     assert not result["passed"]
+
+
+def test_cli_eval_accepts_provider_after_subcommand(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cases = tmp_path / "cases"
+    cases.mkdir()
+    (cases / "a.yaml").write_text(
+        (ROOT / "evals" / "golden" / "06-same-close-execution.yaml").read_text(encoding="utf-8")
+    )
+    assert (
+        main(["eval", "--provider", "rules", "--cases", str(cases), "--out", str(tmp_path / "s.json")]) == 0
+    )
+    assert "1/1 cases passed" in capsys.readouterr().out

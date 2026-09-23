@@ -46,6 +46,9 @@ rsf = "research_factory.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/research_factory"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "research_factory/_skills"
+
 [tool.hatch.build.targets.sdist]
 include = ["src/research_factory", "tests", "skills", "docs", "README.md", "LICENSE"]
 

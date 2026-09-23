@@ -1,0 +1,37 @@
+# Fly.io deployment (ADR-0006). Set secrets with `fly secrets set`; see docs/deployment.md.
+app = "systematic-research-factory"  # change to your Fly app name
+primary_region = "iad"
+
+[build]
+
+[env]
+  RSF_ENVIRONMENT = "production"
+  RSF_BLOB_STORE = "s3://rsf-evidence"
+  RSF_MODEL_PROVIDER = "anthropic"
+  RSF_ANTHROPIC_MODEL = "claude-opus-5"
+  RSF_LOG_LEVEL = "INFO"
+  RSF_HTTP_ALLOWED_HOSTS = '["systematic-research-factory.fly.dev"]'
+  RSF_HTTP_ALLOWED_ORIGINS = '["https://systematic-research-factory.fly.dev"]'
+  RSF_PUBLIC_BASE_URL = "https://systematic-research-factory.fly.dev"
+
+[deploy]
+  release_command = "rsf init-db"
+  strategy = "rolling"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
