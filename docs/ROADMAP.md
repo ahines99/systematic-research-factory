@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-09-23. Ticket prefix: `RSF-`.
 
-**Status (2026-09-23):** 69 tickets done, 10 waiting on the owner, 4 optional tickets skipped (ADR-0007). Everything that can be verified without the owner's accounts is implemented and tested; see [go-live-review.md](go-live-review.md). Status values: `done`; `owner` (code and config are complete, but the done-when needs the owner's accounts, a GitHub remote, an API key or a recording); `skipped` (optional).
+**Status (2026-09-23, after the audit):** 65 tickets done, 12 waiting on the owner, 6 skipped (four optional tickets per ADR-0007, the optional load test, and the separate v0.1.0 release per ADR-0009). Everything that can be verified without the owner's accounts is implemented and tested; see [go-live-review.md](go-live-review.md). Status values: `done`; `owner` (code and config are complete, but the done-when needs the owner's accounts, a GitHub remote, an API key or a recording); `skipped`.
 
 This roadmap takes the repository from its current state (a spec plus a stub MCP server) to a deployed v1.0. Milestones M0–M5 match the six milestones in [IMPLEMENTATION_HANDOFF.md](../IMPLEMENTATION_HANDOFF.md) and end at the **v0.1 MVP**. Milestones M6–M9 take the MVP to **v1.0 production**. Some M6–M9 tickets are optional ([ADR-0007](adr/0007-v1-scope.md)).
 
@@ -46,14 +46,16 @@ These can run in parallel with the critical path: CI (RSF-004), Skill content (R
 | Ticket | What's needed |
 |---|---|
 | RSF-004 | Push to GitHub; confirm the `ci` workflow is green; protect `main` |
+| RSF-034 | Show the Skill changing an outcome: compare `rsf eval --provider anthropic` with `rsf eval --provider anthropic --no-skills` (the rules provider doesn't read Skills) |
 | RSF-039 | Set `ANTHROPIC_API_KEY` and run `rsf eval --provider anthropic` to record the Claude baseline (the rules baseline is recorded) |
 | RSF-052 | Record the demo using [demo-script.md](demo-script.md) (README claims are verified and linked) |
-| RSF-060 | First CI run of the PostgreSQL job (no PostgreSQL on the build machine) |
+| RSF-060 | First CI run of the PostgreSQL job. The PostgreSQL tests already pass against a local PostgreSQL 16.9 |
 | RSF-061 | Build the image (no Docker on the build machine): `docker compose up --build` |
+| RSF-065 | Add the R2 bucket lock rule. R2 tokens can't exclude delete, so the lock is what stops deletes; the app already refuses overwrites |
 | RSF-067 | Create the Fly.io, Neon and R2 resources and deploy ([deployment.md](deployment.md)) |
 | RSF-068 | Run and time the restore drill ([runbook.md](runbook.md#restoring-from-backup-rsf-068)) |
 | RSF-078 | Add the `FLY_API_TOKEN` secret; tag a release to exercise the pipeline |
-| RSF-079 | Deploy, then `rsf demo` on the instance |
+| RSF-079 | Deploy, start the machine, then `rsf --provider rules demo` on the instance |
 | RSF-080 | Sign off [go-live-review.md](go-live-review.md) and tag `v1.0.0` |
 
 ## Decisions
@@ -69,6 +71,20 @@ All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/R
 | [0005](adr/0005-workflow-state-machine.md) | In-house state machine, no workflow engine | RSF-022, 043, 066 |
 | [0006](adr/0006-hosting.md) | Fly.io + Neon + Cloudflare R2; model-spend caps; pre-recorded demo runs | RSF-065, 067, 068, 071, 079, 082 |
 | [0007](adr/0007-v1-scope.md) | v1.0 is a portfolio-grade cut; ops-heavy tickets are optional | M6–M9 |
+| [0008](adr/0008-review-time-trial-counting.md) | Count trials at review time; floor the Sharpe variance | RSF-021, 045 |
+| [0009](adr/0009-production-defaults.md) | Opus by default, a $3/day cap, the rules reviewer for guests, no separate v0.1 release, public repository, skip the load test | RSF-039, 053, 071, 076, 079 |
+
+## Audit follow-up (2026-09-23)
+
+A three-agent audit (code, quantitative methods, docs and operations) found 14 code, 11 quantitative and 15 docs and operations findings. All were fixed, except those that need the owner (the R2 bucket lock, the first CI run, the Claude baseline). The findings and fixes are listed in [go-live-review.md](go-live-review.md#audit-follow-up), and the regressions are pinned in `tests/test_audit_regressions.py`. The audit changed these tickets:
+
+| Ticket | Change |
+|---|---|
+| RSF-034 | Back to `owner`: its done-when needs a Claude A/B comparison with and without Skills |
+| RSF-053 | `skipped`: the local `v0.1.0` tag was deleted, because pushing it would have deployed v1.0 code (ADR-0009) |
+| RSF-060 | Still `owner`, but now verified locally against PostgreSQL 16.9 |
+| RSF-065 | Back to `owner`: the bucket lock is part of its done-when |
+| RSF-076 | `skipped`: optional; the PostgreSQL concurrency test and run leases cover the contention that matters |
 
 ## Ticket index
 
@@ -107,7 +123,7 @@ All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/R
 | RSF-031 | MCP integration test suite | M2 | v0.1 | M | 026–030 | done |
 | RSF-032 | Evaluation harness | M3 | v0.1 | L | 010, 023 | done |
 | RSF-033 | Golden dataset to 25 cases, including adversarial | M3 | v0.1 | M | 032 | done |
-| RSF-034 | Skill: point-in-time-research | M3 | v0.1 | M | — | done |
+| RSF-034 | Skill: point-in-time-research | M3 | v0.1 | M | — | owner |
 | RSF-035 | Skill: financial-research-statistics | M3 | v0.1 | M | — | done |
 | RSF-036 | Skill: signal-red-team | M3 | v0.1 | M | — | done |
 | RSF-037 | Skill: research-committee | M3 | v0.1 | M | — | done |
@@ -126,7 +142,7 @@ All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/R
 | RSF-050 | Architecture and data-contract docs | M5 | v0.1 | M | 031 | done |
 | RSF-051 | Threat model | M5 | v0.1 | M | 029 | done |
 | RSF-052 | README verification and demo recording | M5 | v0.1 | S | 048, 049 | owner |
-| RSF-053 | Release v0.1.0 | M5 | v0.1 | S | 048–052 | done |
+| RSF-053 | Release v0.1.0 | M5 | v0.1 | S | 048–052 | skipped |
 | RSF-054 | Market-data source decision | M6 | v1.0 | S | — | done |
 | RSF-055 | SEC EDGAR adapter | M6 | v1.0 | L | 016 | done |
 | RSF-056 | Security master and identifier history | M6 | v1.0 | M | 055 | done |
@@ -139,7 +155,7 @@ All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/R
 | RSF-062 | Streamable HTTP with API-key authentication | M7 | v1.0 | M | 061 | done |
 | RSF-063 | Roles and server-side authorization | M7 | v1.0 | M | 062 | done |
 | RSF-064 | Secrets and configuration | M7 | v1.0 | S | 061 | done |
-| RSF-065 | Object storage for evidence | M7 | v1.0 | M | 013, 061 | done |
+| RSF-065 | Object storage for evidence | M7 | v1.0 | M | 013, 061 | owner |
 | RSF-066 | Workflow engine decision | M7 | v1.0 | S | — | done |
 | RSF-067 | Hosting and infrastructure as code | M7 | v1.0 | M | 061 | owner |
 | RSF-068 | Backups and restore drill | M7 | v1.0 | S | 065, 067 | owner |
@@ -151,7 +167,7 @@ All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/R
 | RSF-073 | Operations runbook | M8 | v1.0 | S | 068, 071 | done |
 | RSF-074 | Security testing | M9 | v1.0 | M | 051, 063 | done |
 | RSF-075 | Supply-chain controls | M9 | v1.0 | S | 004, 061 | done |
-| RSF-076 | Concurrency and load test | M9 | optional | M | 060, 062 | done |
+| RSF-076 | Concurrency and load test | M9 | optional | M | 060, 062 | skipped |
 | RSF-077 | Reproducibility audit | M9 | v1.0 | M | 059, 060 | done |
 | RSF-078 | Release pipeline | M9 | v1.0 | M | 067, 075 | owner |
 | RSF-079 | Public demo instance | M9 | v1.0 | M | 063, 078, 082 | owner |
@@ -335,7 +351,7 @@ Implements `workflows/base.py` from the spec, with persistence.
 
 ### RSF-024 · CLI runner
 `S` · depends on: RSF-023
-**Done when:** `rsf run --hypothesis <file>` runs the workflow, and `rsf show <run_id>` prints status, step artifacts and the audit trail.
+**Done when:** `rsf run --file <file>` runs the workflow, and `rsf show <run_id>` prints status, step artifacts and the audit trail.
 
 ---
 
@@ -351,7 +367,7 @@ Implements `workflows/base.py` from the spec, with persistence.
 ### RSF-026 · Domain MCP tools
 `M` · depends on: RSF-023, RSF-025
 **Done when:**
-- These tools exist, with Pydantic input and output models: `freeze_hypothesis`, `get_filing_as_of`, `get_prices_as_of`, `run_backtest`, `audit_leakage`, `start_run` and `get_run_report`.
+- These tools exist, with Pydantic input and output models: `freeze_hypothesis`, `get_filings_as_of`, `get_prices_as_of`, `run_backtest`, `audit_leakage`, `start_run` and `get_run_report`.
 - Each is a thin wrapper over a service, with no business logic in the tool.
 
 ### RSF-027 · MCP resources
@@ -511,6 +527,7 @@ The four current Skills are the same boilerplate with only the name changed. Tha
 ### RSF-053 · Release v0.1.0
 `S` · depends on: RSF-048 to RSF-052
 **Done when:** the acceptance checklist in the handoff is fully ticked, a changelog exists, and the `v0.1.0` tag is pushed.
+**Skipped** ([ADR-0009](adr/0009-production-defaults.md)): the checklist and changelog are done, but the MVP ships with v1.0 as `v1.0.0`.
 
 ---
 
@@ -659,6 +676,7 @@ Implements [ADR-0004](adr/0004-authentication-api-keys.md).
 ### RSF-076 · Concurrency and load test
 `M` · depends on: RSF-060, RSF-062 · optional
 **Done when:** N concurrent runs complete without database contention errors or cross-run data mixing; throughput and p95 latency are recorded.
+**Skipped** ([ADR-0009](adr/0009-production-defaults.md)): `test_postgres.py::test_concurrent_runs_do_not_interfere` covers contention and data mixing; throughput is not measured.
 
 ### RSF-077 · Reproducibility audit
 `M` · depends on: RSF-059, RSF-060

@@ -13,3 +13,5 @@ Copy [template.md](template.md) to start a new record.
 | [0005](0005-workflow-state-machine.md) | Keep the in-house state machine; no workflow engine | Accepted | 2026-09-23 |
 | [0006](0006-hosting.md) | Fly.io + Neon + Cloudflare R2, with hard model-spend caps | Accepted | 2026-09-23 |
 | [0007](0007-v1-scope.md) | Define v1.0 as a portfolio-grade production cut; mark ops-heavy work optional | Accepted | 2026-09-23 |
+| [0008](0008-review-time-trial-counting.md) | Count trials at review time; floor the Sharpe variance | Accepted | 2026-09-23 |
+| [0009](0009-production-defaults.md) | Production defaults: Opus, $3/day cap, rules reviewer for guests, no v0.1 release | Accepted | 2026-09-23 |

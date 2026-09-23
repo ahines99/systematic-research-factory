@@ -2,7 +2,7 @@
 
 A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM assists only at judgment steps, can't compute numbers, and can't make decisions.
 
-> **Status:** v0.1 released; v1.0 implemented and tested locally. Deployment is pending the owner's accounts ([go-live review](docs/go-live-review.md)). 152 tests, strict typing and 28 golden evaluation cases all pass.
+> **Status:** v1.0 implemented, audited and fixed; deployment waits on the owner's accounts ([go-live review](docs/go-live-review.md)). 186 tests (plus 3 PostgreSQL-only tests, verified on PostgreSQL 16.9), strict typing and 30 golden evaluation cases all pass. A three-agent audit's findings are fixed, each with a regression test ([tests/test_audit_regressions.py](tests/test_audit_regressions.py)).
 
 ## The problem
 
@@ -18,9 +18,9 @@ Adding an LLM makes each of these easier to commit and harder to notice. This pr
 ## Try it
 
 ```bash
-uv sync --locked                                 # Python 3.12+
-uv run rsf demo --out-dir var/reports            # six scenarios end to end, ~2 seconds, no API key
-uv run rsf eval                                  # 28 golden cases, seven dimensions
+uv sync --locked                                 # Python 3.12+; includes the dev tools
+uv run rsf demo --out-dir var/reports            # six scenarios end to end in seconds, no API key
+uv run rsf eval                                  # 30 golden cases, seven dimensions
 uv run rsf run --file examples/experiments/earnings_drift.yaml
 uv run rsf show <run_id> --format html --out var/run.html
 uv run rsf replay <run_id>                       # byte-identical replay from the archived snapshot
@@ -42,7 +42,7 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 | Layer | Role |
 |---|---|
 | Deterministic core | Point-in-time data access, features with lineage, backtest, leakage audit, statistics. All arithmetic lives here. |
-| MCP server | 15 typed tools, 4 resources, 2 prompts. Every call is authenticated, checked against a policy table, audited, and fails with a typed error code. No trading tools exist. |
+| MCP server | 16 typed tools, 4 resources, 2 prompts. Every call is authenticated, checked against a policy table, audited, and fails with a typed error code. No trading tools exist. |
 | Agent Skills | Procedures for point-in-time research, statistics, red-teaming and the committee, loaded into the judgment prompts. |
 | Workflow state machine | Persists every step, resumes without re-running completed steps, retries transient failures, and pauses for humans, outages and budget caps. |
 
@@ -53,11 +53,11 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 | Claim | Where it's enforced | Proven by |
 |---|---|---|
 | The model never does the maths | [research/](src/research_factory/research/) computes everything; judgment output is [schema-validated](src/research_factory/judgment/contract.py) | [test_research.py](tests/test_research.py) (hand-computed backtest, the deflated-Sharpe worked example), independent recomputation in every [eval](src/research_factory/evals.py) case |
-| Hypotheses can't be quietly edited | Content-hash experiment IDs; the [ledger](src/research_factory/services/ledger.py) counts every trial; database triggers make it append-only | [test_contracts.py](tests/test_contracts.py), golden case [08-overfit-many-trials](evals/golden/08-overfit-many-trials.yaml) |
-| Time is enforced, not requested | `as_of` is required on every query ([pit.py](src/research_factory/data/pit.py)); the [leakage audit](src/research_factory/research/leakage.py) re-derives knowledge times from evidence | [test_data.py](tests/test_data.py), golden cases 02–06 and 15 |
+| Hypotheses can't be quietly edited, and overfitting can't hide | Content-hash experiment IDs; the [ledger](src/research_factory/services/ledger.py) counts every trial, including related trials frozen later or under another family name ([ADR-0008](docs/adr/0008-review-time-trial-counting.md)); database triggers make it append-only | [test_contracts.py](tests/test_contracts.py), golden case [08-overfit-many-trials](evals/golden/08-overfit-many-trials.yaml) |
+| Time is enforced, not requested | `as_of` is required on every query ([pit.py](src/research_factory/data/pit.py)); the [leakage audit](src/research_factory/research/leakage.py) re-derives knowledge times from evidence and recomputes every feature value from the inputs it cites | [test_data.py](tests/test_data.py), golden cases 02–06 and 15 |
 | Claims must cite evidence | Uncited or invented evidence IDs are rejected ([contract.py](src/research_factory/judgment/contract.py)) | `test_uncited_or_invented_evidence_is_rejected` in [test_workflow.py](tests/test_workflow.py), golden case 21 |
-| Humans approve decisions | A deterministic [gate](src/research_factory/services/approvals.py); the approver must hold the role, can't be the requester, and can't approve against the gate | [test_workflow.py](tests/test_workflow.py), [test_http.py](tests/test_http.py), golden cases 23–25 |
-| It's evaluated, not demoed | 28 [golden cases](evals/golden/), 7 adversarial, scored on seven dimensions in CI | [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
+| Humans approve decisions | A deterministic [gate](src/research_factory/services/approvals.py); the model's memo can't be more permissive than the gate; the approver must hold the role, can't be the requester, and can't approve against the gate | [test_workflow.py](tests/test_workflow.py), [test_http.py](tests/test_http.py), golden cases 23–25 |
+| It's evaluated, not demoed | 30 [golden cases](evals/golden/), 7 adversarial, scored on seven dimensions in CI | [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
 | Results are reproducible | Content-addressed evidence; replay from archived snapshots | `test_replay_from_archived_snapshot_is_byte_identical` in [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
 
 ## Documentation

@@ -11,7 +11,14 @@ Commands assume a shell with the app's environment: `fly ssh console` in product
 | `APPROVAL_REQUIRED` | Waiting for the committee | An approver runs `rsf approve <run_id> --decision … --reason … --approver <name>` (or the `approve_run` tool) |
 | `UPSTREAM_UNAVAILABLE` / `TIMEOUT` | A data source was down after retries | When it's back: `rsf resume <run_id>`. Completed steps are reused |
 | `NEEDS_EVIDENCE` | Bad data or rejected reviewer output | Read the findings. Fix the data or re-run with a new experiment. Resuming repeats the failing step |
-| `BUDGET_EXCEEDED` | A per-run or daily model budget was hit | Wait for the next UTC day, or raise the budget deliberately, then `rsf resume <run_id>` |
+| `BUDGET_EXCEEDED` | A per-run or daily model budget was hit | Wait for the next UTC day, or raise the budget deliberately, then `rsf resume <run_id>`. `rsf usage` shows the spend |
+| `INTERNAL` | An unexpected error (a bug) paused the run instead of leaving it `running` | Check `fly logs` for `engine_error` or `step_error`. Fix the cause, then `rsf resume <run_id>` |
+
+A paused run that should not continue can be ended: `rsf cancel <run_id> --reason "…" --actor <name>`. It becomes `failed` with reason `CANCELLED by <name>: …`. Only its requester or an approver can cancel it (the `cancel_run` tool enforces this).
+
+## A run is stuck in `running`
+
+Only one worker advances a run at a time, holding a lease that it renews before each step (`RSF_LEASE_SECONDS`, 15 minutes by default). If the worker dies, the run stays `running` until the lease expires. After that, `rsf resume <run_id>` takes it over. Before expiry, resume returns `CONFLICT`.
 
 ## Replaying a run
 
@@ -46,7 +53,7 @@ Judgment steps pause (`UPSTREAM_UNAVAILABLE`, or `NEEDS_EVIDENCE` for a refusal)
 
 ## The daily model-spend cap was reached
 
-Live runs pause and guest live runs return 429 until 00:00 UTC. Check `model_usage` for the cause. Raise `RSF_BUDGETS__MAX_COST_USD_PER_DAY` only deliberately, and note it in the changelog.
+Keyed runs pause at their next judgment step, and guest live runs return 429, until 00:00 UTC. Guest runs cost nothing (they use the rules reviewer), but the cap stops all live work to be conservative. Run `rsf usage` to see today's spend and the costliest runs. Raise `RSF_BUDGETS__MAX_COST_USD_PER_DAY` only deliberately, and note it in the changelog.
 
 ## Health and logs
 

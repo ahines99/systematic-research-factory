@@ -37,3 +37,8 @@ The project's purpose is to demonstrate research governance, not to find alpha. 
 
 ## Revisit when
 A licensed dataset with public-display rights becomes affordable, or the project's goal shifts from demonstrating governance to running real research.
+
+## Notes
+
+- 2026-09-23 (audit Q7): exits of acquired and failed companies are price-neutral in the semi-synthetic dataset. The earlier −90% delisting return for failed companies was a hindsight effect nobody planted, so the only planted effect is the acceptance-timed signal.
+- 2026-09-23 (audit Q2, Q3): EDGAR quarters are keyed by period end, and fiscal Q4 is derived from net income over weighted-average shares, so stock splits no longer corrupt Q4 EPS.

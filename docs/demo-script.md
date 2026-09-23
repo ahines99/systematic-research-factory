@@ -12,7 +12,7 @@ For a screen recording. Everything below runs locally with no API key.
 | 1:15 | `var/reports/overfit-rejected.html` | "A weak signal. Alone it passes, but it's the 100th variant in its family, so the deflated Sharpe ratio rejects it. The ledger counted every trial." |
 | 1:40 | `var/reports/clean-approved.html`: findings and audit trail | "Every finding cites evidence IDs. The model-drafted reviews had to cite them too. The gate is deterministic, and a human who isn't the requester made the decision." |
 | 2:10 | `uv run rsf replay <run_id>` | "Replaying from the archived snapshot gives byte-identical artifacts." |
-| 2:30 | `uv run rsf eval` | "28 golden cases, including prompt injection and invented evidence, scored on seven dimensions. They run in CI." |
+| 2:30 | `uv run rsf eval` | "30 golden cases, including prompt injection and invented evidence, scored on seven dimensions. They run in CI." |
 | 2:50 | `docs/architecture.md` diagram | "Real SEC filings, simulated prices, a typed MCP interface, and no trading tools. Research you can audit." |
 
 The recording itself is an owner action.

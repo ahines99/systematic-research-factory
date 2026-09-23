@@ -13,7 +13,7 @@ flowchart TB
   end
   subgraph Boundary["MCP boundary (research_factory.server)"]
     AUTH[API keys + roles<br/>auth.py, policies.py]
-    TOOLS[15 typed tools<br/>4 resources, 2 prompts]
+    TOOLS[16 typed tools<br/>4 resources, 2 prompts]
   end
   subgraph Workflow["Workflow layer (research_factory.workflows)"]
     ENG[State machine<br/>engine.py]
@@ -61,11 +61,11 @@ flowchart TB
 | 2 | Data acquisition | deterministic | dataset snapshot as of `as_of` (evidence) + data-quality report | outage → retry, then pause; bad data → `NEEDS_EVIDENCE` |
 | 3 | Feature build | deterministic | feature table with knowledge-time lineage | no values → `NEEDS_EVIDENCE` |
 | 4 | Backtest | deterministic | daily returns, positions, turnover, ICs | no returns → `NEEDS_EVIDENCE` |
-| 5 | Leakage audit | deterministic | four checks, re-derived from evidence | any blocking check → run **fails** |
+| 5 | Leakage audit | deterministic | six checks: lineage completeness, value recomputation, knowledge time, execution delay, universe, target | any blocking check → run **fails** |
 | 6 | Statistical review | deterministic | Sharpe, Newey-West t, bootstrap CI, deflated Sharpe, delay sensitivity | failed threshold → gate rejects |
 | 7 | Economic rationale review | judgment | cited review | invalid or uncited output → `NEEDS_EVIDENCE` |
 | 8 | Implementation review | judgment | cited review | same |
-| 9 | Research committee | gate + judgment + **human** | memo, then decision | pauses until an approver decides |
+| 9 | Research committee | gate + judgment + **human** | review-time trial check, memo, then decision | pauses until an approver decides |
 
 ```mermaid
 stateDiagram-v2
@@ -81,6 +81,14 @@ stateDiagram-v2
 ```
 
 A run moves only along these transitions; any other transition is rejected (`RUN_TRANSITIONS` in `domain/project_models.py`). Each step's result is persisted before the next step starts. On resume, completed steps are reused, never re-executed: the idempotency key is a hash of the experiment, the step and the prior steps' artifact IDs.
+
+Robustness rules (tested in `tests/test_audit_regressions.py`):
+
+- **One worker per run.** `advance` takes a lease on the run with compare-and-set and renews it before each step. A crashed worker's lease expires, and another worker can take over. There is one committee decision per pause, enforced by a unique index.
+- **Retries supersede.** When a step that paused or failed runs again, its earlier findings are marked superseded. The gate reads only the findings behind each step's current result, so a run that recovered can still be approved.
+- **Nothing gets stuck.** Database and storage outages are retryable and pause the run (`UPSTREAM_UNAVAILABLE`). Any other unexpected error pauses it (`INTERNAL`) instead of leaving it `running`.
+- **Timeouts are real.** Blocking work runs in threads that a step timeout can abandon, and the model client's own timeout is shorter than the step's.
+- **Resume keeps a run's shape.** An analysis run resumes as an analysis run. Paused runs can be cancelled by their requester or an approver.
 
 ## Evidence and provenance
 
@@ -101,7 +109,7 @@ flowchart LR
   J --> F
 ```
 
-The leakage audit **trusts evidence, not the feature builder**. For every lineage input it looks up the true knowledge time (the filing's SEC acceptance time, or the session close) from the stored evidence, and compares that to the decision time. A builder that misreports times is caught too; there's a test for exactly that.
+The leakage audit **trusts evidence, not the feature builder**. It requires exactly one lineage row for every feature value, and recomputes each value from the inputs that row cites (the cited filings' EPS, or prices between the cited sessions). A builder that reports honest-looking lineage for values it computed some other way fails. For every input it looks up the true knowledge time (the filing's SEC acceptance time, or the session close) from the stored evidence and compares it to the decision time, so a builder that misreports times is caught too.
 
 ## Point-in-time rules
 
@@ -117,9 +125,10 @@ The leakage audit **trusts evidence, not the feature builder**. For every lineag
 | `synthetic:v1` | synthetic, with planted restatements, IPOs, delistings, ticker reuse, after-close filings | simulated, planted signal of known strength | tests and the demo |
 | `synthetic:v1:null` | same | no signal | null-hypothesis tests |
 | `synthetic:v1:weak` | same | weak signal | overfitting tests |
-| `edgar-semi:v1` | **real SEC EDGAR**, 44 companies, 2019–2023, including 12 exits and 7 IPOs | simulated from the real acceptance times | real-world timing quirks with a known right answer (ADR-0003) |
+| `synthetic:v1:fast` | same | two-session drift | execution-delay fragility tests |
+| `edgar-semi:v1` | **real SEC EDGAR**, 44 companies, 2019–2023, including 12 exits and 7 IPOs; quarters keyed by period end; Q4 from net income over weighted shares (split-robust); revisions tagged `restated` or `split_adjusted` | simulated from the real acceptance times; exits are price-neutral | real-world timing quirks with a known right answer (ADR-0003) |
 
-Prices always carry a "simulated" label. The planted signal reacts only at acceptance time, so a period-end leak inflates results by a known amount. The tests and the evaluation suite rely on that.
+Prices always carry a "simulated" label. The planted signal reacts only at acceptance time, so a period-end leak inflates results by a known amount. The tests and the evaluation suite rely on that. The generator's `expected_event_ic` is a per-filing (event) correlation. It is not comparable to the backtest's cross-sectional rebalance IC, which is lower because most rebalance-date signals are weeks old.
 
 ## Judgment steps and the model
 
@@ -128,9 +137,9 @@ A judgment step builds a structured payload: the frozen hypothesis, with researc
 - `rules`: a deterministic reviewer. It is the offline default, needs no API key, and is the reference in evaluations.
 - `anthropic`: Claude (`claude-opus-5` by default) with JSON-schema structured output and server-side refusal fallback. The procedure from the relevant Agent Skill is loaded into the system prompt.
 
-The output is validated before it is kept. Invalid or uncited output gets one retry with feedback; after that the step pauses with `NEEDS_EVIDENCE`. Every model call is checked against per-run and per-day budgets before it is made, and each call records its model, token counts, cost, prompt hash, Skill hash and schema version.
+The output is validated before it is kept. Invalid or uncited output gets one retry with feedback; after that the step pauses with `NEEDS_EVIDENCE`. A committee memo that recommends something more permissive than the gate is invalid. Skill procedures are injected with a note that the step has no tools, and they can be switched off (`rsf eval --no-skills`) to measure their effect. Every model call is checked against per-run and per-day budgets before it is made, and each call records its model, token counts, cost, prompt hash, Skill hash and schema version.
 
-The **committee gate** is deterministic (`services/approvals.py`). The model drafts a memo but cannot change the recommendation. The approver must hold the approver role, must not be the requester, and may record `approve` only when the gate recommends it.
+The **committee gate** is deterministic (`services/approvals.py`). Before it runs, the committee step recomputes the deflated Sharpe at the number of related trials that exist *now*, and gates on that ([ADR-0008](adr/0008-review-time-trial-counting.md)). The model drafts a memo but cannot change the recommendation. Guest live runs use the deterministic rules reviewer, never a paid model ([ADR-0009](adr/0009-production-defaults.md)). The approver must hold the approver role, must not be the requester, and may record `approve` only when the gate recommends it.
 
 ## Reproducibility
 

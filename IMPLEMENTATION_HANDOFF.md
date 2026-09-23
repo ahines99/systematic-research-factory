@@ -38,18 +38,18 @@ The demonstration shows a complete end-to-end run with both a successful path an
 
 ## Current state (as of 2026-09-23)
 
-**v0.1 is complete, and v1.0 is implemented and verified locally.** Deployment waits on the owner's accounts; see [docs/go-live-review.md](docs/go-live-review.md) and the ticket statuses in [docs/ROADMAP.md](docs/ROADMAP.md#ticket-index).
+**v0.1 is complete, and v1.0 is implemented and verified locally.** A three-agent audit on 2026-09-23 found issues in access control, concurrency, statistics and the EDGAR data; all fixable findings were fixed (see [go-live-review.md](docs/go-live-review.md#audit-follow-up)). Deployment waits on the owner's accounts; see [docs/go-live-review.md](docs/go-live-review.md) and the ticket statuses in [docs/ROADMAP.md](docs/ROADMAP.md#ticket-index).
 
 | Area | State |
 |---|---|
 | Package | `src/research_factory`, built with hatchling, locked with `uv.lock`; Python 3.12+ |
-| Quality gates | ruff, `ruff format`, strict mypy, 152 pytest tests (on 3.12 and 3.14), 28 golden eval cases |
+| Quality gates | ruff, `ruff format`, strict mypy, 186 pytest tests (on 3.12 and 3.14; the PostgreSQL tests also verified against PostgreSQL 16.9), 30 golden eval cases |
 | Data | Synthetic worlds with planted effects, plus real SEC EDGAR filings for 44 companies with simulated prices |
-| Workflow | All nine steps, persisted, resumable, idempotent, with retries, timeouts, fault injection and approvals |
-| MCP | 15 tools, 4 resources, 2 prompts over stdio or Streamable HTTP with API keys and roles |
+| Workflow | All nine steps, persisted, resumable, idempotent, with retries, timeouts, fault injection, approvals, run leases and cancellation |
+| MCP | 16 tools, 4 resources, 2 prompts over stdio or Streamable HTTP with API keys and roles |
 | Skills | Four Skills with procedures, references and a timestamp-check script, loaded into the judgment prompts |
 | Docs | Architecture, data contracts (generated), threat model, deployment, runbook, go-live review, ADRs |
-| Not yet done | GitHub CI run, container build, Fly.io/Neon/R2 deployment, restore drill, demo recording, a Claude eval baseline (needs an API key) |
+| Not yet done | GitHub CI run, container build, Fly.io/Neon/R2 deployment (with the R2 bucket lock), restore drill, demo recording, a Claude eval baseline with and without Skills (needs an API key) |
 
 The code sketches in earlier versions of this document were the design; the implementation is now authoritative. The [implementation map](#implementation-map) below points to it.
 
@@ -83,7 +83,7 @@ For local development, use MCP over stdio or in-process tests. For deployed serv
 | Contracts | Pydantic v2 | Frozen models for frozen artifacts |
 | Operational state | **SQLite for v0.1**, PostgreSQL from M7 | SQLAlchemy 2 + Alembic with portable types only (ADR-0001, RSF-060) |
 | Analytics | NumPy | Dense in-memory matrices; deterministic (see deviations below) |
-| Evidence blobs | Local content-addressed store, then S3-compatible storage with object lock | RSF-013, RSF-065 |
+| Evidence blobs | Local content-addressed store, then S3-compatible storage with conditional writes and a bucket lock | RSF-013, RSF-065 |
 | Workflow | In-house state machine persisted in the operational DB; no workflow engine | [ADR-0005](docs/adr/0005-workflow-state-machine.md) |
 | Market data | Real SEC EDGAR filings; semi-synthetic prices keyed to acceptance time; fully synthetic fixtures for tests | [ADR-0003](docs/adr/0003-market-data-semi-synthetic.md) |
 | Model access | Anthropic SDK (`claude-opus-5`, structured output, refusal fallback) behind a `JudgmentProvider` interface | Deterministic rules provider for offline use and tests (RSF-039) |
@@ -108,12 +108,12 @@ In the MVP these are separate modules in one process (RSF-025). Split them into 
 | `market_data_pit` | Prices, corporate actions and universe membership as known at `as_of`; survivorship-safe | `get_prices_as_of`, `get_universe_as_of` |
 | `factor_research` | Feature build with knowledge-time lineage; leakage audit | `build_features`, `audit_leakage` |
 | `backtest` | Deterministic backtests and statistical review | `run_backtest`, `get_statistics` |
-| `research_ledger` | Hypothesis freezing, experiment identity, trial counting, runs, evidence, approvals | `freeze_hypothesis`, `start_run`, `resume_run`, `get_run_report`, `list_runs`, `approve_run`, `get_ledger` |
+| `research_ledger` | Hypothesis freezing, experiment identity, trial counting, runs, evidence, approvals | `freeze_hypothesis`, `start_run`, `resume_run`, `cancel_run`, `get_run_report`, `list_runs`, `approve_run`, `get_ledger` |
 
 ### Agent Skills
 Skills hold checklists, decision rules, examples and reference links. They never hold secrets or mutable state. The frontmatter advertises the Skill, the body gives the procedure, and `references/` or `scripts/` add depth only when needed.
 
-| Skill | Must contain (currently placeholder) |
+| Skill | Contains |
 |---|---|
 | `point-in-time-research` | Acceptance time vs. filing date vs. period end; restatements; survivorship and delistings; ticker reuse; corporate actions; calendar and time-zone alignment; a timestamp-check script (RSF-034) |
 | `financial-research-statistics` | Multiple testing; deflated Sharpe ratio; Newey-West; when not to trust a Sharpe ratio; decision thresholds tied to service config (RSF-035) |
@@ -168,6 +168,9 @@ Skills hold checklists, decision rules, examples and reference links. They never
 - **Evidence IDs are content-derived, not UUIDs.** This makes reruns byte-identical and deduplicates evidence. A `run_evidence` table links evidence to runs, and there are `experiments`, `trial_results`, `step_results`, `approvals`, `api_keys` and `model_usage` tables beyond the original sketch.
 - **Standalone analysis tools** (`run_backtest`, `audit_leakage`, …) run the deterministic prefix of the workflow as an auditable `analysis` run, so every result has a run and evidence.
 - **A too-short sample yields only `NEEDS_EVIDENCE`.** The other statistics are not treated as evidence either way. The evaluation suite found this.
+- **The committee gates on the trial count at review time, not only at freeze** ([ADR-0008](docs/adr/0008-review-time-trial-counting.md)). The freeze-time statistics stay reproducible; the committee step adds a check for variants frozen later and for renamed families.
+- **The leakage audit recomputes every feature value from its cited evidence.** Checking the lineage's timestamps alone let a builder report honest lineage for leaky values.
+- **Guest live runs use the deterministic rules reviewer** so the public demo never spends model budget ([ADR-0009](docs/adr/0009-production-defaults.md)).
 
 
 ## Evaluation strategy
@@ -258,18 +261,18 @@ Cross-cutting:
 - [x] Every MCP tool has a typed schema and integration tests (`test_mcp.py`, `test_http.py`).
 - [x] At least one Skill is dynamically useful: the point-in-time Skill's script catches the restatement leak in exported lineage (`test_skill_script_accepts_exported_lineage`).
 - [x] Every arithmetic, financial or statistical calculation has deterministic tests.
-- [x] 28 golden cases are scored on all seven evaluation dimensions.
+- [x] 30 golden cases are scored on all seven evaluation dimensions.
 - [x] A run pauses and resumes across a process restart without re-executing completed steps (`test_resume_after_process_restart`).
 - [x] The demo survives one injected tool failure (demo scenario `fault-survived`, golden case 16).
 - [x] The package installs from a clean environment (`uv sync --locked`, verified on Python 3.12); CI is configured in `.github/workflows/ci.yml`.
 
 ## Remaining owner actions
 
-1. Push to GitHub, confirm CI (including the PostgreSQL job) is green, and protect `main` (RSF-004, RSF-060).
+1. Push to GitHub as a public repository, confirm CI (including the PostgreSQL job) is green, and protect `main` (RSF-004, RSF-060).
 2. Build the container: `docker compose up --build` (RSF-061).
-3. Deploy with [docs/deployment.md](docs/deployment.md): Fly.io, Neon, R2 (RSF-067, RSF-079).
+3. Deploy with [docs/deployment.md](docs/deployment.md): Fly.io, Neon, and R2 with a bucket lock rule (RSF-065, RSF-067, RSF-079).
 4. Run the restore drill in [docs/runbook.md](docs/runbook.md) (RSF-068).
-5. Set `ANTHROPIC_API_KEY` and record a Claude baseline: `rsf eval --provider anthropic` (RSF-039).
+5. Set `ANTHROPIC_API_KEY` and record a Claude baseline, with and without Skills: `rsf eval --provider anthropic`, then `rsf eval --provider anthropic --no-skills` (RSF-034, RSF-039).
 6. Record the demo with [docs/demo-script.md](docs/demo-script.md) (RSF-052), then tag `v1.0.0` (RSF-078, RSF-080).
 
 ## Handoff note to the coding agent

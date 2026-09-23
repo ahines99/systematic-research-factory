@@ -332,6 +332,8 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `status_reason` | TEXT | yes |  |
 | `created_at` | DATETIME | no |  |
 | `updated_at` | DATETIME | no |  |
+| `lease_owner` | VARCHAR(64) | yes |  |
+| `lease_expires_at` | DATETIME | yes |  |
 
 ### `approvals`
 
@@ -360,6 +362,7 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `assumptions` | JSON | no |  |
 | `metadata` | JSON | no |  |
 | `created_at` | DATETIME | no |  |
+| `superseded_at` | DATETIME | yes |  |
 
 ### `run_evidence`
 
