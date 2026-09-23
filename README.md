@@ -27,6 +27,8 @@ uv run rsf replay <run_id>                       # byte-identical replay from th
 uv run pytest
 ```
 
+On Windows, keep the checkout path short (or enable long paths): some dependencies install files deep enough to exceed the 260-character limit.
+
 Serve it over MCP: `uv run rsf mcp-stdio` for a local client, or `uv run rsf serve` for Streamable HTTP with API keys (`uv run rsf keys create --owner you --role researcher`).
 
 ## How it works
