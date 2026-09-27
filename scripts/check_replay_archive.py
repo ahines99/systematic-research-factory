@@ -48,6 +48,28 @@ async def check(path: Path) -> None:
                 run_id = scenario["run_id"]
                 assert artifact_hashes(services, run_id, 6) == scenario["artifacts"]
                 result = await replay_run(services, run_id)
+                if not result.identical:
+                    for step, (before, after) in result.compared.items():
+                        if before != after:
+                            old = services.repos.steps.get(run_id, step)
+                            new = services.repos.steps.get(result.replay_run_id, step)
+                            assert old and new and old.artifact_evidence_id and new.artifact_evidence_id
+                            old_doc = services.evidence.load_json(old.artifact_evidence_id)
+                            new_doc = services.evidence.load_json(new.artifact_evidence_id)
+                            print(
+                                json.dumps(
+                                    {
+                                        "scenario": name,
+                                        "step": step,
+                                        "differences": {
+                                            key: [old_doc.get(key), new_doc.get(key)]
+                                            for key in old_doc.keys() | new_doc.keys()
+                                            if old_doc.get(key) != new_doc.get(key)
+                                        },
+                                    },
+                                    sort_keys=True,
+                                )
+                            )
                 assert result.identical, (name, result.compared)
                 assert {key: after for key, (_, after) in result.compared.items()} == scenario["artifacts"]
             print(json.dumps({"archive": path.name, "scenarios": 6, "identical": True}))
