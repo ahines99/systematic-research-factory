@@ -1,5 +1,7 @@
 # Roadmap to a finished portfolio project
 
+> **Execution update:** Alex subsequently accepted the recommendations and supplied the public repository. See [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md) for completed work, accepted budgets and the current owner queue. The gaps and future-tense tasks below preserve the original planning assessment; they are not a claim that completed publication work is still missing.
+
 Prepared 2026-09-27 from the current worktree, the five-agent audit and remediation evidence, release workflows, demo surfaces, and existing scope decisions. This is the actionable finishing plan. [ROADMAP.md](ROADMAP.md) remains the engineering ticket specification; the [remediation report](audits/2026-09-27/remediation.md) remains the record of completed repairs.
 
 **Assessment:** the research engine is substantially implemented and locally verified. The remaining work is release integration, live-provider and hosted acceptance, presentation, publication, and a small maintenance handoff. It is not ready to call a finalized public portfolio project yet. This review did not repeat the full code audit or rerun the application suites; verification counts below refer to the recorded remediation runs.

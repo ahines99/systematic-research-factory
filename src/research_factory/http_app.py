@@ -185,9 +185,16 @@ def _page(title: str, body: str) -> HTMLResponse:
     return HTMLResponse(
         f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><style>
-:root{{--bg:#fff;--fg:#1a1a1a;--muted:#5c5c5c;--line:#ddd}}@media (prefers-color-scheme:dark){{:root{{--bg:#121212;--fg:#eee;--muted:#aaa;--line:#333}}}}
-body{{background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif;max-width:860px;margin:0 auto;padding:16px}}
-a{{color:inherit}}li{{margin:10px 0}}.muted{{color:var(--muted)}}code{{font-size:13px}}</style></head><body>{body}</body></html>"""
+:root{{--bg:#f5f3ed;--fg:#18302f;--muted:#475d5b;--line:#b6c7c0;--card:#fff}}
+body{{background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,sans-serif;max-width:1060px;margin:0 auto;padding:32px 22px}}
+h1{{font-size:clamp(2rem,5vw,3.7rem);line-height:1.08;max-width:850px;letter-spacing:-.04em}}
+h2{{line-height:1.2}}a{{color:inherit;text-underline-offset:4px}}a:focus-visible{{outline:3px solid #b95015;outline-offset:5px}}
+.runs{{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px}}
+.runs li{{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px}}
+.runs a{{font-size:1.2rem}}.runs .muted{{display:block;font-size:.85rem;margin:8px 0}}
+.muted{{color:var(--muted)}}.label{{text-transform:uppercase;letter-spacing:.13em;font-size:.8rem;font-weight:700}}
+.notice{{border-left:4px solid #ad4b17;padding:12px 18px;background:#fff6e9}}code{{font-size:.85em;overflow-wrap:anywhere}}
+footer{{border-top:1px solid var(--line);margin-top:36px;padding-top:20px}}</style></head><body><main>{body}</main></body></html>"""
     )
 
 
@@ -242,14 +249,19 @@ def create_app(services: Services) -> Starlette:
                 f"<span class='muted'>{html.escape(str(run.status))}{(' · ' + html.escape(str(run.decision))) if run.decision else ''}"
                 f"</span><br>{html.escape(story)}</li>"
             )
-        remaining = services.budget.guest_runs_remaining()
         body = (
-            "<h1>Systematic Research Factory: recorded runs</h1>"
-            "<p class='muted'>Governed, point-in-time research. Prices are simulated with planted effects (ADR-0003); "
-            "nothing here says anything about real-world returns.</p>"
-            f"<ul>{''.join(items) or '<li>No recorded runs yet. Run <code>rsf demo</code>.</li>'}</ul>"
-            f"<p class='muted'>Live guest runs left today: {remaining}. POST /demo/live-run with "
-            f'<code>{{"scenario": "clean-approved"}}</code>.</p>'
+            "<p class='label'>Systematic Research Factory · Research controls in action</p>"
+            "<h1>A convincing backtest still has to earn approval.</h1>"
+            "<p>Explore six recorded runs from hypothesis to evidence and decision. "
+            "Start with the clean case, then compare a timing leak and repeated experimentation.</p>"
+            "<p class='notice'><strong>Simulated prices. Scripted demonstration.</strong> "
+            "Reviews use deterministic rules; approval actors are scripted to demonstrate role separation. "
+            "These reports are not live-model evaluations, real human investment decisions or evidence of tradable alpha.</p>"
+            "<h2>Inspect the evidence</h2>"
+            f"<ul class='runs'>{''.join(items) or '<li>Recorded reports will appear here after the demo is seeded.</li>'}</ul>"
+            "<footer><a href='https://github.com/ahines99/systematic-research-factory'>Source and reproduction instructions</a>"
+            " · <a href='https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/note.md'>"
+            "Quantitative research study</a><p class='muted'>Research only. No trading or order-routing tools.</p></footer>"
         )
         return _page("Recorded runs", body)
 

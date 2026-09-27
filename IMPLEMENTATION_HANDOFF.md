@@ -36,20 +36,20 @@ The demonstration shows a complete end-to-end run with both a successful path an
 - No UI optimization before evidence, contracts and tests are stable.
 
 
-## Current state (as of 2026-09-23)
+## Current state (updated 2026-09-27)
 
-**v0.1 is complete, and v1.0 is implemented and verified locally.** A three-agent audit on 2026-09-23 found issues in access control, concurrency, statistics and the EDGAR data; all fixable findings were fixed (see [go-live-review.md](docs/go-live-review.md#audit-follow-up)). Deployment waits on the owner's accounts; see [docs/go-live-review.md](docs/go-live-review.md) and the ticket statuses in [docs/ROADMAP.md](docs/ROADMAP.md#ticket-index).
+**Unreleased v1.0 candidate, with hosted CI and local research evidence.** The five-specialist audit/remediation and subsequent CI portability fixes are documented under [docs/audits/2026-09-27](docs/audits/2026-09-27/). The [current execution status](docs/PORTFOLIO_STATUS.md) is authoritative for portfolio completion and account dependencies. Container smoke has run successfully; live Anthropic and hosted Fly/Neon/R2 acceptance have not.
 
 | Area | State |
 |---|---|
 | Package | `src/research_factory`, built with hatchling, locked with `uv.lock`; Python 3.12+ |
-| Quality gates | ruff, `ruff format`, strict mypy, 187 pytest tests (on 3.12 and 3.14; the PostgreSQL tests also verified against PostgreSQL 16.9), 30 golden eval cases |
+| Quality gates | ruff, format, strict mypy, Python 3.12/3.13/3.14 suites, PostgreSQL contracts, distribution install, container smoke and 37 offline golden cases; see CI for exact revision/counts |
 | Data | Synthetic worlds with planted effects, plus real SEC EDGAR filings for 44 companies with simulated prices |
 | Workflow | All nine steps, persisted, resumable, idempotent, with retries, timeouts, fault injection, approvals, run leases and cancellation |
 | MCP | 16 tools, 4 resources, 2 prompts over stdio or Streamable HTTP with API keys and roles |
 | Skills | Four Skills with procedures, references and a timestamp-check script, loaded into the judgment prompts |
 | Docs | Architecture, data contracts (generated), threat model, deployment, runbook, go-live review, ADRs |
-| Not yet done | GitHub CI run, container build, Fly.io/Neon/R2 deployment (with the R2 bucket lock), restore drill, demo recording, a Claude eval baseline with and without Skills (needs an API key) |
+| Not yet done | Live API baseline and Skills comparison, hosted Fly/Neon/R2 retention/restore/rollback, browser/client walkthrough, video and approved v1.0 release |
 
 The code sketches in earlier versions of this document were the design; the implementation is now authoritative. The [implementation map](#implementation-map) below points to it.
 
@@ -261,19 +261,14 @@ Cross-cutting:
 - [x] Every MCP tool has a typed schema and integration tests (`test_mcp.py`, `test_http.py`).
 - [x] At least one Skill is dynamically useful: the point-in-time Skill's script catches the restatement leak in exported lineage (`test_skill_script_accepts_exported_lineage`).
 - [x] Every arithmetic, financial or statistical calculation has deterministic tests.
-- [x] 30 golden cases are scored on all seven evaluation dimensions.
+- [x] 37 offline golden cases are evaluated across seven dimensions; live-model behavior remains a separate experiment.
 - [x] A run pauses and resumes across a process restart without re-executing completed steps (`test_resume_after_process_restart`).
 - [x] The demo survives one injected tool failure (demo scenario `fault-survived`, golden case 16).
 - [x] The package installs from a clean environment (`uv sync --locked`, verified on Python 3.12); CI is configured in `.github/workflows/ci.yml`.
 
 ## Remaining owner actions
 
-1. Push to GitHub as a public repository, confirm CI (including the PostgreSQL job) is green, and protect `main` (RSF-004, RSF-060).
-2. Build the container: `docker compose up --build` (RSF-061).
-3. Deploy with [docs/deployment.md](docs/deployment.md): Fly.io, Neon, and R2 with a bucket lock rule (RSF-065, RSF-067, RSF-079).
-4. Run the restore drill in [docs/runbook.md](docs/runbook.md) (RSF-068).
-5. Set `ANTHROPIC_API_KEY` and record a Claude baseline, with and without Skills: `rsf eval --provider anthropic`, then `rsf eval --provider anthropic --no-skills` (RSF-034, RSF-039).
-6. Record the demo with [docs/demo-script.md](docs/demo-script.md) (RSF-052). Then bump the version to `1.0.0` in `pyproject.toml` and `__init__.py`, and tag `v1.0.0` (RSF-078, RSF-080). The release workflow refuses a tag that doesn't match the version.
+Follow the ordered account and personal-review queue in [docs/PORTFOLIO_STATUS.md](docs/PORTFOLIO_STATUS.md). GitHub publication and local/container implementation work are no longer owner prerequisites. The assistant performs technical provisioning, evaluations and drills once access exists; Alex owns account terms/billing, sampled output review, narration and final acceptance. Do not tag immediately after recording: live/hosted proof, final source/version freeze, independently preserved baselines, scans and concrete release approval come first.
 
 ## Handoff note to the coding agent
 Don't broaden scope until the first vertical slice is demonstrably correct, auditable and restartable. Prefer boring deterministic code over agent autonomy. Every time a model is introduced, document why a deterministic rule is not enough, and define an evaluation for that model-dependent decision.

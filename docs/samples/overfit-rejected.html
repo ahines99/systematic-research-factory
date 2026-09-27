@@ -1,0 +1,118 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Run run_4301bfeec0024e938d06</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--muted:#5c5c5c;--line:#ddd;--block:#b42318;--high:#c4320a;--med:#b54708;--ok:#067647}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--muted:#aaa;--line:#333;--block:#f97066;--high:#fd853a;--med:#fdb022;--ok:#47cd89}}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif;max-width:1000px;margin:0 auto;padding:16px}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left}
+code{font-size:12px}.step,.cite{color:var(--muted);font-size:12px}li{margin:6px 0}
+.sev-blocking strong{color:var(--block)}.sev-high strong{color:var(--high)}.sev-medium strong{color:var(--med)}
+.st-completed{color:var(--ok)}.st-failed{color:var(--block)}.notice{border-left:3px solid var(--med);padding-left:8px;color:var(--muted)}
+.wrap{overflow-x:auto}
+</style></head><body>
+<h1>Run <code>run_4301bfeec0024e938d06</code></h1>
+<p><strong>Status:</strong> complete · <strong>Decision:</strong> reject<br>
+<strong>Reason:</strong> workflow complete</p>
+<p><strong>Hypothesis:</strong> Companies whose EPS rose year over year outperform after the filing is accepted.<br><strong>Feature:</strong> <code>eps_yoy_change</code>
+(acceptance timing) · <strong>Dataset:</strong> <code>synthetic:v1:weak</code> · trial 100
+of <code>earnings-drift-search</code></p>
+<p class="notice">Prices are simulated with planted effects (ADR-0003). Results say nothing about real-world returns.</p>
+<h2>Gate: reject</h2><ul><li>Statistical threshold failed: Failed: deflated sharpe.</li></ul>
+<h2>Steps</h2><div class="wrap"><table><tr><th>Step</th><th>Status</th><th>Attempts</th><th>Artifact</th></tr><tr><td>Hypothesis freeze</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_232aaee78be24d044621dfa6</code></td></tr><tr><td>Data acquisition</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_b043ccbe40a9aad0839c3742</code></td></tr><tr><td>Feature build</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_ede242540a528584bb8be7aa</code></td></tr><tr><td>Backtest</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_06b9a5d8171cf06adce660b9</code></td></tr><tr><td>Leakage audit</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_29a171b7ff3cc023712afb34</code></td></tr><tr><td>Statistical review</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_400abc88a430f74085476d58</code></td></tr><tr><td>Economic rationale review</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_1143f48f71466cf2e4fae973</code></td></tr><tr><td>Implementation review</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_3776886da2579b5c4f294d93</code></td></tr><tr><td>Research committee</td><td class='st-completed'>completed</td><td>1</td><td><code>ev_f36464be04662d22d804f857</code></td></tr></table></div>
+<h2>Statistics</h2><div class='wrap'><table><tr><th>Metric</th><th>Value</th></tr><tr><td>n obs</td><td>1194</td></tr><tr><td>sharpe annualized</td><td>1.4814046124099849</td></tr><tr><td>newey west t</td><td>3.206359668491078</td></tr><tr><td>deflated sharpe</td><td>0.7549633222727172</td></tr><tr><td>n trials</td><td>100</td></tr><tr><td>bootstrap ci</td><td>[0.6270386790068397, 2.37527783195514]</td></tr><tr><td>ic mean</td><td>0.060887500750104975</td></tr><tr><td>turnover mean</td><td>0.37361111111111106</td></tr><tr><td>cost drag annualized</td><td>0.0023655778894472366</td></tr><tr><td>passed</td><td>false</td></tr></table></div>
+<h2>Findings</h2><ul><li class='sev-high'><strong>[high] Failed: deflated sharpe</strong> <span class='step'>Statistical review</span><br>probability the Sharpe beats the best of 100 null trials: 0.755 against a threshold of 0.950.<div class='cite'><code>ev_06b9a5d8171cf06adce660b9</code></div></li><li class='sev-medium'><strong>[medium] Committee decision: reject</strong> <span class='step'>Research committee</span><br>demo-approver recorded &#x27;reject&#x27; (gate recommended &#x27;reject&#x27;): Demo decision following the gate (reject): Statistical threshold failed: Failed: deflated sharpe.<div class='cite'><code>ev_400abc88a430f74085476d58</code></div></li><li class='sev-info'><strong>[info] Backtest completed</strong> <span class='step'>Backtest</span><br>1194 daily observations, annualized Sharpe 1.48 after 5 bps costs, execution 1 session(s) after the decision.<div class='cite'><code>ev_128c7b53dac0602f848311db</code></div></li><li class='sev-info'><strong>[info] Prices are simulated</strong> <span class='step'>Data acquisition</span><br>Prices in this dataset are simulated with planted effects (ADR-0003). Results say nothing about real-world returns.<div class='cite'><code>ev_128c7b53dac0602f848311db</code></div></li><li class='sev-info'><strong>[info] Economic rationale review: supported</strong> <span class='step'>Economic rationale review</span><br>A mechanism is stated and the measured relationship has the expected sign.<div class='cite'><code>ev_232aaee78be24d044621dfa6</code> <code>ev_400abc88a430f74085476d58</code></div></li><li class='sev-info'><strong>[info] Feature coverage</strong> <span class='step'>Feature build</span><br>&#x27;eps_yoy_change&#x27; (acceptance timing) has values for 2635 of 2635 eligible security-dates (100%) across 60 decision dates.<div class='cite'><code>ev_128c7b53dac0602f848311db</code> <code>ev_bb7895cd783a82444b3652e7</code></div></li><li class='sev-info'><strong>[info] Experiment frozen</strong> <span class='step'>Hypothesis freeze</span><br>Experiment exp_13ab1b3ed629eda570eaf579 is trial 100 in research family &#x27;earnings-drift-search&#x27;. Any change to it creates a new experiment and a new trial.<div class='cite'></div></li><li class='sev-info'><strong>[info] Implementation review: feasible</strong> <span class='step'>Implementation review</span><br>Implementation looks feasible as tested.<div class='cite'><code>ev_06b9a5d8171cf06adce660b9</code> <code>ev_400abc88a430f74085476d58</code></div></li><li class='sev-info'><strong>[info] No leakage detected</strong> <span class='step'>Leakage audit</span><br>Every feature value has exactly one lineage row with inputs. Cited inputs must match the security, feature window and acceptance-known versions at the decision close. All 2635 feature values were recomputed from their cited inputs. All 5270 feature inputs were knowable at decision time. Trades execute 1 session(s) after the decision close (delay 30 minutes). The universe matched point-in-time listings on every decision date. Feature &#x27;eps_yoy_change&#x27; does not use the prediction target.<div class='cite'><code>ev_06b9a5d8171cf06adce660b9</code> <code>ev_bb7895cd783a82444b3652e7</code> <code>ev_ede242540a528584bb8be7aa</code></div></li></ul>
+<section><h2>Economic rationale review memo</h2><pre style='white-space:pre-wrap'>Prices are simulated; no claim about real-world performance.
+
+Scope: mechanism, measured_sign, timing_basis
+Excluded from this review: full_red_team_signoff, cost_multiplier_stress, contributor_exclusion_stress, volatility_regime_stress, real_market_capacity, factor_crowding
+
+### Facts
+No statements supplied in this section.
+
+### Calculations
+- Mean information coefficient (/ic_mean): 0.061 [ev_400abc88a430f74085476d58]
+
+### Assumptions
+- The researcher states an economic mechanism in the frozen hypothesis. [ev_232aaee78be24d044621dfa6]
+
+### Risks and counterarguments
+No statements supplied in this section.
+
+### Recommendation
+supported
+
+### Open questions
+None supplied for the assigned scope.
+
+### Red-team attacks
+No full red-team signoff was performed in this targeted review.
+
+### Dissent
+None recorded.
+
+### Decision record
+Left blank by the reviewer; human decisions appear under Approvals.</pre></section><section><h2>Implementation review memo</h2><pre style='white-space:pre-wrap'>Prices are simulated; no claim about real-world performance.
+
+Scope: cost_drag, execution_delay, portfolio_concentration
+Excluded from this review: full_red_team_signoff, cost_multiplier_stress, contributor_exclusion_stress, volatility_regime_stress, real_market_capacity, factor_crowding
+
+### Facts
+- The tested portfolio has the concentration recorded in the backtest evidence. [ev_06b9a5d8171cf06adce660b9]
+
+### Calculations
+- Mean turnover per rebalance (/turnover_mean): 0.37; Annualized cost drag (/cost_drag_annualized): 0.24% [ev_400abc88a430f74085476d58]
+
+### Assumptions
+No statements supplied in this section.
+
+### Risks and counterarguments
+No statements supplied in this section.
+
+### Recommendation
+feasible
+
+### Open questions
+None supplied for the assigned scope.
+
+### Red-team attacks
+No full red-team signoff was performed in this targeted review.
+
+### Dissent
+None recorded.
+
+### Decision record
+Left blank by the reviewer; human decisions appear under Approvals.</pre></section><section><h2>Research committee memo</h2><pre style='white-space:pre-wrap'>Prices are simulated; no claim about real-world performance.
+
+Scope: gate_consistency, findings, memo, recorded_dissent
+Excluded from this review: full_red_team_signoff, cost_multiplier_stress, contributor_exclusion_stress, volatility_regime_stress, real_market_capacity, factor_crowding
+
+### Facts
+No statements supplied in this section.
+
+### Calculations
+No statements supplied in this section.
+
+### Assumptions
+No statements supplied in this section.
+
+### Risks and counterarguments
+- An earlier review raised a material finding; its cited evidence and full finding remain in the run report. [ev_06b9a5d8171cf06adce660b9]
+
+### Recommendation
+reject
+
+### Open questions
+None supplied for the assigned scope.
+
+### Red-team attacks
+No full red-team signoff was performed in this targeted review.
+
+### Dissent
+None recorded.
+
+### Decision record
+Left blank by the reviewer; human decisions appear under Approvals.</pre></section>
+<h2>Approvals</h2><ul><li><strong>demo-approver: reject</strong> — Demo decision following the gate (reject): Statistical threshold failed: Failed: deflated sharpe. <span class='step'>(2026-09-27T23:13:08.179553Z)</span></li></ul>
+<h2>Usage</h2><p>0 tokens; $0.000000 recorded model cost.</p>
+<h2>Audit trail</h2><div class="wrap"><table><tr><th>#</th><th>Time</th><th>Step</th><th>Event</th><th>Actor</th></tr><tr><td>164</td><td>2026-09-27T23:13:07.595691+00:00</td><td>run</td><td>run_created</td><td>demo-researcher</td></tr><tr><td>165</td><td>2026-09-27T23:13:07.599690+00:00</td><td>run</td><td>run_status_changed</td><td>demo-researcher</td></tr><tr><td>166</td><td>2026-09-27T23:13:07.603695+00:00</td><td>Hypothesis freeze</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>167</td><td>2026-09-27T23:13:07.607695+00:00</td><td>Hypothesis freeze</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>168</td><td>2026-09-27T23:13:07.612696+00:00</td><td>Data acquisition</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>169</td><td>2026-09-27T23:13:07.805904+00:00</td><td>Data acquisition</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>170</td><td>2026-09-27T23:13:07.809905+00:00</td><td>Feature build</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>171</td><td>2026-09-27T23:13:07.857872+00:00</td><td>Feature build</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>172</td><td>2026-09-27T23:13:07.862873+00:00</td><td>Backtest</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>173</td><td>2026-09-27T23:13:07.899384+00:00</td><td>Backtest</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>174</td><td>2026-09-27T23:13:07.903389+00:00</td><td>Leakage audit</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>175</td><td>2026-09-27T23:13:07.972470+00:00</td><td>Leakage audit</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>176</td><td>2026-09-27T23:13:07.976468+00:00</td><td>Statistical review</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>177</td><td>2026-09-27T23:13:08.037603+00:00</td><td>Statistical review</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>178</td><td>2026-09-27T23:13:08.042603+00:00</td><td>Economic rationale review</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>179</td><td>2026-09-27T23:13:08.075121+00:00</td><td>Economic rationale review</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>180</td><td>2026-09-27T23:13:08.080630+00:00</td><td>Implementation review</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>181</td><td>2026-09-27T23:13:08.114149+00:00</td><td>Implementation review</td><td>step_completed</td><td>demo-researcher</td></tr><tr><td>182</td><td>2026-09-27T23:13:08.119149+00:00</td><td>Research committee</td><td>step_started</td><td>demo-researcher</td></tr><tr><td>183</td><td>2026-09-27T23:13:08.167554+00:00</td><td>Research committee</td><td>step_needs_review</td><td>demo-researcher</td></tr><tr><td>184</td><td>2026-09-27T23:13:08.170553+00:00</td><td>Research committee</td><td>run_status_changed</td><td>demo-researcher</td></tr><tr><td>185</td><td>2026-09-27T23:13:08.183063+00:00</td><td>Research committee</td><td>approval_recorded</td><td>demo-approver</td></tr><tr><td>186</td><td>2026-09-27T23:13:08.187063+00:00</td><td>Research committee</td><td>run_status_changed</td><td>demo-approver</td></tr><tr><td>187</td><td>2026-09-27T23:13:08.188065+00:00</td><td>Hypothesis freeze</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>188</td><td>2026-09-27T23:13:08.189063+00:00</td><td>Data acquisition</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>189</td><td>2026-09-27T23:13:08.190063+00:00</td><td>Feature build</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>190</td><td>2026-09-27T23:13:08.192640+00:00</td><td>Backtest</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>191</td><td>2026-09-27T23:13:08.193641+00:00</td><td>Leakage audit</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>192</td><td>2026-09-27T23:13:08.194640+00:00</td><td>Statistical review</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>193</td><td>2026-09-27T23:13:08.195641+00:00</td><td>Economic rationale review</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>194</td><td>2026-09-27T23:13:08.197640+00:00</td><td>Implementation review</td><td>step_reused</td><td>demo-approver</td></tr><tr><td>195</td><td>2026-09-27T23:13:08.200641+00:00</td><td>Research committee</td><td>step_started</td><td>demo-approver</td></tr><tr><td>196</td><td>2026-09-27T23:13:08.229153+00:00</td><td>Research committee</td><td>step_completed</td><td>demo-approver</td></tr><tr><td>197</td><td>2026-09-27T23:13:08.231928+00:00</td><td>Research committee</td><td>run_status_changed</td><td>demo-approver</td></tr></table></div>
+</body></html>

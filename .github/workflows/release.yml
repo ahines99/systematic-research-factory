@@ -57,6 +57,7 @@ jobs:
       - name: scan before publishing
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
+          grype-version: v0.119.0
           image: ${{ steps.meta.outputs.image }}
           fail-build: true
           severity-cutoff: high
@@ -80,11 +81,27 @@ jobs:
           test -n "$digest"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           printf '%s@%s\n' "${IMAGE%:*}" "$digest" > image-digest.txt
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.18"
+      - name: assemble release distributions and evidence
+        run: |
+          uv sync --locked --all-extras --python 3.14
+          uv build --out-dir var/distributions
+          uv run --no-sync rsf eval --provider rules --out var/evidence-scorecard.json
+          uv run --no-sync rsf --provider rules demo --out-dir var/evidence-reports --manifest var/evidence-reports/manifest.json
+          uv run --no-sync python scripts/package_evidence.py --source-revision "$GITHUB_SHA" --out var/release-evidence --distributions var/distributions --scorecard var/evidence-scorecard.json --reports var/evidence-reports
+          cp var/release-evidence.zip release-evidence.zip
+          sha256sum sbom.cdx.json image-digest.txt release-evidence.zip > SHA256SUMS
+          (cd var/distributions && sha256sum *) >> SHA256SUMS
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             sbom.cdx.json
             image-digest.txt
+            SHA256SUMS
+            var/distributions/*
+            release-evidence.zip
           generate_release_notes: true
 
   deploy:

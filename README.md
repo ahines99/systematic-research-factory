@@ -2,7 +2,13 @@
 
 A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM drafts evidence-cited reviews. Code computes and renders numeric claims; a deterministic gate and a separate human control decisions. Qualitative prose still needs review.
 
-> **Status:** unreleased v1.0 candidate (package `0.1.0`). A five-specialist audit and remediation cover workflow integrity, data, budgets, evaluations and delivery. See the [current verification and remaining work](docs/audits/2026-09-27/remediation.md) and [go-live review](docs/go-live-review.md). Hosted release, live model baselines and operational drills remain pending.
+> **Status:** unreleased v1.0 candidate (package `0.1.0`). Public source, hosted CI, an offline demo and a 240-run controlled simulation study are available. Live-model evaluation, hosted operations, video and final release remain pending. See the [current status and owner actions](docs/PORTFOLIO_STATUS.md).
+
+[![CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml)
+
+**[Explore the portfolio](https://ahines99.github.io/systematic-research-factory/)** · [Case study](docs/CASE_STUDY.md) · [Quantitative research note](docs/research/note.md) · [Recorded reports](docs/samples/README.md)
+
+The public reports use deterministic rules and scripted approval actors. All prices are simulated. They demonstrate workflow behavior, not live-model quality or real investment returns.
 
 ## The problem
 
@@ -46,7 +52,7 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 | Agent Skills | Four procedures plus bundled references; scoped review adapters and a targeted point-in-time evaluation. A scoped automated review is not a complete external red-team signoff. |
 | Workflow state machine | Persists every step, resumes without re-running completed steps, retries transient failures, and pauses for humans, outages and budget caps. |
 
-**Data:** a curated SEC-derived snapshot has 44 companies and 1,325 filing/version records (2019–2023), including 10 exits and 8 IPOs. Listing windows are filing-derived proxies; some EPS values are derived and revision categories are heuristic. Prices are simulated for the same companies, with a planted signal of known strength that the market reacts to only at SEC *acceptance* time. A period-end leak therefore inflates results by a known amount, even on real filing timing, and the audit has to catch it. Prices are always labelled simulated; nothing here is a claim about real returns ([ADR-0003](docs/adr/0003-market-data-semi-synthetic.md)).
+**Data:** a curated SEC-derived snapshot has 44 companies and 1,325 filing/version records (2019–2023), including 10 exits and 8 IPOs. Listing windows are filing-derived proxies; some EPS values are derived and revision categories are heuristic. Prices are simulated with a planted signal that reacts at SEC *acceptance* time. Period-end availability is an intentionally invalid counterfactual; its performance effect is measured, not assumed to be constant. The separate [frozen study](docs/research/note.md) uses fully synthetic worlds and reports all controls and sensitivities. See the [data sheet](docs/research/data-sheet.md) and [ADR-0003](docs/adr/0003-market-data-semi-synthetic.md).
 
 ## Why this is not just a chatbot
 
@@ -64,6 +70,8 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 
 | Document | Contents |
 |---|---|
+| [docs/PORTFOLIO_STATUS.md](docs/PORTFOLIO_STATUS.md) | Current execution status, accepted decisions and exact owner/account actions |
+| [docs/CASE_STUDY.md](docs/CASE_STUDY.md) · [docs/research/note.md](docs/research/note.md) | AI/quant case study, frozen simulation results and limitations |
 | [docs/PORTFOLIO_ROADMAP.md](docs/PORTFOLIO_ROADMAP.md) | Remaining portfolio gaps, detailed assistant/owner actions, dependencies and acceptance criteria |
 | [docs/architecture.md](docs/architecture.md) | Layers, the workflow, evidence and provenance, reproducibility, deployment |
 | [docs/data_contracts.md](docs/data_contracts.md) | Every contract and table, generated from the code |

@@ -18,7 +18,9 @@ from typing import Any, Protocol
 from ..domain.errors import DomainError, ErrorCode, NeedsEvidenceError, TransientError
 from .contract import ATTACKS
 
-# USD per million tokens (input, output). Source: Anthropic pricing, cached 2026-06-24.
+# USD per million standard tokens (input, output), verified 2026-09-27:
+# https://platform.claude.com/docs/en/about-claude/pricing
+# This integration does not request prompt caching, fast mode or regional premiums.
 PRICING = {
     "claude-opus-5": (5.00, 25.00),
     "claude-opus-5-5": (4.00, 20.00),

@@ -2,7 +2,7 @@
 
 Reviewed 2026-09-27 against the [roadmap](ROADMAP.md). Package version remains `0.1.0`; no release is tagged or deployed from this checkout.
 
-**Verdict: unreleased candidate, not yet live.** The five-specialist [audit](audits/2026-09-27/README.md) found defects despite the previously passing tests. The [remediation record](audits/2026-09-27/remediation.md) is the current source of implementation status, validation results and remaining limitations. The earlier claim that all account-independent work was complete is superseded.
+**Verdict: unreleased candidate; hosted backend not yet live.** The five-specialist [audit](audits/2026-09-27/README.md) found defects despite previously passing tests. The [remediation record](audits/2026-09-27/remediation.md) preserves its verification results. Subsequent GitHub publication, hosted CI fixes, research and presentation delivery are tracked in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md). That status is authoritative for current owner dependencies.
 
 | Capability | Local acceptance evidence | External acceptance still required |
 |---|---|---|
@@ -11,7 +11,7 @@ Reviewed 2026-09-27 against the [roadmap](ROADMAP.md). Package version remains `
 | Reproducible deterministic artifacts | Archived configuration and snapshots, source/dependency fingerprints, deterministic-only replay, stored candidate archive | Replay an actual previous release using its preserved runtime after the first release exists |
 | Grounded reviews | Schema/citation validation, numeric artifact references rendered by code, explicit uncertainty pauses, targeted skill evaluation | Live model baselines and a measured skills treatment/control comparison |
 | Bounded paid dispatch | Transactional reservations, output limits, late/refusal accounting, audited reconciliation | Verify supported provider behavior and actual billed usage with the owner's API account |
-| Distribution and operations | Build, package and container checks; readiness validates database and archived blobs; release deploys the scanned digest | First hosted CI/release run, R2 retention, restore and rollback, measured idle cost |
+| Distribution and operations | Hosted CI, build/package/container checks; readiness validates database and archived blobs; release is configured to deploy the scanned digest | First release/deployment run, R2 retention, restore and rollback, measured idle cost |
 
 Passing local tests does not establish investment performance, complete semantic correctness of model prose, or production readiness. Prices are simulated. Listing windows and some EPS values are derived proxies; see [architecture](architecture.md#datasets).
 
@@ -21,7 +21,7 @@ The final local image passes the configured high/critical vulnerability gate aft
 
 | Tickets | Action and acceptance |
 |---|---|
-| RSF-004, RSF-060 | Configure a GitHub remote, push the reviewed changes, run all CI jobs, and protect `main`. No remote is configured in this checkout. |
+| RSF-004, RSF-060 | Public remote and successful hosted CI now exist. Keep branch checks enforced for future changes; final candidate status is linked from the execution record. |
 | RSF-034, RSF-039 | Supply an API key and preserve distinct live model/skills-on/skills-off scorecards, including exact input, prompt, skill, model and runtime provenance. A deterministic rules run cannot prove a skill improves a model. |
 | RSF-065, RSF-067 | Provision Fly, Neon and R2; configure credentials, host allowlists and R2 retention; verify real overwrite/delete behavior under that policy. |
 | RSF-068 | Time a restore into isolated infrastructure, read the restored evidence, and replay with the recorded runtime. Record duration and failures. |

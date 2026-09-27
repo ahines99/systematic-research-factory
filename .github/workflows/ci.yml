@@ -131,6 +131,17 @@ jobs:
       - run: uv sync --locked --all-extras --python 3.14
       - run: uv build --out-dir var/distributions
       - run: uv run --no-sync python scripts/check_distributions.py var/distributions
+      - name: assemble downloadable candidate evidence
+        run: |
+          uv run --no-sync rsf eval --provider rules --out var/evidence-scorecard.json
+          uv run --no-sync rsf --provider rules demo --out-dir var/evidence-reports --manifest var/evidence-reports/manifest.json
+          uv run --no-sync python scripts/package_evidence.py --source-revision "$GITHUB_SHA" --out var/release-evidence --distributions var/distributions --scorecard var/evidence-scorecard.json --reports var/evidence-reports
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: candidate-evidence
+          path: |
+            var/distributions/*
+            var/release-evidence.zip
 
   container:
     name: container, PostgreSQL and client smoke
@@ -142,6 +153,23 @@ jobs:
           version: "0.12.18"
       - run: uv sync --locked --python 3.14
       - run: docker compose up --build --wait --wait-timeout 180
+      - name: name the built image for scanning
+        run: docker tag "$(docker compose images -q app)" rsf-ci:scan
+      - name: scan candidate image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          grype-version: v0.119.0
+          image: rsf-ci:scan
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: true
+          output-format: json
+          output-file: var/candidate-image-scan.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: candidate-image-scan
+          path: var/candidate-image-scan.json
       - run: uv run --no-sync python scripts/smoke_deployment.py http://127.0.0.1:8000 --record-runs var/container-runs.json
       - name: verify non-root runtime and persisted demo after restart
         run: |

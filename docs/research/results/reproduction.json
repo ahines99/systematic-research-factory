@@ -1,0 +1,56 @@
+{
+  "verified_on": "2026-09-27",
+  "record_count": 240,
+  "equal": {
+    "protocol_sha256": true,
+    "runner_sha256": true,
+    "records": true,
+    "summary": true,
+    "deviations": true
+  },
+  "reproduction_runtime": {
+    "package_version": "0.1.0",
+    "source_sha256": "5a5682eff24be953bafa054652bd41dda55d1b92bed4ab6c36251504042f5bb1",
+    "python": "3.12.10",
+    "python_build": [
+      "tags/v3.12.10:0cc8128",
+      "Apr  8 2025 12:21:36"
+    ],
+    "libc": [
+      "",
+      ""
+    ],
+    "numpy": "2.5.3",
+    "numpy_simd": {
+      "baseline": [
+        "X86_V2"
+      ],
+      "found": [
+        "X86_V3"
+      ]
+    },
+    "numerical_libraries": [
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 24,
+        "prefix": "libscipy_openblas",
+        "version": "0.3.34.106.0",
+        "threading_layer": "pthreads",
+        "architecture": "SkylakeX"
+      }
+    ],
+    "platform": "Windows-AMD64",
+    "dependencies": {
+      "numpy": "2.5.3",
+      "pydantic": "2.13.5",
+      "pydantic-settings": "2.15.0",
+      "sqlalchemy": "2.0.54",
+      "alembic": "1.20.0",
+      "anyio": "4.15.1",
+      "tzdata": "2026.4",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "notes": "Reproduction after runtime-fingerprint improvement; original results were not overwritten."
+}
