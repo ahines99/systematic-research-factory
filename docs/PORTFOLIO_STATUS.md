@@ -2,6 +2,8 @@
 
 Updated 2026-09-27. Audience: **equal AI engineering and quantitative research**. This is the current execution record; the [roadmap](PORTFOLIO_ROADMAP.md) preserves the original gap assessment and task IDs.
 
+The [static portfolio](https://ahines99.github.io/systematic-research-factory/) is published on GitHub Pages and its landing page, three principal reports and research assets were verified over HTTPS. [Delivery verification](portfolio-delivery-verification.json) records 292 local test passes, the clean-public-clone demo/evaluation, the repeated study and the candidate image scan. Consult [current CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml) for the exact latest revision. Browser visual inspection remains pending; HTTP checks do not substitute for it.
+
 ## Accepted decisions
 
 Alex accepted the recommended public GitHub/Fly/Neon/R2 approach and supplied `ahines99/systematic-research-factory`. Use GitHub as the portfolio destination for now. Keep Opus 5, free rules-based guests, $1/run and $3/day model caps, a $20 total live-evaluation allowance with a $3 pilot, and a $25/month hosting target with review at a $20 projection. Start Fly at one shared CPU/1 GB in `iad`. Use Neon Free for setup, then confirm a 24-hour recovery window on the chosen launch plan. Use R2 Standard with 90-day retention. No custom domain or paid market-data purchase is required. Actual billing limits and retention still need platform verification.

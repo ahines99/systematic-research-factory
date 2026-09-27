@@ -1,0 +1,100 @@
+{
+  "date": "2026-09-27",
+  "tested_source_commit": "407876798ec0e9567b90004b1adb24fd4ef7c3a5",
+  "local_suite": {
+    "passed": 292,
+    "skipped": 4,
+    "skip_reason": "PostgreSQL-specific tests; exercised by hosted job"
+  },
+  "clean_clone": {
+    "source_revision": "407876798ec0e9567b90004b1adb24fd4ef7c3a5",
+    "fresh_public_clone": true,
+    "hidden_var_inputs": false,
+    "paid_calls": false,
+    "demo_scenarios": 6,
+    "eval_passed": 37,
+    "duration_seconds": 39.27
+  },
+  "site": [
+    {
+      "path": "",
+      "status": 200,
+      "bytes": 9961
+    },
+    {
+      "path": "samples/clean-approved.html",
+      "status": 200,
+      "bytes": 14909
+    },
+    {
+      "path": "samples/leak-caught.html",
+      "status": 200,
+      "bytes": 6479
+    },
+    {
+      "path": "samples/overfit-rejected.html",
+      "status": 200,
+      "bytes": 15025
+    },
+    {
+      "path": "research/results/controls.svg",
+      "status": 200,
+      "bytes": 105795
+    },
+    {
+      "path": "research/results/metrics.csv",
+      "status": 200,
+      "bytes": 47969
+    }
+  ],
+  "publication_scan": {
+    "scope": "known secret patterns across Git history and publishable files, plus archive members; not a guarantee of all secret detection",
+    "scanned_blobs": 722,
+    "matches": [],
+    "archives": [
+      {
+        "file": "tests/fixtures/replay/candidate-linux-py312.tar.gz",
+        "key_table_rows": {
+          "api_keys": 0
+        }
+      },
+      {
+        "file": "tests/fixtures/replay/candidate-linux-py314.tar.gz",
+        "key_table_rows": {
+          "api_keys": 0
+        }
+      }
+    ]
+  },
+  "candidate_scan": {
+    "run": "https://github.com/ahines99/systematic-research-factory/actions/runs/36358044047",
+    "policy": "only-fixed; fail on high/critical",
+    "matches": [
+      {
+        "id": "CVE-2026-17084",
+        "severity": "Medium"
+      },
+      {
+        "id": "CVE-2026-15806",
+        "severity": "Medium"
+      },
+      {
+        "id": "CVE-2025-15367",
+        "severity": "Medium"
+      },
+      {
+        "id": "CVE-2026-15310",
+        "severity": "Low"
+      }
+    ]
+  },
+  "visual_browser_qa": {
+    "completed": false,
+    "reason": "No browser exposed by available computer-use connector"
+  },
+  "study_reproduction": "research/results/reproduction.json",
+  "paid_calls": 0,
+  "cloud_resources_provisioned": false,
+  "release_tag_created": false,
+  "packaging_followup": "Source distribution initially omitted CONTRIBUTING.md and SECURITY.md; include list fixed and all three extracted-document tests passed. Candidate bundle generated and file checksums verified locally; final CI verifies revised archive."
+}
