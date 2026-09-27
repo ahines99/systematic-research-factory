@@ -9,14 +9,48 @@ on:
 permissions:
   contents: read
 
+env:
+  UV_PYTHON: "3.14"
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  historical-replay:
+    name: preserved candidate replay (Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.image }}
+    env:
+      UV_PYTHON: /usr/local/bin/python
+    strategy:
+      matrix:
+        include:
+          - python: "3.12"
+            archive: candidate-linux-py312.tar.gz
+            image: python:3.12-slim-bookworm@sha256:392307d22300de8b5986851a12d9176dfc0fc073e65bf6523ebd7dcbeb23564e
+          - python: "3.14"
+            archive: candidate-linux-py314.tar.gz
+            image: python:3.14-slim-bookworm@sha256:82bc3c539b8813ada9d68c63b40158fa002f7f33de9bf3312a3dfdc0620dff56
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 2300404a749fb46ab435ec76007cea43a3c36e23
+          path: var/replay-source
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.18"
+      - run: uv sync --project var/replay-source --locked --python /usr/local/bin/python
+      - name: replay stored expectations with the preserved implementation
+        run: uv run --no-sync --project var/replay-source python scripts/check_replay_archive.py tests/fixtures/replay/${{ matrix.archive }}
+
   test:
     name: lint, types, tests (Python ${{ matrix.python }})
     runs-on: ubuntu-24.04
+    env:
+      UV_PYTHON: ${{ matrix.python }}
     strategy:
       fail-fast: false
       matrix:
@@ -27,10 +61,10 @@ jobs:
         with:
           version: "0.12.18"
       - run: uv sync --locked --all-extras --python ${{ matrix.python }}
-      - run: uv run ruff check src tests scripts
-      - run: uv run ruff format --check src tests scripts
-      - run: uv run mypy
-      - run: uv run pytest --cov --cov-report=term --cov-report=xml
+      - run: uv run --no-sync ruff check src tests scripts
+      - run: uv run --no-sync ruff format --check src tests scripts
+      - run: uv run --no-sync mypy
+      - run: uv run --no-sync pytest --cov --cov-report=term --cov-report=xml
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.python == '3.12'
         with:
@@ -56,7 +90,7 @@ jobs:
         with:
           version: "0.12.18"
       - run: uv sync --locked --all-extras --python 3.14
-      - run: uv run pytest tests/test_persistence.py tests/test_postgres.py tests/test_remediation_judgment.py tests/test_remediation_workflow.py -v
+      - run: uv run --no-sync pytest tests/test_persistence.py tests/test_postgres.py tests/test_remediation_judgment.py tests/test_remediation_workflow.py -v
 
   evals:
     name: golden evaluation suite (RSF-032)
@@ -67,7 +101,7 @@ jobs:
         with:
           version: "0.12.18"
       - run: uv sync --locked --python 3.14
-      - run: uv run rsf eval --provider rules --out var/scorecard.json
+      - run: uv run --no-sync rsf eval --provider rules --out var/scorecard.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -95,7 +129,7 @@ jobs:
           version: "0.12.18"
       - run: uv sync --locked --all-extras --python 3.14
       - run: uv build --out-dir var/distributions
-      - run: uv run python scripts/check_distributions.py var/distributions
+      - run: uv run --no-sync python scripts/check_distributions.py var/distributions
 
   container:
     name: container, PostgreSQL and client smoke
@@ -107,12 +141,12 @@ jobs:
           version: "0.12.18"
       - run: uv sync --locked --python 3.14
       - run: docker compose up --build --wait --wait-timeout 180
-      - run: uv run python scripts/smoke_deployment.py http://127.0.0.1:8000 --record-runs var/container-runs.json
+      - run: uv run --no-sync python scripts/smoke_deployment.py http://127.0.0.1:8000 --record-runs var/container-runs.json
       - name: verify non-root runtime and persisted demo after restart
         run: |
           test "$(docker compose exec -T app id -u)" = "10001"
           docker compose restart app
-          uv run python scripts/smoke_deployment.py http://127.0.0.1:8000 --expect-runs var/container-runs.json
+          uv run --no-sync python scripts/smoke_deployment.py http://127.0.0.1:8000 --expect-runs var/container-runs.json
       - name: collect logs
         if: failure()
         run: docker compose logs

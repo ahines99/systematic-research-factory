@@ -1,0 +1,9 @@
+{
+  "format": "rsf-replay-registry/1",
+  "candidate_source_commit": "2300404a749fb46ab435ec76007cea43a3c36e23",
+  "archives": [
+    {"path": "candidate-linux-py312.tar.gz", "python": "3.12", "platform": "Linux-x86_64"},
+    {"path": "candidate-linux-py314.tar.gz", "python": "3.14", "platform": "Linux-x86_64"}
+  ],
+  "classification": "pre-release candidate; not a prior published release"
+}

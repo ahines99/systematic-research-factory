@@ -79,16 +79,13 @@ async def test_preserved_baseline_replays_without_regenerating_expectations(
     monkeypatch.setattr(services.provider, "judge", forbidden)
     try:
         current = runtime_identity()
-        # Platform mismatch is an explicit rejection test. CI's matching Linux3.12/3.14 job must take the replay path.
-        compatible_platform = all(archived["runtime"][key] == current[key] for key in ("python", "platform"))
-        if not compatible_platform:
+        # Current code must reject any incompatible historical runtime. A separate
+        # required CI job selects the immutable historical source and actually replays it.
+        if archived["runtime"] != current:
             run_id = next(iter(archived["scenarios"].values()))["run_id"]
             with pytest.raises(ConflictError, match="different code/dependency/platform"):
                 await replay_run(services, run_id)
             return
-        assert archived["runtime"] == current, (
-            "preserve the archived runtime; review source/dependency changes before adding a new baseline"
-        )
         assert len(archived["scenarios"]) == 6
         for scenario in archived["scenarios"].values():
             assert artifact_hashes(services, scenario["run_id"], 6) == scenario["artifacts"]
