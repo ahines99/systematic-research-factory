@@ -188,7 +188,8 @@ async def test_budget_exhaustion_pauses_the_run(clock) -> None:
     engine, run_id = await _start(s)
     run = engine.get_run(run_id)
     assert run.status is RunStatus.NEEDS_REVIEW and run.status_reason.startswith("BUDGET_EXCEEDED")  # type: ignore[union-attr]
-    assert run.current_step == "Implementation review"  # first model call used 1200 tokens
+    assert run.current_step == "Economic rationale review"  # preflight prevents overspending
+    assert s.repos.usage.totals_for_run(run_id) == (0, 0.0)
 
 
 async def test_daily_cap_blocks_model_calls(clock) -> None:

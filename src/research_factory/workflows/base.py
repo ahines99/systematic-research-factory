@@ -39,6 +39,7 @@ class StepOutcome:
     reason_code: str | None = None
     fail_run: bool = False  # the step completed, but its result means the run cannot continue
     run_decision: str | None = None  # final committee decision, when the step records one
+    gate_context: str | None = None  # approval binds to this exact review context
     audit: dict[str, Any] = field(default_factory=dict)  # extra, non-sensitive audit fields
 
 

@@ -1,0 +1,89 @@
+{
+  "archive_sha256": "9d752b641ad8ba572072f35dc3670992117c22a3ce94ba57661fe56c1c43c2af",
+  "format": "rsf-preserved-baseline/1",
+  "label": "candidate-v1-2026-09-27",
+  "runtime": {
+    "dependencies": {
+      "PyYAML": "6.0.3",
+      "alembic": "1.20.0",
+      "anyio": "4.15.1",
+      "numpy": "2.5.3",
+      "pydantic": "2.13.5",
+      "pydantic-settings": "2.15.0",
+      "sqlalchemy": "2.0.54",
+      "tzdata": "2026.4"
+    },
+    "numpy": "2.5.3",
+    "package_version": "0.1.0",
+    "platform": "Linux-x86_64",
+    "python": "3.14",
+    "source_sha256": "be644e8895c310919ae4e6cffacc9d0ae52a886ffee8512cc50057774c4e3d0e"
+  },
+  "scenarios": {
+    "clean-approved": {
+      "artifacts": {
+        "Backtest": "c037cfddac3e897bb6b971b61a8504bd3d8b603c9f5700e8d2eff9b27cb37e70",
+        "Data acquisition": "a5b053d56c14d952cc1a334852194d0e28022aea91ff5e0e5a86c6196ba961f3",
+        "Feature build": "1bcf9b08b8260cdfc6a1920977fdb670091c619a1a321940ee73591be0ccd101",
+        "Hypothesis freeze": "c8c83c8bc79acd3c588fd52f64f4d546bffb6289b588aec929cd46403e61142b",
+        "Leakage audit": "36cc45f27ff26385beca79565e762a289bbf057570e3f0581afc29fc0c6eac96",
+        "Statistical review": "605748d5b7962072758c6d6e71a5d1992573d605686618fb89a223f537a41ef1"
+      },
+      "run_id": "run_d74b2403034d445285a1"
+    },
+    "fault-survived": {
+      "artifacts": {
+        "Backtest": "c037cfddac3e897bb6b971b61a8504bd3d8b603c9f5700e8d2eff9b27cb37e70",
+        "Data acquisition": "a5b053d56c14d952cc1a334852194d0e28022aea91ff5e0e5a86c6196ba961f3",
+        "Feature build": "1bcf9b08b8260cdfc6a1920977fdb670091c619a1a321940ee73591be0ccd101",
+        "Hypothesis freeze": "c8c83c8bc79acd3c588fd52f64f4d546bffb6289b588aec929cd46403e61142b",
+        "Leakage audit": "36cc45f27ff26385beca79565e762a289bbf057570e3f0581afc29fc0c6eac96",
+        "Statistical review": "605748d5b7962072758c6d6e71a5d1992573d605686618fb89a223f537a41ef1"
+      },
+      "run_id": "run_8e239ff75396433e92c9"
+    },
+    "leak-caught": {
+      "artifacts": {
+        "Backtest": "f7c023ec23752358063a31dcc7808d26efee6d5b833093e932a444e6c79c977c",
+        "Data acquisition": "a5b053d56c14d952cc1a334852194d0e28022aea91ff5e0e5a86c6196ba961f3",
+        "Feature build": "f67a770865c0e02d107dec94964b5224b0f041bba81bf6e7f3833f7ee080f26b",
+        "Hypothesis freeze": "e1206f15cfd881df213e03fe74cb9a9db02248032f4878845e58fbb1b00f3503",
+        "Leakage audit": "b1f2bccb6908d60750c2ade1bec1de18acbc2072ab4fdc8050b8130cffbc493c"
+      },
+      "run_id": "run_efacd0adbd92440d8098"
+    },
+    "overfit-rejected": {
+      "artifacts": {
+        "Backtest": "764dab56224f45a8c9b79e1f1fead449d655a7c20e1f3b0ecaa12797d0765f90",
+        "Data acquisition": "efde896fe2eda7ed8be2c3152b6fae1261d602c1f409bae67565671aa23cb3da",
+        "Feature build": "954d26c2874f915e10e2a634165dfd07f31409a80a9db125da60c5907b597ddd",
+        "Hypothesis freeze": "3dfb18563758f009cf3dd17db762b966827b8152442c741b96b0fdacef3f15a5",
+        "Leakage audit": "36cc45f27ff26385beca79565e762a289bbf057570e3f0581afc29fc0c6eac96",
+        "Statistical review": "b00b873435a833e1ef84b1c165651d6fb6a87d4d9978ff939567717448b533c4"
+      },
+      "run_id": "run_95f354f7d7fa49f789da"
+    },
+    "real-filings": {
+      "artifacts": {
+        "Backtest": "14727112eae254152bc71a7d2088c3f6382f1ee6f84f7a61b4af2ae05802c066",
+        "Data acquisition": "77a4fd7f1f784c9a8fe576f0b6bce81a95c5af8c3d37a3ad9fc0347176c47c46",
+        "Feature build": "b0549f275d8c069322174e5f2629d1c8eb4461f830253c4c33519708e6f7524e",
+        "Hypothesis freeze": "dbddbaf08c0bdb601a0fab8a86ff76c6bd14f330825e6905c3dd39d272f20a6b",
+        "Leakage audit": "672dfb7732697d85dc15e2c33871c9dad5eeb84e58a5a75ce3f7f46dc320b386",
+        "Statistical review": "4b9fb30fa5a15a41032d239b631457fcb2c2e37f76179da2d02837dc9274b918"
+      },
+      "run_id": "run_cae8edacc5d340fea53a"
+    },
+    "survivorship-caught": {
+      "artifacts": {
+        "Backtest": "a00263ec89d19eaadf9c065c0bbd96d509a1ebd912bf96472e4b19eae331f163",
+        "Data acquisition": "a5b053d56c14d952cc1a334852194d0e28022aea91ff5e0e5a86c6196ba961f3",
+        "Feature build": "ed185121b8945f5160a0485fd7ee12366d6f97c08e52d88bdc21b6f074ffc74c",
+        "Hypothesis freeze": "226d2a73abf092f009f2940da2bf729c24425b80fb665a67dd9c99d8392018bb",
+        "Leakage audit": "2cf660a9ddad2250c5b367ecfb19b1f348a4f6d733e42e0f805b1a08f6d1159f"
+      },
+      "run_id": "run_6edfcb70ec0d42e7bf34"
+    }
+  },
+  "source_revision": "91e3023+reviewed-remediation"
+}

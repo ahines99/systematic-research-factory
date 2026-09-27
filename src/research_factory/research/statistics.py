@@ -22,6 +22,7 @@ from ..config import StatisticalThresholds
 FloatArray = npt.NDArray[np.float64]
 EULER_GAMMA = 0.5772156649015329
 PERIODS_PER_YEAR = 252
+BOOTSTRAP_SEED = 20260923
 _N = NormalDist()
 
 
@@ -103,7 +104,7 @@ def expected_max_sharpe(n_trials: int, var_sr: float) -> float:
 
 
 def block_bootstrap_sharpe_ci(
-    x: FloatArray, block: int, samples: int, confidence: float, seed: int = 20260923
+    x: FloatArray, block: int, samples: int, confidence: float, seed: int = BOOTSTRAP_SEED
 ) -> tuple[float, float]:
     """Circular block bootstrap percentile CI of the annualized Sharpe ratio."""
     n = len(x)
@@ -144,6 +145,11 @@ class StatisticalReport:
     newey_west_t: float
     bootstrap_ci: tuple[float, float]
     bootstrap_confidence: float
+    bootstrap_method: str
+    bootstrap_block_size: int
+    bootstrap_samples: int
+    bootstrap_seed: int
+    bootstrap_interval_method: str
     n_trials: int
     var_sr: float
     var_sr_source: str
@@ -275,6 +281,11 @@ def statistical_review(
         newey_west_t=nw,
         bootstrap_ci=ci,
         bootstrap_confidence=th.bootstrap_confidence,
+        bootstrap_method="circular_block",
+        bootstrap_block_size=max(1, min(hold_days, n)),
+        bootstrap_samples=th.bootstrap_samples if n >= 2 else 0,
+        bootstrap_seed=BOOTSTRAP_SEED,
+        bootstrap_interval_method="percentile",
         n_trials=trials,
         var_sr=var_sr,
         var_sr_source=source,

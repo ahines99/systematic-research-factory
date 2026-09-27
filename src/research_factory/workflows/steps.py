@@ -16,16 +16,22 @@ from ..data.pit import PointInTimeData
 from ..data.registry import dataset_names
 from ..data.world import filing_to_dict
 from ..domain.errors import InvalidInputError, NeedsEvidenceError
-from ..domain.identity import content_id
+from ..domain.identity import canonical_json, content_id, sha256_hex
 from ..domain.models import Confidence, Finding, Severity
 from ..domain.project_models import ApprovalDecision, StepStatus
 from ..judgment import prompts
-from ..judgment.contract import SCHEMA_VERSION, JudgmentValidationError, output_schema, validate_output
+from ..judgment.contract import (
+    SCHEMA_VERSION,
+    JudgmentValidationError,
+    output_schema,
+    render_memo,
+    validate_output,
+)
 from ..judgment.providers import JudgmentRequest
 from ..research.backtest import run_backtest
 from ..research.features import FeatureTable, build_features, get_feature, rebalance_sessions
 from ..research.leakage import audit_leakage
-from ..research.quality import check_dataset, corrupt, scan_untrusted_text, stale
+from ..research.quality import check_dataset, corrupt, scan_untrusted_text, stale, validate_backtest_coverage
 from ..research.statistics import PERIODS_PER_YEAR, deflated_sharpe_at, statistical_review
 from ..services.approvals import APPROVAL_REQUIRED, COMMITTEE_STEP, compute_gate
 from .base import StepContext, StepOutcome
@@ -57,6 +63,11 @@ def make_finding(
             "type": finding_type,
             "title": title,
             "statement": statement,
+            "severity": str(severity),
+            "confidence": str(confidence),
+            "evidence_ids": sorted(evidence_ids),
+            "assumptions": assumptions,
+            "metadata": metadata or {},
         },
     )
     return Finding(
@@ -150,8 +161,24 @@ class DataAcquisitionStep:
                 dataset = corrupt(dataset)
             if s.faults.should_stale("data_source"):
                 dataset = stale(dataset)
+            # view_as_of records the source hash, so invalid JSON numbers must be
+            # rejected before that hash is computed as well as before archiving.
+            invalid_eps = [f.accession for f in dataset.filings if not np.isfinite(f.eps)]
+            if invalid_eps:
+                raise NeedsEvidenceError(
+                    "the source contains non-finite fundamentals",
+                    details={"count": len(invalid_eps), "examples": invalid_eps[:5]},
+                )
             view = PointInTimeData(dataset).view_as_of(spec.as_of)
             dataset_id = dataset.dataset_id
+        validate_backtest_coverage(view, spec)
+        issues = await run_blocking(check_dataset, view)
+        invalid_fundamentals = [issue for issue in issues if issue.check == "non_finite_fundamentals"]
+        if invalid_fundamentals:
+            raise NeedsEvidenceError(
+                "the source contains non-finite fundamentals and cannot be archived as valid JSON",
+                details={"quality": [issue.to_dict() for issue in invalid_fundamentals]},
+            )
         snapshot = s.evidence.record_bytes(
             view.to_bytes(),
             source_uri=f"rsf://datasets/{dataset_id}",
@@ -175,7 +202,6 @@ class DataAcquisitionStep:
             step=self.name,
         )
         s._snapshots[snapshot.evidence_id] = view
-        issues = check_dataset(view)
         findings = [
             make_finding(
                 ctx,
@@ -350,12 +376,14 @@ class LeakageAuditStep:
         feature_doc = ctx.artifact(FeatureBuildStep.name)
         backtest_doc = ctx.artifact(BacktestStep.name)
         filings_doc = s.evidence.load_json(acq["filings_evidence_id"])
-        report = audit_leakage(
-            feature_doc=feature_doc,
-            backtest_doc=backtest_doc,
-            filings_doc=filings_doc,
-            dataset=view,
-            input_sources=frozenset(feature_doc["input_sources"]),
+        report = await run_blocking(
+            lambda: audit_leakage(
+                feature_doc=feature_doc,
+                backtest_doc=backtest_doc,
+                filings_doc=filings_doc,
+                dataset=view,
+                input_sources=frozenset(feature_doc["input_sources"]),
+            )
         )
         cited = [
             ctx.artifacts[FeatureBuildStep.name],
@@ -417,16 +445,18 @@ class StatisticalReviewStep:
             lambda: run_backtest(view, table, spec, hyp.expected_sign, extra_lag_sessions=1)
         )
         n_trials, sharpes = s.ledger.trial_context(ctx.record.experiment_id)
-        report = statistical_review(
-            net,
-            gross,
-            hold_days=spec.hold_days,
-            ic_values=[x["ic"] for x in bt["ic_by_decision"]],
-            turnover=[x["turnover"] for x in bt["turnover"]],
-            trial_sharpes=sharpes,
-            n_trials=n_trials,
-            thresholds=s.settings.thresholds,
-            delay_net=delayed.net,
+        report = await run_blocking(
+            lambda: statistical_review(
+                net,
+                gross,
+                hold_days=spec.hold_days,
+                ic_values=[x["ic"] for x in bt["ic_by_decision"]],
+                turnover=[x["turnover"] for x in bt["turnover"]],
+                trial_sharpes=sharpes,
+                n_trials=n_trials,
+                thresholds=s.settings.thresholds,
+                delay_net=delayed.net,
+            )
         )
         cited = [ctx.artifacts[BacktestStep.name]]
         findings = []
@@ -519,7 +549,40 @@ class JudgmentStep:
         s = ctx.services
         catalog = self.evidence_catalog(ctx)
         allowed = {e["evidence_id"] for e in catalog}
-        payload = {**self.payload(ctx), "evidence_catalog": catalog}
+        evidence_documents = {
+            e["evidence_id"]: s.evidence.load_json(e["evidence_id"])
+            for e in catalog
+            if e["source_type"].startswith("artifact:")
+        }
+        slug = self.slug.replace("-", "_")
+        scope = prompts.review_scope(slug)
+        payload = {**self.payload(ctx), "evidence_catalog": catalog, "review_scope": scope}
+        if slug == "research_committee":
+            prior_reviews = []
+            dissent = []
+            dissent_sources = []
+            for entry in catalog:
+                if entry["step"] not in ("Economic rationale review", "Implementation review"):
+                    continue
+                doc = evidence_documents.get(entry["evidence_id"], {})
+                if doc.get("format") != "rsf-judgment/1":
+                    continue
+                prior_reviews.append(
+                    {
+                        "step": entry["step"],
+                        "artifact_evidence_id": entry["evidence_id"],
+                        "output": doc["output"],
+                    }
+                )
+                for position in doc["output"].get("dissent", []):
+                    if position not in dissent:
+                        dissent.append(position)
+                    dissent_sources.append(
+                        {"dissent": position, "artifact_evidence_id": entry["evidence_id"]}
+                    )
+            scope["dissent"] = dissent
+            scope["dissent_sources"] = dissent_sources
+            payload["prior_reviews"] = prior_reviews
         request = JudgmentRequest(
             step_slug=self.slug.replace("-", "_"),
             system=prompts.system_prompt(self.slug.replace("-", "_")),
@@ -533,28 +596,51 @@ class JudgmentStep:
             "prompt_version": prompts.prompt_version(request.step_slug),
             "skill_version": prompts.skill_version(request.step_slug),
             "schema_version": SCHEMA_VERSION,
+            "schema_hash": prompts.schema_version(request.step_slug),
+            "input_hash": sha256_hex(canonical_json(payload)),
             "input_tokens": 0,
             "output_tokens": 0,
             "cost_usd": 0.0,
         }
         problems: list[str] = []
+        review_attempts: list[dict[str, Any]] = []
+        stamp["review_attempts"] = review_attempts
         for _ in range(self.max_attempts):
-            s.budget.check(ctx.run.run_id)
-            response = await run_blocking(s.provider.judge, request)
-            s.budget.record(
-                run_id=ctx.run.run_id,
-                step=self.name,
-                model=response.model,
-                input_tokens=response.input_tokens,
-                output_tokens=response.output_tokens,
-                cost_usd=response.cost_usd,
+            response = await run_blocking(
+                s.budget.invoke, s.provider, request, ctx.run.run_id, self.name, s.engine
             )
             stamp["model"] = response.model
+            stamp["provider"] = response.provider
+            review_attempts.append(
+                {
+                    "provider": response.provider,
+                    "model": response.model,
+                    "raw_output": response.raw,
+                    "feedback": list(request.feedback),
+                }
+            )
             stamp["input_tokens"] += response.input_tokens
             stamp["output_tokens"] += response.output_tokens
             stamp["cost_usd"] += response.cost_usd
             try:
-                output = validate_output(response.raw, verdicts=self.verdicts, allowed_evidence=allowed)
+                output = validate_output(
+                    response.raw,
+                    verdicts=self.verdicts,
+                    allowed_evidence=allowed,
+                    evidence_documents=evidence_documents,
+                    review_scope=scope,
+                )
+                if output.needs_evidence:
+                    finding = make_finding(
+                        ctx,
+                        self.name,
+                        "needs_evidence",
+                        "Reviewer needs evidence",
+                        output.summary,
+                        Severity.HIGH,
+                        sorted({e for c in output.claims for e in c.evidence_ids}),
+                    )
+                    return None, [finding], stamp
                 extra = self.extra_problems(output.verdict, payload)
                 if extra:
                     raise JudgmentValidationError(extra)
@@ -567,6 +653,15 @@ class JudgmentStep:
                 "step": self.name,
                 **stamp,
                 "output": output.model_dump(mode="json"),
+                "raw_output": response.raw,
+                "request": {
+                    "system": request.system,
+                    "payload": request.payload,
+                    "schema": request.schema,
+                    "verdicts": request.verdicts,
+                    "feedback": list(request.feedback),
+                },
+                "memo": render_memo(output.model_dump(mode="json"), scope),
             }
             return artifact, [], stamp
         finding = make_finding(
@@ -606,9 +701,22 @@ def _statistics_brief(ctx: StepContext) -> dict[str, Any]:
         "n_obs",
         "sharpe_annualized",
         "newey_west_t",
+        "newey_west_lags",
         "deflated_sharpe",
         "n_trials",
         "bootstrap_ci",
+        "bootstrap_confidence",
+        "bootstrap_method",
+        "bootstrap_block_size",
+        "bootstrap_samples",
+        "bootstrap_seed",
+        "bootstrap_interval_method",
+        "var_sr",
+        "var_sr_source",
+        "sharpe_per_period",
+        "expected_max_sharpe_per_period",
+        "psr_vs_zero",
+        "min_track_record_length",
         "ic_mean",
         "ic_ir",
         "turnover_mean",
@@ -643,7 +751,7 @@ class EconomicRationaleStep(JudgmentStep):
     def payload(self, ctx: StepContext) -> dict[str, Any]:
         frozen = ctx.artifact(HypothesisFreezeStep.name)
         return {
-            "hypothesis": {**_hypothesis_brief(ctx), "rationale_raw": ctx.experiment.hypothesis.rationale},
+            "hypothesis": _hypothesis_brief(ctx),
             "statistics": _statistics_brief(ctx),
             "untrusted_text_flags": frozen.get("untrusted_text_flags", []),
         }
@@ -765,8 +873,15 @@ class ResearchCommitteeStep(JudgmentStep):
             metadata={"check": "deflated_sharpe_review_time", "n_trials": n_review},
         )
 
+    def current_findings(self, ctx: StepContext) -> list[Finding]:
+        findings = [
+            f for f in ctx.services.repos.findings.list_for_run(ctx.run.run_id) if f.step != self.name
+        ]
+        review = self.review_time_check(ctx)
+        return [*findings, *([review] if review else [])]
+
     def payload(self, ctx: StepContext) -> dict[str, Any]:
-        findings = ctx.services.repos.findings.list_for_run(ctx.run.run_id)
+        findings = self.current_findings(ctx)
         gate = compute_gate(findings)
         return {
             "hypothesis": _hypothesis_brief(ctx),
@@ -788,14 +903,11 @@ class ResearchCommitteeStep(JudgmentStep):
     async def execute(self, ctx: StepContext) -> StepOutcome:
         s = ctx.services
         review = self.review_time_check(ctx)
-        if review is not None:
-            s.repos.findings.add(
-                ctx.run.run_id, review, s.clock.now()
-            )  # visible to the gate and the approver
-        gate = compute_gate(s.repos.findings.list_for_run(ctx.run.run_id))
+        gate = compute_gate(self.current_findings(ctx))
+        context = s.approvals.context(ctx.run.run_id)
         previous = s.repos.steps.get(ctx.run.run_id, self.name)
         stamp: dict[str, Any] = {}
-        if previous is not None and previous.artifact_evidence_id:
+        if previous is not None and previous.artifact_evidence_id and previous.gate_context == context:
             memo_artifact = {
                 **s.evidence.load_json(previous.artifact_evidence_id),  # reuse the drafted memo
                 "gate": gate.to_dict(),
@@ -811,7 +923,15 @@ class ResearchCommitteeStep(JudgmentStep):
                     audit=stamp,
                 )
             memo_artifact = {**drafted, "gate": gate.to_dict()}
-        approvals = [a for a in s.repos.approvals.list_for_run(ctx.run.run_id) if a.step == self.name]
+        approvals = [
+            a
+            for a in s.repos.approvals.list_for_run(ctx.run.run_id)
+            if a.step == self.name
+            and a.gate_context == context
+            and not (
+                a.decision is ApprovalDecision.APPROVE and gate.recommendation is not ApprovalDecision.APPROVE
+            )
+        ]
         if not approvals:
             return StepOutcome(
                 StepStatus.NEEDS_REVIEW,
@@ -820,6 +940,7 @@ class ResearchCommitteeStep(JudgmentStep):
                 reason=f"awaiting a committee decision; the gate recommends {gate.recommendation}",
                 reason_code=APPROVAL_REQUIRED,
                 audit={**stamp, "gate": gate.to_dict()},
+                gate_context=context,
             )
         decision = approvals[-1]
         final = {
@@ -849,6 +970,7 @@ class ResearchCommitteeStep(JudgmentStep):
             artifact=final,
             findings=[finding, *([review] if review else [])],
             run_decision=str(decision.decision),
+            gate_context=context,
             audit={
                 "decision": str(decision.decision),
                 "human_changed_recommendation": final["human_changed_recommendation"],

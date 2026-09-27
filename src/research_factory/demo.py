@@ -25,12 +25,13 @@ from .domain.project_models import (
 )
 from .services.container import Services
 from .workflows.engine import WorkflowEngine
+from .workflows.execution import runtime_identity
 from .workflows.faults import FaultRule
 from .workflows.primary import primary_engine, primary_steps
 
 DEMO_REQUESTER = "demo-researcher"
 DEMO_APPROVER = "demo-approver"
-DETERMINISTIC_STEPS = 8  # steps 1-8; the committee artifact carries a human decision
+DETERMINISTIC_STEPS = 6  # the two subsequent review steps may call a paid model
 RATIONALE = (
     "Investors under-react to earnings news, so prices keep drifting in the direction of the surprise "
     "for several weeks after the filing becomes public."
@@ -155,7 +156,7 @@ class ScenarioResult:
     artifacts: dict[str, str] = field(default_factory=dict)  # step -> artifact content hash
 
 
-def artifact_hashes(services: Services, run_id: str, limit: int = DETERMINISTIC_STEPS) -> dict[str, str]:
+def artifact_hashes(services: Services, run_id: str, limit: int = 8) -> dict[str, str]:
     names = [s.name for s in primary_steps()[:limit]]
     out = {}
     for result in services.repos.steps.list(run_id):
@@ -230,16 +231,22 @@ async def replay_run(services: Services, run_id: str, actor: str = "replay") -> 
         raise ConflictError("the run has no archived data snapshot to replay from")
     snapshot_id = services.evidence.load_json(acquisition.artifact_evidence_id)["snapshot_evidence_id"]
     dataset = record.experiment.hypothesis.universe.dataset
-    before = artifact_hashes(services, run_id)
-    services.pinned_snapshots[dataset] = snapshot_id
-    try:
-        steps = primary_steps()[: len(before)] if before else primary_steps()[:2]
-        replay = await WorkflowEngine(services, steps).start(
-            record.experiment_id, actor, project_type="replay"
+    recorded = original.execution_manifest
+    if recorded.get("format") != "rsf-execution/1":
+        raise ConflictError(
+            "this legacy run has no execution manifest; exact replay requires its archived configuration"
         )
-    finally:
-        services.pinned_snapshots.pop(dataset, None)
-    after = artifact_hashes(services, replay.run_id)
+    if recorded.get("runtime") != runtime_identity():
+        raise ConflictError(
+            "the archived run requires a different code/dependency/platform runtime; use its recorded release environment"
+        )
+    before = artifact_hashes(services, run_id, DETERMINISTIC_STEPS)
+    replay_manifest = {**recorded, "snapshots": {dataset: snapshot_id}}
+    steps = primary_steps()[: len(before)] if before else primary_steps()[:2]
+    replay = await WorkflowEngine(services, steps, manifest=replay_manifest).start(
+        record.experiment_id, actor, project_type="replay"
+    )
+    after = artifact_hashes(services, replay.run_id, DETERMINISTIC_STEPS)
     compared = {step: (before[step], after.get(step, "")) for step in before}
     return ReplayResult(run_id, replay.run_id, all(a == b for a, b in compared.values()), compared)
 

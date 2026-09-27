@@ -5,6 +5,17 @@ description: Keeps Systematic Research Factory research point-in-time clean. Cov
 
 # Point-in-time research
 
+## Execution modes
+
+For an external agent with MCP access, follow the full procedure below. A tool-less judgment
+receives `review_scope`, the selected references and structured evidence in its request. Check
+the assigned timing/version questions; missing acceptance evidence means `needs_evidence=true`.
+The targeted evaluation `point_in_time_review` uses this skill directly, including after-close
+acceptances, amendment versions and date-only missing evidence. It is run with identical inputs
+and scoring with/without skill text; the rules baseline is deterministic and measures no skill effect.
+Do not infer an entire lineage audit from a spot check. In JSON output, numbers belong in
+`metric_refs` with `{metric:index}` placeholders; the application renders values from evidence.
+
 **The one rule:** a value may drive a decision at `decision_ts` only if every input behind it had a
 `knowledge_ts <= decision_ts`. The trade then happens at `decision_ts + execution_delay_minutes`.
 Everything below applies that rule to real SEC and market data.

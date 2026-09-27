@@ -37,14 +37,14 @@ def first_close_at_or_after(epochs: npt.NDArray[np.int64], ts: datetime) -> int:
     """Index of the first session whose close is at or after ``ts`` (len(epochs) if none)."""
     if ts.tzinfo is None:
         raise ValueError("timestamp must be timezone-aware")
-    return int(np.searchsorted(epochs, int(ts.timestamp()), side="left"))
+    return int(np.searchsorted(epochs, ts.timestamp(), side="left"))
 
 
 def last_close_at_or_before(epochs: npt.NDArray[np.int64], ts: datetime) -> int:
     """Index of the last session whose close is at or before ``ts`` (-1 if none)."""
     if ts.tzinfo is None:
         raise ValueError("timestamp must be timezone-aware")
-    return int(np.searchsorted(epochs, int(ts.timestamp()), side="right")) - 1
+    return int(np.searchsorted(epochs, ts.timestamp(), side="right")) - 1
 
 
 def execution_lag_sessions(execution_delay_minutes: int) -> int:

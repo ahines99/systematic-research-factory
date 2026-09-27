@@ -128,6 +128,7 @@ One execution of the workflow for an experiment.
 | `status_reason` | string | null |  |  |
 | `created_at` | string (date-time) | yes |  |
 | `updated_at` | string (date-time) | yes |  |
+| `execution_manifest` | object |  |  |
 
 **ApprovalDecision**: one of `approve`, `reject`, `needs_more_evidence`
 
@@ -148,6 +149,11 @@ The persisted outcome of one step; completed results are immutable.
 | `error_code` | string | null |  |  |
 | `error_message` | string | null |  |  |
 | `created_at` | string (date-time) | yes |  |
+| `fail_run` | boolean |  |  |
+| `run_decision` | ApprovalDecision | null |  |  |
+| `gate_context` | string | null |  |  |
+
+**ApprovalDecision**: one of `approve`, `reject`, `needs_more_evidence`
 
 **StepStatus**: one of `completed`, `failed`, `needs_review`
 
@@ -217,6 +223,7 @@ A human committee decision.
 | `decision` | ApprovalDecision | yes |  |
 | `reason` | string | yes | minLength=3 |
 | `created_at` | string (date-time) | yes |  |
+| `gate_context` | string |  |  |
 
 **ApprovalDecision**: one of `approve`, `reject`, `needs_more_evidence`
 
@@ -232,6 +239,20 @@ What a judgment step (model or rules) must return.
 | `claims` | array | yes |  |
 | `open_questions` | array |  |  |
 | `needs_evidence` | boolean |  |  |
+| `attacks` | array |  |  |
+| `dissent` | array |  |  |
+
+**Attack**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `attack` | string | yes |  |
+| `evidence_ids` | array |  |  |
+| `severity` | string | yes | enum=['low', 'medium', 'high', 'blocking'] |
+| `status` | string | yes | enum=['refuted', 'unrefuted', 'not_tested'] |
+| `criterion` | string | yes | minLength=5 |
+| `observation` | string | yes | minLength=5 |
+| `evidence_request` | string |  |  |
 
 **Claim**
 
@@ -240,10 +261,32 @@ What a judgment step (model or rules) must return.
 | `kind` | ClaimKind | yes |  |
 | `statement` | string | yes | minLength=5, maxLength=2000 |
 | `evidence_ids` | array |  |  |
+| `metric_refs` | array |  |  |
 
 **ClaimKind**: one of `fact`, `calculation`, `assumption`, `risk`, `recommendation`
 
 **Confidence**: one of `low`, `medium`, `high`
+
+**Dissent**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `author` | string | yes |  |
+| `role` | string | yes |  |
+| `position` | string | yes | enum=['approve', 'reject', 'needs_more_evidence'] |
+| `argument` | string | yes |  |
+| `evidence_ids` | array |  |  |
+| `resolution_criterion` | string | yes |  |
+| `response` | string | yes |  |
+| `status` | string | yes | enum=['open', 'resolved_by_evidence', 'noted_not_adopted'] |
+
+**MetricReference**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `evidence_id` | string | yes |  |
+| `field_path` | string | yes | pattern=^/ |
+| `format` | string |  | pattern=^(?:\.[0-6][f%]|d)$ |
 
 ## Relational schema
 
@@ -273,6 +316,13 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `payload_hash` | VARCHAR(64) | no |  |
 | `created_at` | DATETIME | no |  |
 
+### `budget_lock`
+
+| Column | Type | Nullable | Key |
+|---|---|---|---|
+| `lock_id` | INTEGER | no | PK |
+| `version` | INTEGER | no |  |
+
 ### `evidence`
 
 | Column | Type | Nullable | Key |
@@ -296,6 +346,19 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `created_by` | VARCHAR(120) | no |  |
 | `created_at` | DATETIME | no |  |
 
+### `model_reservations`
+
+| Column | Type | Nullable | Key |
+|---|---|---|---|
+| `reservation_id` | VARCHAR(64) | no | PK |
+| `run_id` | VARCHAR(64) | yes |  |
+| `step` | VARCHAR(64) | no |  |
+| `model` | VARCHAR(120) | no |  |
+| `tokens` | INTEGER | no |  |
+| `cost_usd` | FLOAT | no |  |
+| `status` | VARCHAR(16) | no |  |
+| `created_at` | DATETIME | no |  |
+
 ### `model_usage`
 
 | Column | Type | Nullable | Key |
@@ -308,6 +371,13 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `output_tokens` | INTEGER | no |  |
 | `cost_usd` | FLOAT | no |  |
 | `created_at` | DATETIME | no |  |
+
+### `research_guard`
+
+| Column | Type | Nullable | Key |
+|---|---|---|---|
+| `guard_id` | INTEGER | no | PK |
+| `revision` | INTEGER | no |  |
 
 ### `trial_results`
 
@@ -334,6 +404,7 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `updated_at` | DATETIME | no |  |
 | `lease_owner` | VARCHAR(64) | yes |  |
 | `lease_expires_at` | DATETIME | yes |  |
+| `execution_manifest` | JSON | no |  |
 
 ### `approvals`
 
@@ -346,6 +417,7 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `decision` | VARCHAR(32) | no |  |
 | `reason` | TEXT | no |  |
 | `created_at` | DATETIME | no |  |
+| `gate_context` | VARCHAR(64) | no |  |
 
 ### `findings`
 
@@ -385,6 +457,9 @@ Append-only tables (database triggers reject UPDATE and DELETE): `audit_events`,
 | `error_code` | VARCHAR(64) | yes |  |
 | `error_message` | TEXT | yes |  |
 | `created_at` | DATETIME | no |  |
+| `fail_run` | BOOLEAN | no |  |
+| `run_decision` | VARCHAR(32) | yes |  |
+| `gate_context` | VARCHAR(64) | yes |  |
 
 ### `finding_evidence`
 

@@ -5,6 +5,21 @@ description: Drafts the Research committee memo for a Systematic Research Factor
 
 # Research committee
 
+## Execution modes and structured memo
+
+For a full external committee review, use every section and checklist below. The automated
+committee step is a **targeted gate/findings review**, explicitly labelled by `review_scope`.
+Its report preserves separate facts, calculations, assumptions, risks/counterarguments,
+recommendation, open questions, attacks, dissent and a blank reviewer decision record.
+An excluded full red-team signoff is unverified; do not invent its table or imply it happened.
+If full red-team evidence is assigned but missing, set `needs_evidence=true`.
+
+In JSON, use claim kinds for the memo sections, `attacks` for structured attack rows and
+`dissent` for attributed positions and resolution criteria. Copy supplied human/earlier dissent
+word for word; only new model dissent may use role `model_reviewer`. Numeric claims consist of
+`{metric:index}` placeholders backed by `metric_refs`; code resolves fields and supplies labels.
+Selected reference templates are included in the tool-less prompt, so no file read is required.
+
 The committee step turns a run's evidence into a decision that people can read, audit and dispute.
 Three actors take part, **in this order**:
 

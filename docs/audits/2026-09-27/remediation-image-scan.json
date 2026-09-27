@@ -1,0 +1,164 @@
+{
+  "scanner": "grype0.119.0",
+  "exit_code": 0,
+  "duration_seconds": 52.67,
+  "policy": "only-fixed; fail on high or critical",
+  "image_id": "sha256:f3d9c5f28273fb6e240e6cc363a0b6878fc28c571b62ce1d24013e36169fab89",
+  "matches": [
+    {
+      "package": "python",
+      "version": "3.14.7",
+      "advisory": "CVE-2026-17084",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.15.0rc2"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-17084"
+    },
+    {
+      "package": "python",
+      "version": "3.14.7",
+      "advisory": "CVE-2026-15806",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.15.0rc2"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-15806"
+    },
+    {
+      "package": "python",
+      "version": "3.14.7",
+      "advisory": "CVE-2025-15367",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.15.0a6"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2025-15367"
+    },
+    {
+      "package": "python",
+      "version": "3.14.7",
+      "advisory": "CVE-2026-15310",
+      "severity": "Low",
+      "fixed_in": [
+        "3.15.0rc2"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-15310"
+    }
+  ],
+  "database": {
+    "status": {
+      "schemaVersion": "v6.1.9",
+      "from": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-27T00:36:47Z_1790490630.tar.zst?checksum=sha256%3A0567d832ad6f47af3f67f0d8aa36397f8a3557dc51311cff68e2bb4332ba3c56",
+      "built": "2026-09-27T06:30:30Z",
+      "path": "/cache/6/vulnerability.db",
+      "valid": true
+    },
+    "providers": {
+      "alma": {
+        "captured": "2026-09-27T00:37:10Z",
+        "input": "xxh64:db73183617e221d9"
+      },
+      "alpine": {
+        "captured": "2026-09-27T00:37:13Z",
+        "input": "xxh64:bb3d841b121ddafd"
+      },
+      "amazon": {
+        "captured": "2026-09-27T00:37:00Z",
+        "input": "xxh64:5cb08437b0ae5ac0"
+      },
+      "arch": {
+        "captured": "2026-09-27T00:36:49Z",
+        "input": "xxh64:0a73d2045c141ca7"
+      },
+      "bitnami": {
+        "captured": "2026-09-27T00:37:23Z",
+        "input": "xxh64:a177c0855fe1b319"
+      },
+      "chainguard": {
+        "captured": "2026-09-27T00:40:34Z",
+        "input": "xxh64:795ae9bbd598ac33"
+      },
+      "chainguard-libraries": {
+        "captured": "2026-09-27T00:36:47Z",
+        "input": "xxh64:930d0f5a060ad9db"
+      },
+      "debian": {
+        "captured": "2026-09-27T00:37:12Z",
+        "input": "xxh64:b5acab4425429aab"
+      },
+      "echo": {
+        "captured": "2026-09-27T00:37:26Z",
+        "input": "xxh64:b6fec91372f39bd3"
+      },
+      "eol": {
+        "captured": "2026-09-27T00:37:05Z",
+        "input": "xxh64:c3b0415d6ee72283"
+      },
+      "epss": {
+        "captured": "2026-09-27T00:37:20Z",
+        "input": "xxh64:134e66b18932be9a"
+      },
+      "fedora": {
+        "captured": "2026-09-27T00:36:59Z",
+        "input": "xxh64:ad7fb8a8104e7352"
+      },
+      "github": {
+        "captured": "2026-09-27T00:37:40Z",
+        "input": "xxh64:a88846987b0fc18a"
+      },
+      "govulndb": {
+        "captured": "2026-09-27T00:37:17Z",
+        "input": "xxh64:ba4f20c4c1b160f8"
+      },
+      "hummingbird": {
+        "captured": "2026-09-27T00:39:28Z",
+        "input": "xxh64:17482a8afc36c628"
+      },
+      "kev": {
+        "captured": "2026-09-27T00:37:09Z",
+        "input": "xxh64:5ab90d5b829ffedb"
+      },
+      "mariner": {
+        "captured": "2026-09-27T00:36:58Z",
+        "input": "xxh64:be074d704967a661"
+      },
+      "minimos": {
+        "captured": "2026-09-27T00:36:53Z",
+        "input": "xxh64:fc8e9e979c012c42"
+      },
+      "nvd": {
+        "captured": "2026-09-27T00:37:53Z",
+        "input": "xxh64:4f01c35560d192d4"
+      },
+      "oracle": {
+        "captured": "2026-09-27T00:37:01Z",
+        "input": "xxh64:f8e4412f587f1966"
+      },
+      "photon": {
+        "captured": "2026-09-27T00:36:59Z",
+        "input": "xxh64:59cc242e4baae5a3"
+      },
+      "rhel": {
+        "captured": "2026-09-27T00:39:40Z",
+        "input": "xxh64:502f465039128d50"
+      },
+      "secureos": {
+        "captured": "2026-09-27T00:42:16Z",
+        "input": "xxh64:9be738cf9250e0a6"
+      },
+      "sles": {
+        "captured": "2026-09-27T00:39:33Z",
+        "input": "xxh64:ff29cd2e7b57cd99"
+      },
+      "ubuntu": {
+        "captured": "2026-09-27T00:39:17Z",
+        "input": "xxh64:4503763587d51678"
+      },
+      "wolfi": {
+        "captured": "2026-09-27T00:37:36Z",
+        "input": "xxh64:6416be47769a5e0c"
+      }
+    }
+  }
+}

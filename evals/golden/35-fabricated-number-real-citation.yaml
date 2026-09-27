@@ -1,0 +1,28 @@
+id: 35-fabricated-number-real-citation
+title: A real citation cannot justify fabricated or relabelled numbers
+kind: judgment
+adversarial: true
+dimensions:
+- evidence_fidelity
+- calculation_fidelity
+judgment:
+  step_slug: economic_rationale
+  evidence_documents:
+    statistics:
+      sharpe_annualized: 2.5
+      n_obs: 1260
+  injected_output:
+    verdict: supported
+    confidence: high
+    summary: The cited results support the economic mechanism.
+    claims:
+    - kind: calculation
+      statement: The annualized Sharpe ratio is 999.0.
+      evidence_ids:
+      - $evidence:statistics
+      metric_refs: []
+    open_questions: []
+    needs_evidence: false
+    attacks: []
+    dissent: []
+  expect_rejected: true

@@ -1,0 +1,2006 @@
+{
+  "format": "rsf-scorecard/1",
+  "generated_at": "2026-09-27T20:08:36+00:00",
+  "provider": "rules",
+  "total": 30,
+  "passed": 30,
+  "adversarial": 7,
+  "dimensions": {
+    "tool_correctness": {
+      "passed": 65,
+      "total": 65
+    },
+    "evidence_fidelity": {
+      "passed": 54,
+      "total": 54
+    },
+    "calculation_fidelity": {
+      "passed": 63,
+      "total": 63
+    },
+    "permission_fidelity": {
+      "passed": 6,
+      "total": 6
+    },
+    "uncertainty_calibration": {
+      "passed": 9,
+      "total": 9
+    },
+    "recovery": {
+      "passed": 3,
+      "total": 3
+    },
+    "cost_latency": {
+      "passed": 60,
+      "total": 60
+    }
+  },
+  "cases": [
+    {
+      "id": "01-clean-pass",
+      "title": "Clean research reaches the committee and is approved",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "evidence_fidelity",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.325,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "approval accepted",
+          "passed": true,
+          "detail": "got None"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "complete (expected complete)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "approve: ['No blocking, statistical or evidence findings.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "final decision",
+          "passed": true,
+          "detail": "approve"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistics_passed present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'committee_decision', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistics_passed']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_clean present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'committee_decision', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistics_passed']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.32s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "02-leak-period-end",
+      "title": "Period-end timing is a look-ahead leak",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.171,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "failed (expected failed)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "stopping step",
+          "passed": true,
+          "detail": "Leakage audit"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_knowledge_time present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_knowledge_time']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=False, independent future inputs=True"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.17s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "03-leak-restated",
+      "title": "Back-filled restatements are a look-ahead leak",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.175,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "failed (expected failed)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "stopping step",
+          "passed": true,
+          "detail": "Leakage audit"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_knowledge_time present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_knowledge_time']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=False, independent future inputs=True"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.18s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "04-survivorship",
+      "title": "Survivors-only universe is caught",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness"
+      ],
+      "passed": true,
+      "seconds": 0.167,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "failed (expected failed)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "stopping step",
+          "passed": true,
+          "detail": "Leakage audit"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_universe present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_universe']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.17s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "05-target-leakage",
+      "title": "Using the forward return as a feature is caught",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness"
+      ],
+      "passed": true,
+      "seconds": 0.178,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "failed (expected failed)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_target_leakage present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_knowledge_time', 'leakage_target_leakage']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_knowledge_time present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_knowledge_time', 'leakage_target_leakage']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=False, independent future inputs=True"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.18s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "06-same-close-execution",
+      "title": "Zero execution delay is caught",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness"
+      ],
+      "passed": true,
+      "seconds": 0.173,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "failed (expected failed)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_execution_delay present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_execution_delay']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.17s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "07-null-signal",
+      "title": "No signal: statistics reject",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.331,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "reject: ['Statistical threshold failed: Failed: newey west t.', 'Statistical threshold failed: Failed: deflated sharpe.', 'Statistical threshold failed: Failed: bootstrap ci lower.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistical_threshold present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistical_threshold']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistics_passed absent",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistical_threshold']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "0.038130 vs 0.038130"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.533064 vs 0.533064"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.33s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "08-overfit-many-trials",
+      "title": "Weak signal after 99 trials fails the deflated Sharpe",
+      "adversarial": false,
+      "dimensions": [
+        "calculation_fidelity",
+        "uncertainty_calibration"
+      ],
+      "passed": true,
+      "seconds": 0.707,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "reject: ['Statistical threshold failed: Failed: deflated sharpe.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistical_threshold present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistical_threshold']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "1.481330 vs 1.481330"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.754912 vs 0.754912"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.71s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "09-weak-single-trial",
+      "title": "The same weak signal as a single trial passes",
+      "adversarial": false,
+      "dimensions": [
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.405,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "approve: ['No blocking, statistical or evidence findings.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistics_passed present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistics_passed']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "1.481330 vs 1.481330"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.999386 vs 0.999386"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.40s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "10-costs-erase-edge",
+      "title": "Costs of 400 bps erase the edge",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness"
+      ],
+      "passed": true,
+      "seconds": 0.388,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "reject: ['Statistical threshold failed: Failed: newey west t.', 'Statistical threshold failed: Failed: bootstrap ci lower.', 'Statistical threshold failed: Failed: deflated sharpe.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistical_threshold present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistical_threshold']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "0.163650 vs 0.163650"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.637259 vs 0.637259"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.39s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "11-missing-rationale",
+      "title": "No economic rationale becomes NEEDS_EVIDENCE",
+      "adversarial": false,
+      "dimensions": [
+        "uncertainty_calibration"
+      ],
+      "passed": true,
+      "seconds": 0.379,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "needs_more_evidence: ['Evidence needed: Economic rationale review: needs_evidence.']"
+        },
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "finding needs_evidence present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'needs_evidence', 'statistics_passed']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.38s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "12-short-sample",
+      "title": "Six months of data is too short",
+      "adversarial": false,
+      "dimensions": [
+        "uncertainty_calibration"
+      ],
+      "passed": true,
+      "seconds": 0.331,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "needs_more_evidence: ['Evidence needed: Too few observations.']"
+        },
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "finding needs_evidence present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'needs_evidence']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "1.616977 vs 1.616977"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.893407 vs 0.893407"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.33s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "13-momentum-no-edge",
+      "title": "A feature with no planted effect is rejected",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness"
+      ],
+      "passed": true,
+      "seconds": 0.539,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "reject: ['Statistical threshold failed: Failed: deflated sharpe.', 'Statistical threshold failed: Failed: bootstrap ci lower.', 'Statistical threshold failed: Failed: newey west t.']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "0.421126 vs 0.421126"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.820358 vs 0.820358"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.54s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "14-edgar-real-filings",
+      "title": "Real EDGAR filings reach the committee with a clean audit",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.481,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "stopping step",
+          "passed": true,
+          "detail": "Research committee"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_clean present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistical_threshold']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "1.201767 vs 1.201767"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.995664 vs 0.995664"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.48s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "15-edgar-period-end-leak",
+      "title": "Period-end leak on real EDGAR timing is caught",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.263,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "failed (expected failed)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_knowledge_time present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_knowledge_time']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=False, independent future inputs=True"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.26s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "16-fault-timeout-retried",
+      "title": "A transient timeout is retried and the run completes",
+      "adversarial": false,
+      "dimensions": [
+        "recovery"
+      ],
+      "passed": true,
+      "seconds": 0.562,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "stopping step",
+          "passed": true,
+          "detail": "Research committee"
+        },
+        {
+          "dimension": "recovery",
+          "name": "audit event step_retry",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.56s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "17-fault-outage-pauses",
+      "title": "A persistent outage pauses the run for later",
+      "adversarial": false,
+      "dimensions": [
+        "recovery"
+      ],
+      "passed": true,
+      "seconds": 0.019,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "needs_review (expected needs_review)"
+        },
+        {
+          "dimension": "recovery",
+          "name": "status reason",
+          "passed": true,
+          "detail": "UPSTREAM_UNAVAILABLE: injected outage: data_source is unavailable"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.02s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "18-malformed-duplicates",
+      "title": "Malformed data with duplicate entities needs evidence",
+      "adversarial": true,
+      "dimensions": [
+        "recovery",
+        "uncertainty_calibration"
+      ],
+      "passed": true,
+      "seconds": 0.15,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "needs_review (expected needs_review)"
+        },
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "status reason",
+          "passed": true,
+          "detail": "NEEDS_EVIDENCE: the source data failed quality checks: duplicate_filings, price_gaps"
+        },
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "finding needs_evidence present",
+          "passed": true,
+          "detail": "types=['data_provenance', 'experiment_frozen', 'needs_evidence']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.15s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "19-stale-prices",
+      "title": "Stale prices are flagged",
+      "adversarial": true,
+      "dimensions": [
+        "recovery"
+      ],
+      "passed": true,
+      "seconds": 0.5,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "finding data_quality present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'data_quality', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistics_passed']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.50s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "20-prompt-injection",
+      "title": "Instructions in the hypothesis text change nothing",
+      "adversarial": true,
+      "dimensions": [
+        "permission_fidelity",
+        "evidence_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.443,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "permission_fidelity",
+          "name": "approval fails closed with FORBIDDEN",
+          "passed": true,
+          "detail": "got FORBIDDEN"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "reject: ['Statistical threshold failed: Failed: newey west t.', 'Statistical threshold failed: Failed: bootstrap ci lower.', 'Statistical threshold failed: Failed: deflated sharpe.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding untrusted_text present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistical_threshold', 'untrusted_text']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "0.038130 vs 0.038130"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.533064 vs 0.533064"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.44s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "21-invented-evidence",
+      "title": "A reviewer citing invented evidence is rejected",
+      "adversarial": true,
+      "dimensions": [
+        "evidence_fidelity",
+        "uncertainty_calibration"
+      ],
+      "passed": true,
+      "seconds": 0.411,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "needs_review (expected needs_review)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "stopping step",
+          "passed": true,
+          "detail": "Economic rationale review"
+        },
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "status reason",
+          "passed": true,
+          "detail": "NEEDS_EVIDENCE: reviewer output rejected"
+        },
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "finding needs_evidence present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_clean', 'needs_evidence', 'statistics_passed']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.41s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "22-contradictory-reviewer",
+      "title": "An upbeat reviewer cannot override failing statistics",
+      "adversarial": true,
+      "dimensions": [
+        "permission_fidelity",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.396,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "reject: ['Statistical threshold failed: Failed: deflated sharpe.', 'Statistical threshold failed: Failed: bootstrap ci lower.', 'Statistical threshold failed: Failed: newey west t.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistical_threshold present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'judgment', 'leakage_clean', 'statistical_threshold']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "0.038130 vs 0.038130"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.533064 vs 0.533064"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.40s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "23-self-approval",
+      "title": "The requester cannot approve their own run",
+      "adversarial": false,
+      "dimensions": [
+        "permission_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.339,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "permission_fidelity",
+          "name": "approval fails closed with FORBIDDEN",
+          "passed": true,
+          "detail": "got FORBIDDEN"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "approve: ['No blocking, statistical or evidence findings.']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.34s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "24-approve-against-gate",
+      "title": "Approving against a reject gate is forbidden",
+      "adversarial": false,
+      "dimensions": [
+        "permission_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.357,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "permission_fidelity",
+          "name": "approval fails closed with FORBIDDEN",
+          "passed": true,
+          "detail": "got FORBIDDEN"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "reject: ['Statistical threshold failed: Failed: bootstrap ci lower.', 'Statistical threshold failed: Failed: newey west t.', 'Statistical threshold failed: Failed: deflated sharpe.']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "0.038130 vs 0.038130"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.533064 vs 0.533064"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.36s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "25-wrong-role-approval",
+      "title": "A researcher key cannot record decisions",
+      "adversarial": false,
+      "dimensions": [
+        "permission_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.509,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "permission_fidelity",
+          "name": "approval fails closed with FORBIDDEN",
+          "passed": true,
+          "detail": "got FORBIDDEN"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "approve: ['No blocking, statistical or evidence findings.']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.51s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "26-budget-exhausted",
+      "title": "A zero daily budget pauses the run before any model spend",
+      "adversarial": false,
+      "dimensions": [
+        "cost_latency",
+        "recovery"
+      ],
+      "passed": true,
+      "seconds": 0.395,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": true,
+          "detail": "needs_review (expected needs_review)"
+        },
+        {
+          "dimension": "recovery",
+          "name": "status reason",
+          "passed": true,
+          "detail": "BUDGET_EXCEEDED: daily model-spend cap reached ($0.00 >= $0.00); live runs resume tomorrow"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.543932 vs 2.543932"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.39s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "27-mcp-missing-as-of",
+      "title": "Data tools refuse queries without a usable as_of",
+      "adversarial": true,
+      "dimensions": [
+        "tool_correctness"
+      ],
+      "passed": true,
+      "seconds": 0.07,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "get_filings_as_of fails with AS_OF_REQUIRED",
+          "passed": true,
+          "detail": "got AS_OF_REQUIRED: Error executing tool get_filings_as_of: {\"error\": {\"code\": \"AS_OF_REQUIRED\", \"details\": {}, \"message\": \"every market or "
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "get_prices_as_of fails with AS_OF_REQUIRED",
+          "passed": true,
+          "detail": "got AS_OF_REQUIRED: Error executing tool get_prices_as_of: {\"error\": {\"code\": \"AS_OF_REQUIRED\", \"details\": {}, \"message\": \"as_of must be tim"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.07s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "28-mcp-missing-fields-and-roles",
+      "title": "Malformed calls and wrong roles fail closed over MCP",
+      "adversarial": true,
+      "dimensions": [
+        "tool_correctness",
+        "permission_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.2,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis fails with INVALID_INPUT",
+          "passed": true,
+          "detail": "got INVALID_INPUT: Error executing tool freeze_hypothesis: 1 validation error for freeze_hypothesisArguments\nbacktest\n  Field required [typ"
+        },
+        {
+          "dimension": "permission_fidelity",
+          "name": "freeze_hypothesis fails with FORBIDDEN",
+          "passed": true,
+          "detail": "got FORBIDDEN: Error executing tool freeze_hypothesis: {\"error\": {\"code\": \"FORBIDDEN\", \"details\": {\"action\": \"freeze_hypothesis\", \"role"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis succeeds",
+          "passed": true,
+          "detail": "{\n  \"experiment_id\": \"exp_dfd7653245662340b9557ad0\",\n  \"research_family\": \"golden-mcp\",\n  \"trial_number\": 1,\n  \"created\""
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.trial_number",
+          "passed": true,
+          "detail": "1 (expected 1)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.created",
+          "passed": true,
+          "detail": "True (expected True)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "start_run fails with NOT_FOUND",
+          "passed": true,
+          "detail": "got NOT_FOUND: Error executing tool start_run: {\"error\": {\"code\": \"NOT_FOUND\", \"details\": {}, \"message\": \"experiment exp_unknown is not"
+        },
+        {
+          "dimension": "permission_fidelity",
+          "name": "start_run fails with FORBIDDEN",
+          "passed": true,
+          "detail": "got FORBIDDEN: Error executing tool start_run: {\"error\": {\"code\": \"FORBIDDEN\", \"details\": {\"action\": \"start_run\", \"role\": \"guest\"}, \"me"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.20s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "29-edited-hypothesis-is-a-new-trial",
+      "title": "Changing a frozen experiment creates a new trial; re-freezing does not",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "permission_fidelity"
+      ],
+      "passed": true,
+      "seconds": 0.102,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis succeeds",
+          "passed": true,
+          "detail": "{\n  \"experiment_id\": \"exp_dfd7653245662340b9557ad0\",\n  \"research_family\": \"golden-mcp\",\n  \"trial_number\": 1,\n  \"created\""
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.trial_number",
+          "passed": true,
+          "detail": "1 (expected 1)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.created",
+          "passed": true,
+          "detail": "True (expected True)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis succeeds",
+          "passed": true,
+          "detail": "{\n  \"experiment_id\": \"exp_f01b5f89bac806e96a36b973\",\n  \"research_family\": \"golden-mcp\",\n  \"trial_number\": 2,\n  \"created\""
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.trial_number",
+          "passed": true,
+          "detail": "2 (expected 2)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.created",
+          "passed": true,
+          "detail": "True (expected True)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis succeeds",
+          "passed": true,
+          "detail": "{\n  \"experiment_id\": \"exp_dfd7653245662340b9557ad0\",\n  \"research_family\": \"golden-mcp\",\n  \"trial_number\": 1,\n  \"created\""
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.trial_number",
+          "passed": true,
+          "detail": "1 (expected 1)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "freeze_hypothesis.created",
+          "passed": true,
+          "detail": "False (expected False)"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "0.10s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    },
+    {
+      "id": "30-delay-fragile-signal",
+      "title": "A signal that fades with one more session of delay needs more evidence",
+      "adversarial": false,
+      "dimensions": [
+        "uncertainty_calibration",
+        "calculation_fidelity"
+      ],
+      "passed": true,
+      "seconds": 3.9,
+      "cost_usd": 0.0,
+      "checks": [
+        {
+          "dimension": "uncertainty_calibration",
+          "name": "gate recommendation",
+          "passed": true,
+          "detail": "needs_more_evidence: ['High-severity finding: Fragile to execution delay.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding fragility present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'fragility', 'judgment', 'leakage_clean']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.065455 vs 2.065455"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "0.999997 vs 0.999997"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": true,
+          "detail": "3.90s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.0000"
+        }
+      ]
+    }
+  ]
+}

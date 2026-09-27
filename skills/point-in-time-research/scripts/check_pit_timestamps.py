@@ -110,7 +110,10 @@ def _is_valid_value(value: Any) -> bool:
         return True
     if isinstance(value, bool):
         return False
-    return isinstance(value, (int, float))
+    try:
+        return isinstance(value, (int, float)) and math.isfinite(value)
+    except OverflowError:
+        return False
 
 
 def load(source: str) -> Any:
@@ -121,7 +124,7 @@ def load(source: str) -> Any:
             # utf-8-sig tolerates a BOM (e.g. files written by Windows PowerShell).
             with open(source, encoding="utf-8-sig") as fh:
                 text = fh.read()
-    except OSError as exc:
+    except (OSError, UnicodeError) as exc:
         raise BadInput(f"cannot read {source!r}: {exc}") from exc
     text = text.lstrip("﻿")
     if not text.strip():

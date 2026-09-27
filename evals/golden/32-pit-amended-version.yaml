@@ -1,0 +1,18 @@
+id: 32-pit-amended-version
+title: An amendment cannot replace the original before its acceptance
+kind: judgment
+dimensions:
+- evidence_fidelity
+- uncertainty_calibration
+judgment:
+  step_slug: point_in_time_review
+  payload:
+    filing: &id001
+      acceptanceDateTime: '2024-08-01T12:00:00Z'
+      filingDate: '2024-08-01'
+      reportDate: '2024-03-31'
+      version: amendment
+    decision_ts: '2024-05-03T20:00:00Z'
+  evidence_documents:
+    filing: *id001
+  expect_verdict: leakage

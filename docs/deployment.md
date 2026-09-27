@@ -1,6 +1,6 @@
 # Deployment
 
-Target: Fly.io (app), Neon (PostgreSQL), Cloudflare R2 (evidence blobs), per [ADR-0006](adr/0006-hosting.md). Everything here needs the owner's accounts, so these steps are run by the owner.
+Target: Fly.io (app), Neon (PostgreSQL), Cloudflare R2 (evidence blobs), per [ADR-0006](adr/0006-hosting.md). Provisioning and hosted verification need the owner's accounts. Local builds, distribution checks and smoke tests run before those actions.
 
 ## One-time setup
 
@@ -16,26 +16,45 @@ Target: Fly.io (app), Neon (PostgreSQL), Cloudflare R2 (evidence blobs), per [AD
      RSF_S3_ENDPOINT_URL='https://<account-id>.r2.cloudflarestorage.com' \
      RSF_S3_ACCESS_KEY_ID='…' RSF_S3_SECRET_ACCESS_KEY='…' \
      ANTHROPIC_API_KEY='…'
-   fly deploy --remote-only
+   # Deploy through the tagged release workflow after the setup below.
    ```
 
    `release_command = "rsf init-db"` runs the migrations before each release.
 
    `fly.toml` sets `RSF_TRUST_PROXY_HEADERS = "true"`, so the guest rate limit keys on Fly's `fly-client-ip` header. Turn it off anywhere the app is not behind Fly's proxy, because a client could set that header itself.
-4. **Seed the demo:** the machine auto-stops, so start it first (`fly machine start`), then run `fly ssh console -C "rsf --provider rules demo"`. This records the six scenarios that guests browse at `/demo`. Use the rules reviewer, so seeding costs nothing and the outcomes match `evals/demo_manifest.json`.
-5. **Create keys:** run `fly ssh console -C "rsf keys create --owner <name> --role researcher"` (or `approver`, `viewer`). The key is shown once.
-6. **GitHub:** add a `FLY_API_TOKEN` repository secret and a `production` environment for the release workflow. The GHCR image can stay private: Fly builds its own image from the tagged commit (`--remote-only`), and GHCR holds the scanned copy with its SBOM.
+4. **Prepare the release smoke key before the first deploy:** in a trusted local shell with the production `RSF_DATABASE_URL`, run `uv run rsf init-db`, then `uv run rsf keys create --owner release-smoke --role viewer`. Store the one-time key as the `RSF_SMOKE_API_KEY` GitHub production-environment secret; never put it in a file or workflow output. This avoids a first-release dependency on an already-running server.
+5. **Demo:** the release workflow starts the machine through a health request and seeds the six scenarios with `rsf --provider rules demo`. Seeding and the release smoke use no paid model calls. For a manual repair, start the specific machine and run `fly ssh console -C "rsf --provider rules demo"`.
+6. **Create user keys:** run `fly ssh console -C "rsf keys create --owner <name> --role researcher"` (or `approver`, `viewer`). The key is shown once.
+7. **GitHub:** create a protected `production` environment with `FLY_API_TOKEN` and `RSF_SMOKE_API_KEY`. The GHCR image may stay private: the deployment job authenticates with its read-only package token, pulls the scanned digest, authenticates to Fly's registry, and copies that exact digest before deployment. No production rebuild occurs. See [Fly registry authentication](https://fly.io/docs/flyctl/auth-docker/) and [private-registry deployment](https://fly.io/docs/blueprints/using-the-fly-docker-registry/).
 
 ## Releasing
 
-Bump the version in `pyproject.toml` and `src/research_factory/__init__.py` (a test keeps them equal) and commit. Then tag `vX.Y.Z` and push the tag. `.github/workflows/release.yml` then:
+Update the version in `pyproject.toml` and `src/research_factory/__init__.py`, run `uv lock`, and turn the changelog candidate into a dated release entry. Run `uv lock --check`, `uv run python scripts/check_release.py vX.Y.Z`, the complete CI checks, and the local deployment checks below. Commit the version fields, lock and changelog together. Then tag `vX.Y.Z` and push the tag. `.github/workflows/release.yml` then:
 
-1. checks that the tag matches the package version, then runs the tests and the golden evaluation suite;
+1. checks the tag, both version declarations and the lock; runs the entire reusable CI workflow, including lint, types, tests, PostgreSQL, rules evaluations, dependency audit, distributions and container smoke;
 2. builds the image and scans it (failing on high-severity issues that have a fix) **before** pushing it to GHCR;
-3. generates a CycloneDX SBOM and attaches it to the GitHub release;
-4. deploys with a rolling strategy and smoke-tests `/healthz` on the app named in `fly.toml`.
+3. generates a CycloneDX SBOM and attaches it and the immutable image digest to the GitHub release;
+4. pulls the exact GHCR digest, copies it to the authenticated Fly registry, checks digest equality, and deploys that digest with a rolling strategy;
+5. seeds the free demo, checks the expected version, `/readyz`, public reports, MCP initialization/tool discovery and guest reads, invalid-key rejection and a viewer-key read. Production deployments are serialized.
 
-The first release is `v1.0.0`; there is no separate v0.1 release ([ADR-0009](adr/0009-production-defaults.md)).
+Production uses Python 3.14.7 from a verified `python:3.14-slim-bookworm` digest. Both build and runtime layers upgrade OpenSSL/libssl3 to Debian security revision `3.0.22-1~deb12u1`; the base image still contained an older revision when verified. Python 3.14 avoids the Python 3.13-and-earlier tarfile issue described in the [official Python security announcement](https://mail.python.org/archives/list/security-announce@python.org/thread/EFJWGAZJA56AKSBR2WHMHQZO7RRLZPRH/). The image scan remains a required release gate. CI covers Python 3.12, 3.13 and 3.14; preserved candidate archives separately verify Linux 3.12 and the deployed Linux 3.14 runtime.
+
+Build inputs use a digest-pinned Python image and uv image, a locked application dependency set and GitHub Actions pinned to verified release commit SHAs (the release tags remain in comments). The build-backend dependency is not an immutable source pin. Update them deliberately and rerun the full validation.
+
+The first release is `v1.0.0`; there is no separate v0.1 release ([ADR-0009](adr/0009-production-defaults.md)). Complete code and local checks before tagging; record hosted smoke, rollback and restore results after deployment before declaring go-live complete. Do not claim that the first release has been exercised before it runs.
+
+## Local deployment checks
+
+```bash
+uv build --out-dir var/distributions
+uv run python scripts/check_distributions.py var/distributions
+docker compose up --build --wait --wait-timeout 180
+uv run python scripts/smoke_deployment.py http://127.0.0.1:8000 --record-runs var/container-runs.json
+docker compose restart app
+uv run python scripts/smoke_deployment.py http://127.0.0.1:8000 --expect-runs var/container-runs.json
+```
+
+The distribution check installs the wheel and locked dependencies into an isolated environment, runs demo/eval from another directory, and runs the shipped source-distribution tests. Compose runs PostgreSQL and the unprivileged application with persistent volumes; keep the volumes for persistence verification. CI removes only its own isolated stack afterwards. `/healthz` is liveness; `/readyz` checks the database and archived seeded evidence, and remains unavailable until a demo exists.
 
 ## Rollback
 
@@ -44,7 +63,9 @@ fly releases                    # find the last good release's image
 fly deploy --image <image-ref>  # redeploy it
 ```
 
-Migrations are additive. If a release added a migration that must be undone, run `alembic downgrade` against a restored copy first. Never downgrade production in place.
+Migrations are additive. If a release added a migration that must be undone, run `alembic downgrade` against a restored copy first. Never downgrade production in place. Rehearse one rollback to a previous known image, check the deployed version and client smoke, then redeploy the intended image; record the images, timestamps and result in the go-live drill log.
+
+After provisioning, record the selected Neon restore retention window and measured idle monthly cost for Fly, Neon and R2 against the approximately $25/month target. These are owner acceptance evidence, not values inferred from configuration.
 
 ## Cost controls
 

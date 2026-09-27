@@ -1,7 +1,9 @@
 """Real SEC EDGAR filings with semi-synthetic prices (RSF-057, ADR-0003).
 
-Filings, acceptance times, restatements and listing windows are real (public-domain SEC
-data, recorded in ``snapshots/edgar_universe_v1.json.gz``). Prices are simulated for those
+Filings and acceptance times come from public-domain SEC data, recorded in
+``snapshots/edgar_universe_v1.json.gz``. Listing windows are filing-derived proxies,
+some quarterly EPS values are derived, and revision classifications are heuristic.
+Prices are simulated for those
 companies by ``price_sim``, with a planted relationship to the EPS feature keyed to the
 *real* acceptance times. A period-end leak therefore inflates results by a known amount on
 real filing-timing quirks. Prices are always labelled as simulated.

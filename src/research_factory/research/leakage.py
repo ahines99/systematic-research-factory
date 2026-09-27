@@ -15,11 +15,16 @@ from typing import Any
 import numpy as np
 
 from ..data.calendar import EASTERN, close_utc
-from ..data.fundamentals import yoy_change
-from ..data.world import MarketDataset
+from ..data.fundamentals import FilingIndex, yoy_change
+from ..data.world import MarketDataset, filing_from_dict
 from ..domain.models import Severity
+from .features import FEATURES, STALE_AFTER_DAYS
 
 MAX_EXAMPLES = 5
+
+
+def _finite(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and bool(np.isfinite(value))
 
 
 @dataclass
@@ -77,7 +82,13 @@ def check_knowledge_times(lineage_rows: list[dict[str, Any]], accepted: dict[str
     misreported = 0
     examples: list[dict[str, Any]] = []
     for row in lineage_rows:
-        decision = datetime.fromisoformat(row["decision_ts"])
+        try:
+            decision = datetime.fromisoformat(row["decision_ts"])
+            if decision.tzinfo is None:
+                raise ValueError("naive decision")
+        except (KeyError, TypeError, ValueError):
+            unverifiable += 1
+            continue
         for inp in row["inputs"]:
             actual = _knowledge_time(inp["locator"], accepted)
             if actual is None:
@@ -91,7 +102,11 @@ def check_knowledge_times(lineage_rows: list[dict[str, Any]], accepted: dict[str
                         }
                     )
                 continue
-            claimed = datetime.fromisoformat(inp["knowledge_ts"])
+            try:
+                claimed = datetime.fromisoformat(inp["knowledge_ts"])
+            except (KeyError, TypeError, ValueError):
+                unverifiable += 1
+                continue
             if claimed != actual:
                 misreported += 1
             if actual > decision:
@@ -106,7 +121,7 @@ def check_knowledge_times(lineage_rows: list[dict[str, Any]], accepted: dict[str
                             "days_ahead": round((actual - decision).total_seconds() / 86400, 2),
                         }
                     )
-    total = violations + unverifiable
+    total = violations + unverifiable + misreported
     if total == 0:
         statement = f"All {sum(len(r['inputs']) for r in lineage_rows)} feature inputs were knowable at decision time."
     else:
@@ -212,24 +227,102 @@ def recompute(
     return None
 
 
+def check_lineage_semantics(
+    feature_doc: dict[str, Any], filings_doc: list[dict[str, Any]], dataset: MarketDataset
+) -> AuditCheck:
+    """Bind cited observations to the feature's security, exact window and decision close.
+
+    Timestamps and values supplied by a builder are insufficient: independently select
+    the acceptance-known filing versions or the feature's fixed price endpoints.
+    """
+    filings = FilingIndex(filing_from_dict(f) for f in filings_doc)
+    feature = feature_doc["feature"]
+    violations = 0
+    examples: list[dict[str, Any]] = []
+    for row in feature_doc["lineage"]["rows"]:
+        valid = False
+        try:
+            sid = row["security_id"]
+            i = dataset.index[sid]
+            decision = datetime.fromisoformat(row["decision_ts"])
+            day = decision.astimezone(EASTERN).date()
+            t = dataset.session_index(day)
+            if decision.tzinfo is None or decision != close_utc(day) or not dataset.listed_mask[t, i]:
+                raise ValueError("decision must be the listed security's session close")
+            locators = [inp["locator"] for inp in row["inputs"]]
+            if feature == "eps_yoy_change":
+                latest = filings.latest_original_known_at(sid, decision)
+                if latest is None:
+                    raise ValueError("no current filing known")
+                current = filings.version_known_at(sid, latest.fiscal_period, decision)
+                prior = filings.version_known_at(sid, FilingIndex.year_ago(latest.fiscal_period), decision)
+                valid = (
+                    current is not None
+                    and prior is not None
+                    and (day - current.period_end).days <= STALE_AFTER_DAYS
+                    and _finite(current.eps)
+                    and _finite(prior.eps)
+                    and locators == [f"filing:{current.accession}", f"filing:{prior.accession}"]
+                )
+            elif feature in ("momentum_60_5", "forward_return_20d"):
+                start, end = (t - 60, t - 5) if feature == "momentum_60_5" else (t, t + 20)
+                if start < 0 or end >= len(dataset.trading_days):
+                    raise ValueError("window outside snapshot")
+                endpoints = [start, end] if feature == "momentum_60_5" else [end]
+                valid = (
+                    locators == [f"price:{sid}:{dataset.day(j)}" for j in endpoints]
+                    and bool(np.isfinite(dataset.adjusted_returns[start + 1 : end + 1, i]).all())
+                    and bool(dataset.listed_mask[start : end + 1, i].all())
+                )
+        except (KeyError, IndexError, TypeError, ValueError):
+            valid = False
+        if not valid:
+            violations += 1
+            if len(examples) < MAX_EXAMPLES:
+                examples.append(
+                    {"security_id": row.get("security_id"), "decision_ts": row.get("decision_ts")}
+                )
+    return AuditCheck(
+        "lineage_semantics",
+        violations == 0 and feature in FEATURES,
+        Severity.BLOCKING,
+        "Cited inputs must match the security, feature window and acceptance-known versions at the decision close.",
+        violations + int(feature not in FEATURES),
+        examples,
+    )
+
+
 def check_lineage_complete(feature_doc: dict[str, Any]) -> AuditCheck:
     """Every feature value needs exactly one lineage row that cites at least one input (audit Q4)."""
     rows: dict[tuple[str, str], list[dict[str, Any]]] = {}
-    for row in feature_doc["lineage"]["rows"]:
-        day = datetime.fromisoformat(row["decision_ts"]).astimezone(EASTERN).date().isoformat()
-        rows.setdefault((row["security_id"], day), []).append(row)
     problems = 0
     examples: list[dict[str, Any]] = []
+    for row in feature_doc["lineage"]["rows"]:
+        try:
+            decision = datetime.fromisoformat(row["decision_ts"])
+            if decision.tzinfo is None:
+                raise ValueError("naive decision")
+            day = decision.astimezone(EASTERN).date().isoformat()
+            rows.setdefault((row["security_id"], day), []).append(row)
+        except (KeyError, TypeError, ValueError):
+            problems += 1
+    expected_keys = set()
     for r, session in enumerate(feature_doc["sessions"]):
         for sid, value in zip(feature_doc["security_ids"], feature_doc["values"][r], strict=True):
             if value is None:
                 continue
+            expected_keys.add((sid, session))
             matches = rows.get((sid, session), [])
-            ok = len(matches) == 1 and matches[0]["inputs"] and matches[0]["value"] == value
+            ok = (
+                _finite(value) and len(matches) == 1 and matches[0]["inputs"] and matches[0]["value"] == value
+            )
             if not ok:
                 problems += 1
                 if len(examples) < MAX_EXAMPLES:
                     examples.append({"security_id": sid, "session": session, "lineage_rows": len(matches)})
+    problems += sum(len(matches) for key, matches in rows.items() if key not in expected_keys)
+    problems += len(feature_doc["sessions"]) - len(set(feature_doc["sessions"]))
+    problems += len(feature_doc["security_ids"]) - len(set(feature_doc["security_ids"]))
     if problems == 0:
         return AuditCheck(
             "lineage_complete",
@@ -257,7 +350,7 @@ def check_values_reproduce(
     examples: list[dict[str, Any]] = []
     for row in feature_doc["lineage"]["rows"]:
         expected = recompute(feature_doc["feature"], row, eps, dataset)
-        if expected is None:
+        if expected is None or not _finite(expected) or not _finite(row["value"]):
             unreproducible += 1
         elif abs(expected - row["value"]) > 1e-9 * max(1.0, abs(expected)):
             mismatched += 1
@@ -269,7 +362,7 @@ def check_values_reproduce(
                     "security_id": row["security_id"],
                     "decision_ts": row["decision_ts"],
                     "value": row["value"],
-                    "recomputed": expected,
+                    "recomputed": expected if _finite(expected) else None,
                 }
             )
     total = mismatched + unreproducible
@@ -303,10 +396,19 @@ def audit_leakage(
     return LeakageReport(
         [
             check_lineage_complete(feature_doc),
+            check_lineage_semantics(feature_doc, filings_doc, dataset),
             check_values_reproduce(feature_doc, filings_doc, dataset),
             check_knowledge_times(feature_doc["lineage"]["rows"], accepted),
             check_execution_delay(backtest_doc),
             check_universe(backtest_doc, dataset),
-            check_target(input_sources, feature_doc["feature"]),
+            check_target(
+                input_sources
+                | (
+                    FEATURES[feature_doc["feature"]].input_sources
+                    if feature_doc["feature"] in FEATURES
+                    else frozenset()
+                ),
+                feature_doc["feature"],
+            ),
         ]
     )

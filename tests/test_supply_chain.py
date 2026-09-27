@@ -53,7 +53,7 @@ def test_env_files_are_ignored() -> None:
 
 def test_container_is_pinned_and_unprivileged() -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-    assert re.search(r"python:3\.12-slim-bookworm@sha256:[0-9a-f]{64}", dockerfile)
+    assert re.search(r"python:3\.14-slim-bookworm@sha256:[0-9a-f]{64}", dockerfile)
     assert re.search(r"ghcr.io/astral-sh/uv:\d+\.\d+\.\d+", dockerfile)
     assert "USER rsf" in dockerfile and "--locked" in dockerfile
 

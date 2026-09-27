@@ -1,9 +1,19 @@
 ---
 name: financial-research-statistics
-description: Interprets and challenges the statistical evidence for a systematic equity signal in the Systematic Research Factory. Covers multiple testing and the t > 3 hurdle, the deflated and probabilistic Sharpe ratios using the research ledger's trial count, Newey-West t-statistics for overlapping or serially correlated returns, block-bootstrap confidence intervals, IC and IC-IR, minimum track record length, and when not to trust a Sharpe ratio. Use when reading get_statistics output, deciding whether a run clears StatisticalThresholds (min_observations, min_newey_west_t, min_deflated_sharpe, bootstrap_confidence, require_ci_lower_above_zero), drafting the Statistical review section, answering "is this Sharpe ratio real?", or explaining a failed statistical gate. All arithmetic comes from tools, never from the model.
+description: Interprets and challenges the statistical evidence for a systematic equity signal in the Systematic Research Factory. Covers multiple testing and the t above 3 hurdle, the deflated and probabilistic Sharpe ratios using the research ledger's trial count, Newey-West t-statistics for overlapping or serially correlated returns, block-bootstrap confidence intervals, IC and IC-IR, minimum track record length, and when not to trust a Sharpe ratio. Use when reading get_statistics output, deciding whether a run clears StatisticalThresholds (min_observations, min_newey_west_t, min_deflated_sharpe, bootstrap_confidence, require_ci_lower_above_zero), drafting the Statistical review section, answering "is this Sharpe ratio real?", or explaining a failed statistical gate. All arithmetic comes from tools, never from the model.
 ---
 
 # Financial research statistics
+
+## Execution modes
+
+The external-agent procedure below uses MCP. In a tool-less judgment, `review_scope` lists
+the assigned checks and exclusions; selected references are included in the actual prompt.
+Review only the assigned claims using supplied statistics, including bootstrap metadata,
+Newey-West lag and variance source. Missing material metadata for an assigned check requires
+`needs_evidence=true`. Excluded stress tests remain unverified, never implicitly cleared.
+For JSON calculations, return only `{metric:index}` placeholders with `metric_refs` selecting
+cited artifact fields; code renders values and labels. Do not copy numeric prose from examples.
 
 **Hard rule:** the model never computes a return, Sharpe ratio, t-statistic, p-value or confidence
 interval. Every number comes from `get_statistics` (or another deterministic tool) and is quoted

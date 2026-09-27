@@ -1,0 +1,18 @@
+id: 31-pit-after-close
+title: An after-close acceptance was unavailable at the earlier decision
+kind: judgment
+dimensions:
+- evidence_fidelity
+- uncertainty_calibration
+judgment:
+  step_slug: point_in_time_review
+  payload:
+    filing: &id001
+      acceptanceDateTime: '2024-05-02T20:31:07Z'
+      filingDate: '2024-05-02'
+      reportDate: '2024-03-31'
+      version: original
+    decision_ts: '2024-05-02T20:00:00Z'
+  evidence_documents:
+    filing: *id001
+  expect_verdict: leakage

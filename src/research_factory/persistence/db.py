@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,20 @@ def make_engine(url: str) -> Engine:
             path = url.removeprefix("sqlite:///")
             Path(path).parent.mkdir(parents=True, exist_ok=True)
     engine = create_engine(url, **kwargs)
+    if isinstance(engine.pool, StaticPool):
+        # StaticPool deliberately shares one SQLite DBAPI connection. Without
+        # serialization, a reader closing its Connection can roll back a late
+        # model worker's accounting transaction on that same connection.
+        connection_lock = threading.RLock()
+
+        @event.listens_for(engine, "checkout")
+        def _lock_checkout(_dbapi: Any, _record: Any, _proxy: Any) -> None:
+            connection_lock.acquire()
+
+        @event.listens_for(engine, "checkin")
+        def _unlock_checkin(_dbapi: Any, _record: Any) -> None:
+            connection_lock.release()
+
     if url.startswith("sqlite"):
 
         @event.listens_for(engine, "connect")

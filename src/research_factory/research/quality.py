@@ -14,8 +14,10 @@ from typing import Any
 
 import numpy as np
 
-from ..data.calendar import EASTERN
+from ..data.calendar import EASTERN, close_utc, trading_days
 from ..data.world import MarketDataset
+from ..domain.errors import NeedsEvidenceError
+from ..domain.project_models import BacktestSpec
 
 STALE_SESSIONS = 10
 EXTREME_RETURN = 0.8
@@ -58,6 +60,30 @@ def scan_untrusted_text(text: str) -> list[str]:
     return [p.pattern for p in INJECTION_PATTERNS if p.search(text)]
 
 
+def validate_backtest_coverage(ds: MarketDataset, spec: BacktestSpec) -> None:
+    """Require all frozen-window sessions and their closes under our weekday calendar.
+
+    Weekend endpoints do not require price rows. A truncated view must never silently
+    change the frozen sample, including when ``as_of`` precedes the final session close.
+    """
+    required = trading_days(spec.start, spec.end)
+    if not len(required):
+        raise NeedsEvidenceError("the frozen backtest range contains no trading sessions")
+    last_close = close_utc(required[-1].item())
+    missing = np.setdiff1d(required, ds.trading_days)
+    if last_close > spec.as_of or len(missing):
+        raise NeedsEvidenceError(
+            "the dataset does not cover the frozen backtest range at its as_of cutoff",
+            details={
+                "start": spec.start.isoformat(),
+                "end": spec.end.isoformat(),
+                "last_required_close": last_close.isoformat(),
+                "missing_sessions": len(missing),
+                "missing_examples": [str(day) for day in missing[:MAX_EXAMPLES]],
+            },
+        )
+
+
 def check_dataset(ds: MarketDataset) -> list[QualityIssue]:
     issues: list[QualityIssue] = []
 
@@ -90,6 +116,27 @@ def check_dataset(ds: MarketDataset) -> list[QualityIssue]:
 
     listed = ds.listed_mask
     closes = ds.raw_close
+    invalid_numeric = np.isinf(closes) | ~np.isfinite(ds.split_ratio) | (ds.split_ratio <= 0)
+    if invalid_numeric.any():
+        issues.append(
+            QualityIssue(
+                "invalid_price_numbers",
+                True,
+                int(invalid_numeric.sum()),
+                "Prices must not be infinite and split ratios must be finite and positive.",
+            )
+        )
+    invalid_eps = [f for f in ds.filings if not np.isfinite(f.eps)]
+    if invalid_eps:
+        issues.append(
+            QualityIssue(
+                "non_finite_fundamentals",
+                True,
+                len(invalid_eps),
+                "Filing EPS values must be finite.",
+                [{"accession": f.accession} for f in invalid_eps[:MAX_EXAMPLES]],
+            )
+        )
     gaps = listed & np.isnan(closes)
     if gaps.any():
         t_idx, i_idx = np.nonzero(gaps)

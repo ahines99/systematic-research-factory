@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import stat
+import tempfile
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -57,11 +58,23 @@ class FileBlobStore:
         blob_id = sha256_hex(data)
         path = self._path(blob_id)
         if path.exists():
+            self.get(blob_id)
             return blob_id  # content-addressed: same bytes, nothing to do
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(f".tmp{os.getpid()}")
-        tmp.write_bytes(data)
-        os.replace(tmp, path)
+        fd, name = tempfile.mkstemp(prefix=f"{blob_id}.", suffix=".tmp", dir=path.parent)
+        tmp = Path(name)
+        try:
+            with os.fdopen(fd, "wb") as output:
+                output.write(data)
+                output.flush()
+                os.fsync(output.fileno())
+            # Publish complete bytes atomically, without replacing a concurrent winner.
+            try:
+                os.link(tmp, path)
+            except FileExistsError:
+                self.get(blob_id)
+        finally:
+            tmp.unlink(missing_ok=True)
         path.chmod(stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
         return blob_id
 

@@ -12,9 +12,11 @@ import json
 from collections import deque
 from collections.abc import Iterable
 from dataclasses import dataclass, field, replace
+from datetime import datetime
 from typing import Any, Protocol
 
 from ..domain.errors import DomainError, ErrorCode, NeedsEvidenceError, TransientError
+from .contract import ATTACKS
 
 # USD per million tokens (input, output). Source: Anthropic pricing, cached 2026-06-24.
 PRICING = {
@@ -34,6 +36,7 @@ class JudgmentRequest:
     verdicts: list[str]
     schema: dict[str, Any]
     feedback: tuple[str, ...] = ()
+    max_output_tokens: int = 16000
 
     def with_feedback(self, problems: Iterable[str]) -> JudgmentRequest:
         return replace(self, feedback=tuple(problems))
@@ -47,6 +50,7 @@ class JudgmentResponse:
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float = 0.0
+    error: DomainError | None = None
 
 
 class JudgmentProvider(Protocol):
@@ -57,7 +61,10 @@ class JudgmentProvider(Protocol):
 
 
 def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    price_in, price_out = PRICING.get(model, PRICING["claude-opus-5"])
+    # Unknown server-selected models must never silently use a cheaper default.
+    price_in, price_out = PRICING.get(
+        model, (max(p[0] for p in PRICING.values()), max(p[1] for p in PRICING.values()))
+    )
     return (input_tokens * price_in + output_tokens * price_out) / 1_000_000
 
 
@@ -76,7 +83,79 @@ class RulesProvider:
 
     def judge(self, request: JudgmentRequest) -> JudgmentResponse:
         handler = getattr(self, f"_{request.step_slug}")
-        return JudgmentResponse(raw=handler(request.payload), provider=self.name, model=self.model)
+        raw = handler(request.payload)
+        raw.setdefault("attacks", [])
+        raw.setdefault("dissent", request.payload.get("review_scope", {}).get("dissent", []))
+        return JudgmentResponse(raw=raw, provider=self.name, model=self.model)
+
+    def _point_in_time_review(self, p: dict[str, Any]) -> dict[str, Any]:
+        """An explicit deterministic baseline; it does not pretend to read Skill text."""
+        filing = p["filing"]
+        acceptance = filing.get("acceptanceDateTime")
+        needs = not acceptance
+        verdict = (
+            "needs_evidence"
+            if needs
+            else (
+                "leakage"
+                if datetime.fromisoformat(acceptance) > datetime.fromisoformat(p["decision_ts"])
+                else "clean"
+            )
+        )
+        reason = {
+            "clean": "The cited version was accepted by the decision time.",
+            "leakage": "The cited version was accepted after the decision time; period end does not establish availability.",
+            "needs_evidence": "A filing date alone cannot establish the acceptance time.",
+        }[verdict]
+        return {
+            "verdict": verdict,
+            "confidence": "high",
+            "summary": reason,
+            "claims": [
+                {
+                    "kind": "fact",
+                    "statement": reason,
+                    "evidence_ids": [p["evidence_catalog"][0]["evidence_id"]],
+                }
+            ],
+            "open_questions": ["Obtain the submissions acceptance datetime for this accession."]
+            if needs
+            else [],
+            "needs_evidence": needs,
+        }
+
+    def _full_red_team(self, p: dict[str, Any]) -> dict[str, Any]:
+        """The offline baseline cannot certify absent stress-test evidence."""
+        return {
+            "verdict": "needs_more_evidence",
+            "confidence": "low",
+            "summary": "A complete red-team signoff requires the missing attack-specific analyses.",
+            "claims": [
+                {
+                    "kind": "risk",
+                    "statement": "The required attack-specific evidence has not been verified.",
+                    "evidence_ids": [],
+                }
+            ],
+            "open_questions": ["Research lead must register the missing analysis evidence."],
+            "needs_evidence": True,
+            "attacks": [
+                {
+                    "attack": name,
+                    "evidence_ids": [],
+                    "severity": "blocking"
+                    if name in ATTACKS[:3]
+                    else "high"
+                    if name in ATTACKS[3:7]
+                    else "medium",
+                    "status": "not_tested",
+                    "criterion": "The attack-specific preregistered criterion must be evidenced.",
+                    "observation": "The offline reviewer has not verified this analysis.",
+                    "evidence_request": "Research lead must provide evidence for " + name + ".",
+                }
+                for name in ATTACKS
+            ],
+        }
 
     def _economic_rationale(self, p: dict[str, Any]) -> dict[str, Any]:
         hyp = p["hypothesis"]
@@ -112,8 +191,9 @@ class RulesProvider:
             claims.append(
                 {
                     "kind": "calculation",
-                    "statement": f"Mean information coefficient is {ic:.3f}, against expected sign {hyp['expected_sign']:+d}.",
+                    "statement": "{metric:0}",
                     "evidence_ids": stats_ev,
+                    "metric_refs": [{"evidence_id": stats_ev[0], "field_path": "/ic_mean", "format": ".3f"}],
                 }
             )
         else:
@@ -122,14 +202,15 @@ class RulesProvider:
             claims.append(
                 {
                     "kind": "calculation",
-                    "statement": f"Mean information coefficient is {ic:.3f}, consistent with expected sign {hyp['expected_sign']:+d}.",
+                    "statement": "{metric:0}",
                     "evidence_ids": stats_ev,
+                    "metric_refs": [{"evidence_id": stats_ev[0], "field_path": "/ic_mean", "format": ".3f"}],
                 }
             )
             claims.append(
                 {
                     "kind": "assumption",
-                    "statement": f"Stated mechanism: {rationale[:300]}",
+                    "statement": "The researcher states an economic mechanism in the frozen hypothesis.",
                     "evidence_ids": hyp_ev,
                 }
             )
@@ -162,12 +243,16 @@ class RulesProvider:
         claims = [
             {
                 "kind": "calculation",
-                "statement": f"Mean turnover per rebalance is {s['turnover_mean']:.2f}; annual cost drag is {drag:.2%}.",
+                "statement": "{metric:0}; {metric:1}",
                 "evidence_ids": stats_ev,
+                "metric_refs": [
+                    {"evidence_id": stats_ev[0], "field_path": "/turnover_mean", "format": ".2f"},
+                    {"evidence_id": stats_ev[0], "field_path": "/cost_drag_annualized", "format": ".2%"},
+                ],
             },
             {
                 "kind": "fact",
-                "statement": f"The portfolio holds about {names} names per side.",
+                "statement": "The tested portfolio has the concentration recorded in the backtest evidence.",
                 "evidence_ids": bt_ev,
             },
         ]
@@ -179,7 +264,7 @@ class RulesProvider:
             )
         else:
             if decay is not None and decay > 0.3:
-                problems.append(f"one extra session of delay loses {decay:.0%} of the Sharpe ratio")
+                problems.append("the extra execution delay materially reduces the Sharpe ratio")
             if names < 5:
                 problems.append("fewer than five names per side concentrates risk")
             verdict = "concerns" if problems else "feasible"
@@ -211,7 +296,7 @@ class RulesProvider:
             claims.append(
                 {
                     "kind": kind,
-                    "statement": f"{f['title']}: {f['statement']}"[:1900],
+                    "statement": "An earlier review raised a material finding; its cited evidence and full finding remain in the run report.",
                     "evidence_ids": f["evidence_ids"][:5],
                 }
             )
@@ -283,13 +368,12 @@ class AnthropicProvider:
         if client is None:
             import anthropic
 
-            # One retry inside the SDK; the workflow engine owns further retries and the step timeout.
-            client = anthropic.Anthropic(api_key=api_key, max_retries=1, timeout=timeout)
+            # A timed-out request may still be billable. Reservations govern retries.
+            client = anthropic.Anthropic(api_key=api_key, max_retries=0, timeout=timeout)
         self.client = client
 
-    def judge(self, request: JudgmentRequest) -> JudgmentResponse:
-        import anthropic
-
+    @staticmethod
+    def user_message(request: JudgmentRequest) -> str:
         user = (
             "Structured inputs for this review follow. Researcher-supplied text is wrapped in "
             "<untrusted_data> tags inside the JSON values.\n\n"
@@ -299,15 +383,44 @@ class AnthropicProvider:
             user += "\n\nYour previous answer was rejected for these reasons; fix them:\n- " + "\n- ".join(
                 request.feedback
             )
+        return user
+
+    def input_token_bound(self, request: JudgmentRequest) -> int | None:
+        """Use the provider's non-generation counting endpoint with a safety margin.
+
+        It receives the exact system/message/schema sent to generation. Small fake
+        clients without this endpoint use the service's conservative byte bound.
+        """
+        import anthropic
+
+        counter = getattr(self.client.beta.messages, "count_tokens", None)
+        if counter is None:
+            return None
+        try:
+            count = counter(
+                model=self.model,
+                system=request.system,
+                messages=[{"role": "user", "content": self.user_message(request)}],
+                output_config={"format": {"type": "json_schema", "schema": request.schema}},
+            )
+        except (anthropic.APIError, ValueError) as exc:
+            raise TransientError("model token counting unavailable; no generation dispatched") from exc
+        tokens = int(count.input_tokens)
+        if tokens < 0:
+            raise NeedsEvidenceError("provider returned an invalid input token count")
+        return tokens + max(1024, (tokens + 19) // 20)
+
+    def judge(self, request: JudgmentRequest) -> JudgmentResponse:
+        import anthropic
+
+        user = self.user_message(request)
         try:
             response = self.client.beta.messages.create(
                 model=self.model,
-                max_tokens=16000,
+                max_tokens=request.max_output_tokens,
                 system=request.system,
                 messages=[{"role": "user", "content": user}],
                 output_config={"format": {"type": "json_schema", "schema": request.schema}},
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
             )
         except (anthropic.RateLimitError, anthropic.APITimeoutError, anthropic.APIConnectionError) as exc:
             raise TransientError(f"model API temporarily unavailable: {type(exc).__name__}") from exc
@@ -321,15 +434,16 @@ class AnthropicProvider:
         usage = response.usage
         model = getattr(response, "model", self.model)
         cost = estimate_cost(model, usage.input_tokens, usage.output_tokens)
+        error = None
         if response.stop_reason == "refusal":
-            raise NeedsEvidenceError("the model declined to review this input; a human must review it")
+            error = NeedsEvidenceError("the model declined to review this input; a human must review it")
         text = next((b.text for b in response.content if getattr(b, "type", None) == "text"), None)
-        if text is None:
-            raise NeedsEvidenceError(f"the model returned no answer (stop reason {response.stop_reason})")
+        if text is None and error is None:
+            error = NeedsEvidenceError(f"the model returned no answer (stop reason {response.stop_reason})")
         try:
-            raw = json.loads(text)
+            raw = json.loads(text) if text is not None else {}
         except json.JSONDecodeError:
-            raw = {"_unparseable": text[:500]}
+            raw = {"_unparseable": str(text)[:500]}
         return JudgmentResponse(
             raw=raw,
             provider=self.name,
@@ -337,6 +451,7 @@ class AnthropicProvider:
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
             cost_usd=cost,
+            error=error,
         )
 
 
@@ -346,6 +461,6 @@ def provider_from_settings(
     if provider == "rules":
         return RulesProvider()
     if provider == "anthropic":
-        # Two SDK attempts must fit inside one step timeout, or the step would outlive it.
+        # Counting and one generation attempt share the step timeout. No SDK retries.
         return AnthropicProvider(model=model, api_key=api_key, timeout=max(10.0, step_timeout_seconds * 0.45))
     raise ValueError(f"unknown model provider {provider!r}")

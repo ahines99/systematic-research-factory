@@ -4,12 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,18 +20,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.12", "3.13"]
+        python: ["3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.18"
       - run: uv sync --locked --all-extras --python ${{ matrix.python }}
-      - run: uv run ruff check src tests
-      - run: uv run ruff format --check src tests
+      - run: uv run ruff check src tests scripts
+      - run: uv run ruff format --check src tests scripts
       - run: uv run mypy
       - run: uv run pytest --cov --cov-report=term --cov-report=xml
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.python == '3.12'
         with:
           name: coverage
@@ -50,24 +51,24 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://postgres:rsf-ci-only@localhost:5432/postgres
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.18"
-      - run: uv sync --locked --all-extras --python 3.12
-      - run: uv run pytest tests/test_persistence.py tests/test_postgres.py -v
+      - run: uv sync --locked --all-extras --python 3.14
+      - run: uv run pytest tests/test_persistence.py tests/test_postgres.py tests/test_remediation_judgment.py tests/test_remediation_workflow.py -v
 
   evals:
     name: golden evaluation suite (RSF-032)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.18"
-      - run: uv sync --locked --python 3.12
+      - run: uv sync --locked --python 3.14
       - run: uv run rsf eval --provider rules --out var/scorecard.json
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: scorecard
@@ -77,9 +78,44 @@ jobs:
     name: dependency audit (RSF-075)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.18"
       - run: uv export --locked --all-extras --no-dev --format requirements-txt --no-hashes --no-emit-project > requirements.txt
       - run: uvx pip-audit@2.10.1 --disable-pip --no-deps --strict -r requirements.txt
+
+  distributions:
+    name: wheel and source distribution installation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.18"
+      - run: uv sync --locked --all-extras --python 3.14
+      - run: uv build --out-dir var/distributions
+      - run: uv run python scripts/check_distributions.py var/distributions
+
+  container:
+    name: container, PostgreSQL and client smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.18"
+      - run: uv sync --locked --python 3.14
+      - run: docker compose up --build --wait --wait-timeout 180
+      - run: uv run python scripts/smoke_deployment.py http://127.0.0.1:8000 --record-runs var/container-runs.json
+      - name: verify non-root runtime and persisted demo after restart
+        run: |
+          test "$(docker compose exec -T app id -u)" = "10001"
+          docker compose restart app
+          uv run python scripts/smoke_deployment.py http://127.0.0.1:8000 --expect-runs var/container-runs.json
+      - name: collect logs
+        if: failure()
+        run: docker compose logs
+      - name: stop isolated stack
+        if: always()
+        run: docker compose down --volumes

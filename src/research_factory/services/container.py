@@ -93,7 +93,9 @@ def build_services(
         blobs=blobs,
         evidence=EvidenceStore(repos.evidence, blobs, clock),
         audit=audit,
-        ledger=ResearchLedger(repos.experiments, audit, clock),
+        ledger=ResearchLedger(
+            repos.experiments, audit, clock, transaction=lambda: repos.transaction(guard_ledger=True)
+        ),
         approvals=ApprovalService(repos, audit, clock),
         budget=BudgetGuard(settings.budgets, repos.usage, repos.runs, clock),
         provider=provider,

@@ -17,12 +17,16 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from contextlib import suppress
+from contextvars import ContextVar
+from dataclasses import replace
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 import anyio
 from sqlalchemy.exc import DBAPIError, OperationalError
 
+from ..config import StatisticalThresholds
 from ..domain.errors import (
     BudgetExceededError,
     ConflictError,
@@ -43,6 +47,7 @@ from ..domain.project_models import (
 )
 from ..observability import bind, get_logger, unbind
 from .base import Step, StepContext, StepOutcome
+from .execution import execution_manifest, runtime_identity
 
 if TYPE_CHECKING:
     from ..services.container import Services
@@ -78,15 +83,21 @@ def idempotency_key(experiment_id: str, step: str, prior: Sequence[str]) -> str:
 
 
 class WorkflowEngine:
-    def __init__(self, services: Services, steps: Sequence[Step]):
+    def __init__(self, services: Services, steps: Sequence[Step], *, manifest: dict[str, Any] | None = None):
         self.services = services
         self.steps = list(steps)
+        self.manifest = manifest
+        self._owner: ContextVar[str | None] = ContextVar("workflow_owner", default=None)
 
     # ----------------------------------------------------------------- lifecycle
 
     def create_run(
         self, experiment_id: str, requested_by: str, project_type: str = "systematic_research"
     ) -> WorkflowRun:
+        with self.services.repos.transaction():
+            return self._create_run(experiment_id, requested_by, project_type)
+
+    def _create_run(self, experiment_id: str, requested_by: str, project_type: str) -> WorkflowRun:
         record = self.services.ledger.get(experiment_id)
         now = self.services.clock.now()
         run = WorkflowRun(
@@ -97,6 +108,7 @@ class WorkflowEngine:
             requested_by=requested_by,
             created_at=now,
             updated_at=now,
+            execution_manifest=self.manifest or execution_manifest(self.services.settings),
         )
         self.services.repos.runs.add(run)
         self.services.audit.append(
@@ -119,6 +131,23 @@ class WorkflowEngine:
         return await self.advance(run.run_id, actor=requested_by)
 
     def _transition(
+        self,
+        run: WorkflowRun,
+        status: RunStatus,
+        actor: str,
+        *,
+        reason: str | None = None,
+        current_step: str | None = None,
+        decision: ApprovalDecision | None = None,
+    ) -> WorkflowRun:
+        with self.services.repos.transaction(
+            run_id=run.run_id, owner=self._owner.get(), now=self.services.clock.now()
+        ):
+            return self._transition_locked(
+                run, status, actor, reason=reason, current_step=current_step, decision=decision
+            )
+
+    def _transition_locked(
         self,
         run: WorkflowRun,
         status: RunStatus,
@@ -161,12 +190,14 @@ class WorkflowEngine:
         run = self.get_run(run_id)
         if run.status is not RunStatus.NEEDS_REVIEW:
             raise ConflictError(f"only a paused run can be cancelled; this one is {run.status}")
-        owner = f"{actor}:{uuid.uuid4().hex[:12]}"
+        owner = f"worker_{uuid.uuid4().hex}"
         if not self.services.repos.runs.claim(run_id, owner, self.services.clock.now(), self._lease_until()):
             raise ConflictError("this run is being advanced by another worker")
+        token = self._owner.set(owner)
         try:
             return self._transition(run, RunStatus.FAILED, actor, reason=f"CANCELLED by {actor}: {reason}")
         finally:
+            self._owner.reset(token)
             self.services.repos.runs.release(run_id, owner)
 
     # ----------------------------------------------------------------- execution
@@ -179,28 +210,87 @@ class WorkflowEngine:
         run = self.get_run(run_id)
         if run.status.terminal:
             return run
-        owner = f"{actor}:{uuid.uuid4().hex[:12]}"
+        recorded_runtime = run.execution_manifest.get("runtime")
+        if recorded_runtime and recorded_runtime != runtime_identity():
+            raise ConflictError("resume requires the run's recorded code/dependency/platform runtime")
+        owner = f"worker_{uuid.uuid4().hex}"
         if not self.services.repos.runs.claim(run_id, owner, self.services.clock.now(), self._lease_until()):
             raise ConflictError("this run is being advanced by another worker; try again when it pauses")
-        record = self.services.ledger.get(run.experiment_id)
+        token = self._owner.set(owner)
         bind(run_id=run_id, experiment_id=run.experiment_id)
         try:
+            record = self.services.ledger.get(run.experiment_id)
             run = self._transition(self.get_run(run_id), RunStatus.RUNNING, actor)
-            return await self._advance(run, record, actor, owner)
-        except DomainError:
+            with self.services.repos.fenced(run_id, owner, self.services.clock.now):
+                return await self._advance_with_heartbeat(run, record, actor, owner)
+        except anyio.get_cancelled_exc_class() as exc:
+            with suppress(ConflictError):
+                self._pause_after_error(run_id, actor, exc)
+            raise
+        except DomainError as exc:
+            # A validation/context conflict while we still own the run must be
+            # resumable; a fenced-out worker must not write even a pause event.
+            with suppress(ConflictError):
+                self._pause_after_error(run_id, actor, exc)
             raise
         except Exception as exc:  # anything unexpected outside a step: pause, never leave it "running"
             log.exception("engine_error", error_type=type(exc).__name__)
             return self._pause_after_error(run_id, actor, exc)
         finally:
+            self._owner.reset(token)
             try:
                 self.services.repos.runs.release(run_id, owner)
             finally:
                 unbind("run_id", "experiment_id", "step")
 
-    def _pause_after_error(self, run_id: str, actor: str, exc: Exception) -> WorkflowRun:
+    async def _advance_with_heartbeat(
+        self, run: WorkflowRun, record: Any, actor: str, owner: str
+    ) -> WorkflowRun:
+        result: WorkflowRun | None = None
+        failure: BaseException | None = None
+        lost = False
+        async with anyio.create_task_group() as group:
+
+            async def heartbeat() -> None:
+                nonlocal lost
+                while True:
+                    await anyio.sleep(max(0.001, self.services.settings.lease_seconds / 3))
+                    try:
+                        renewed = self.services.repos.runs.renew(run.run_id, owner, self._lease_until())
+                    except Exception:
+                        renewed = False
+                    if not renewed:
+                        lost = True
+                        group.cancel_scope.cancel()
+                        return
+
+            group.start_soon(heartbeat)
+            try:
+                result = await self._advance(run, record, actor, owner)
+            except BaseException as exc:
+                failure = exc
+            finally:
+                group.cancel_scope.cancel()
+        if lost:
+            raise ConflictError("the run's lease was lost; this worker stopped without committing")
+        if failure is not None:
+            raise failure
+        assert result is not None
+        return result
+
+    def _pause_after_error(self, run_id: str, actor: str, exc: BaseException) -> WorkflowRun:
+        with self.services.repos.transaction(
+            run_id=run_id, owner=self._owner.get(), now=self.services.clock.now()
+        ):
+            return self._pause_error_locked(run_id, actor, exc)
+
+    def _pause_error_locked(self, run_id: str, actor: str, exc: BaseException) -> WorkflowRun:
         infra = isinstance(exc, INFRASTRUCTURE_ERRORS)
-        code = "UPSTREAM_UNAVAILABLE" if infra else "INTERNAL"
+        code = (
+            "CANCELLED"
+            if not isinstance(exc, Exception)
+            else ("UPSTREAM_UNAVAILABLE" if infra else "INTERNAL")
+        )
         self.services.audit.append(
             run_id=run_id,
             step="run",
@@ -210,7 +300,7 @@ class WorkflowEngine:
         )
         current = self.get_run(run_id)
         if current.status is RunStatus.RUNNING:
-            return self._transition(
+            return self._transition_locked(
                 current,
                 RunStatus.NEEDS_REVIEW,
                 actor,
@@ -222,6 +312,15 @@ class WorkflowEngine:
         run_id = run.run_id
         artifacts: dict[str, str] = {}
         prior: list[str] = []
+        manifest = run.execution_manifest
+        settings = self.services.settings
+        if manifest.get("thresholds"):
+            settings = settings.model_copy(
+                update={"thresholds": StatisticalThresholds.model_validate(manifest["thresholds"])}
+            )
+        execution_services = replace(
+            self.services, settings=settings, pinned_snapshots=dict(manifest.get("snapshots", {}))
+        )
 
         for step in self.steps:
             key = idempotency_key(run.experiment_id, step.name, prior)
@@ -239,25 +338,33 @@ class WorkflowEngine:
                     actor=actor,
                     payload={"idempotency_key": key},
                 )
+                fail_run = existing.fail_run
+                decision = existing.run_decision
+                if not run.execution_manifest and existing.artifact_evidence_id:
+                    # Migration cannot inspect the external blob store. Recover known
+                    # legacy terminal effects from the durable artifact at resume time.
+                    document = self.services.evidence.load_json(existing.artifact_evidence_id)
+                    if step.name == "Leakage audit":
+                        fail_run = fail_run or bool(document.get("blocking"))
+                    if document.get("format") == "rsf-committee-decision/1" and document.get("decision"):
+                        decision = ApprovalDecision(document["decision"])
+                if fail_run:
+                    return self._transition(
+                        run,
+                        RunStatus.FAILED,
+                        actor,
+                        reason=existing.error_message or f"{step.name} failed",
+                        current_step=step.name,
+                    )
+                if decision is not None:
+                    run = run.model_copy(update={"decision": decision})
                 continue
 
             if not self.services.repos.runs.renew(run_id, owner, self._lease_until()):
                 raise ConflictError("the run's lease was taken over by another worker")
-            if existing is not None:
-                superseded = self.services.repos.findings.supersede_step(
-                    run_id, step.name, self.services.clock.now()
-                )
-                if superseded:
-                    self.services.audit.append(
-                        run_id=run_id,
-                        step=step.name,
-                        event_type="findings_superseded",
-                        actor=actor,
-                        payload={"count": superseded, "previous_status": str(existing.status)},
-                    )
             run = self._transition(run, RunStatus.RUNNING, actor, current_step=step.name)
             bind(step=step.name)
-            ctx = StepContext(run=run, record=record, services=self.services, artifacts=dict(artifacts))
+            ctx = StepContext(run=run, record=record, services=execution_services, artifacts=dict(artifacts))
             outcome, attempts = await self._execute(step, ctx, actor)
             artifact_id = self._persist(run, step, key, outcome, attempts, actor)
 
@@ -352,7 +459,33 @@ class WorkflowEngine:
     def _persist(
         self, run: WorkflowRun, step: Step, key: str, outcome: StepOutcome, attempts: int, actor: str
     ) -> str | None:
+        with self.services.repos.transaction(
+            run_id=run.run_id,
+            owner=self._owner.get(),
+            now=self.services.clock.now(),
+            guard_ledger=outcome.gate_context is not None,
+        ):
+            return self._persist_locked(run, step, key, outcome, attempts, actor)
+
+    def _persist_locked(
+        self, run: WorkflowRun, step: Step, key: str, outcome: StepOutcome, attempts: int, actor: str
+    ) -> str | None:
         services = self.services
+        if outcome.gate_context is not None and outcome.gate_context != services.approvals.context(
+            run.run_id
+        ):
+            raise ConflictError(
+                "the committee review inputs changed before the checkpoint; resume to review again"
+            )
+        superseded = services.repos.findings.supersede_step(run.run_id, step.name, services.clock.now())
+        if superseded:
+            services.audit.append(
+                run_id=run.run_id,
+                step=step.name,
+                event_type="findings_superseded",
+                actor=actor,
+                payload={"count": superseded},
+            )
         artifact_id: str | None = None
         if outcome.artifact is not None:
             ref = services.evidence.record_json(
@@ -376,9 +509,16 @@ class WorkflowEngine:
                 idempotency_key=key,
                 artifact_evidence_id=artifact_id,
                 attempts=attempts,
-                error_code=outcome.reason_code if outcome.status is not StepStatus.COMPLETED else None,
-                error_message=outcome.reason if outcome.status is not StepStatus.COMPLETED else None,
+                error_code=outcome.reason_code
+                if outcome.status is not StepStatus.COMPLETED or outcome.fail_run
+                else None,
+                error_message=outcome.reason
+                if outcome.status is not StepStatus.COMPLETED or outcome.fail_run
+                else None,
                 created_at=now,
+                fail_run=outcome.fail_run,
+                run_decision=ApprovalDecision(outcome.run_decision) if outcome.run_decision else None,
+                gate_context=outcome.gate_context,
             )
         )
         log.info(

@@ -155,6 +155,7 @@ class WorkflowRun(BaseModel):
     status_reason: str | None = None
     created_at: UTCDateTime
     updated_at: UTCDateTime
+    execution_manifest: dict[str, Any] = Field(default_factory=dict)
 
 
 class StepResult(BaseModel):
@@ -169,6 +170,9 @@ class StepResult(BaseModel):
     error_code: str | None = None
     error_message: str | None = None
     created_at: UTCDateTime
+    fail_run: bool = False
+    run_decision: ApprovalDecision | None = None
+    gate_context: str | None = None
 
 
 class ApprovalRecord(BaseModel):
@@ -181,6 +185,7 @@ class ApprovalRecord(BaseModel):
     decision: ApprovalDecision
     reason: str = Field(min_length=3)
     created_at: UTCDateTime
+    gate_context: str = "legacy"
 
 
 class ExperimentRecord(BaseModel):

@@ -13,11 +13,11 @@ from typing import Any
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
 from mcp.server.mcpserver.exceptions import ResourceError, ToolError
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from .. import __version__
 from ..auth import ApiKeyService, Principal
-from ..domain.errors import NotFoundError
+from ..domain.errors import InvalidInputError, NotFoundError
 from ..domain.policies import POLICIES
 from ..report import build_run_report
 from ..services.container import Services
@@ -38,6 +38,24 @@ class Health(BaseModel):
     version: str
 
 
+class GovernedMCPServer(MCPServer):
+    """Normalize only the SDK's proven input-validation failure, never arbitrary errors."""
+
+    async def call_tool(
+        self, name: str, arguments: dict[str, Any], context: Context[Any, Any] | None = None
+    ) -> Any:
+        try:
+            return await super().call_tool(name, arguments, context)
+        except ToolError as exc:
+            if type(exc) is ToolError and isinstance(exc.__cause__, ValidationError):
+                error = InvalidInputError(
+                    "tool arguments failed schema validation",
+                    details={"fields": [".".join(str(p) for p in e["loc"]) for e in exc.__cause__.errors()]},
+                )
+                raise ToolError(json.dumps({"error": error.to_dict()})) from None
+            raise
+
+
 async def governed_resource(*args: Any) -> str:
     """Resources report policy errors as ResourceError with the same typed JSON body as tools."""
     try:
@@ -51,7 +69,7 @@ def create_server(services: Services, *, local_principal: Principal | None = Non
     deps = ServerDeps(services=services, keys=ApiKeyService(services.repos.api_keys, services.clock))
     if local_principal is not None:
         deps.local_principal = local_principal
-    mcp = MCPServer("Systematic Research Factory", version=__version__, instructions=INSTRUCTIONS)
+    mcp = GovernedMCPServer("Systematic Research Factory", version=__version__, instructions=INSTRUCTIONS)
 
     @mcp.tool(description="Service health for diagnostics.")
     async def healthcheck(ctx: Context[Any, Any] | None = None) -> Health:

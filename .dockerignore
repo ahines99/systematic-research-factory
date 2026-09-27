@@ -9,6 +9,8 @@ var
 .env
 .env.*
 tests
-evals
+evals/*
+!evals/golden/
+!evals/golden/**
 docs
 examples

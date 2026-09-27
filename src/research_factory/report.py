@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import json
 from typing import Any
 
 from .domain.errors import NotFoundError
@@ -25,7 +26,16 @@ def build_run_report(services: Services, run_id: str) -> dict[str, Any]:
     spec = record.experiment.backtest
     stats: dict[str, Any] | None = None
     backtest: dict[str, Any] | None = None
+    memos: list[dict[str, Any]] = []
     for s in steps:
+        if s.artifact_evidence_id and s.step in (
+            "Economic rationale review",
+            "Implementation review",
+            "Research committee",
+        ):
+            judgment = services.evidence.load_json(s.artifact_evidence_id)
+            if "memo" in judgment:
+                memos.append({"step": s.step, "evidence_id": s.artifact_evidence_id, **judgment["memo"]})
         if s.artifact_evidence_id and s.step == "Statistical review":
             doc = services.evidence.load_json(s.artifact_evidence_id)
             stats = {
@@ -77,6 +87,7 @@ def build_run_report(services: Services, run_id: str) -> dict[str, Any]:
             key=lambda f: (SEVERITY_ORDER[f["severity"]], f["step"]),
         ),
         "backtest": backtest,
+        "review_memos": memos,
         "statistics": stats,
         "approvals": [a.model_dump(mode="json") for a in repos.approvals.list_for_run(run_id)],
         "evidence": [
@@ -145,6 +156,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append(
             f"- **[{f['severity']}] {f['title']}** ({f['step']}): {f['statement']} Evidence: {cites}"
         )
+    for memo in report.get("review_memos", []):
+        lines += ["", f"## {memo['step']} memo", *memo_lines(memo)]
     if report["approvals"]:
         lines += ["", "## Approvals"]
         lines += [
@@ -157,6 +170,65 @@ def render_markdown(report: dict[str, Any]) -> str:
         for e in report["audit"]
     ]
     return "\n".join(lines) + "\n"
+
+
+def memo_lines(memo: dict[str, Any]) -> list[str]:
+    """Fixed review sections and explicit limitations; no inferred reviewer statements."""
+    lines = [
+        memo["prices_simulated_notice"],
+        "",
+        "Scope: " + ", ".join(memo["scope"]["assigned"]),
+        "Excluded from this review: " + (", ".join(memo["scope"]["excluded"]) or "none"),
+    ]
+    for key, title in (
+        ("facts", "Facts"),
+        ("calculations", "Calculations"),
+        ("assumptions", "Assumptions"),
+        ("risks_and_counterarguments", "Risks and counterarguments"),
+    ):
+        lines += ["", f"### {title}"]
+        lines += [
+            f"- {c['statement']} [{', '.join(c['evidence_ids']) or 'uncited interpretation'}]"
+            for c in memo[key]
+        ] or ["No statements supplied in this section."]
+    lines += [
+        "",
+        "### Recommendation",
+        memo["recommendation"]["verdict"],
+        "",
+        "### Open questions",
+        *[f"- {q}" for q in memo["open_questions"]],
+    ]
+    if not memo["open_questions"]:
+        lines.append("None supplied for the assigned scope.")
+    lines += ["", "### Red-team attacks"]
+    if memo["attacks"]:
+        lines += [
+            "| Attack | Evidence | Severity | Status | Criterion and observation | Evidence request |",
+            "|---|---|---|---|---|---|",
+        ]
+        lines += [
+            f"| {a['attack']} | {', '.join(a['evidence_ids'])} | {a['severity']} | {a['status']} | "
+            f"{a['criterion']} — {a['observation']} | {a['evidence_request']} |"
+            for a in memo["attacks"]
+        ]
+    else:
+        lines.append("No full red-team signoff was performed in this targeted review.")
+    lines += ["", "### Dissent"]
+    for d in memo["dissent"]:
+        lines += [
+            f"- {d['author']} ({d['role']}): {d['position']} — {d['argument']}",
+            f"  Evidence: {', '.join(d['evidence_ids'])}; resolution: {d['resolution_criterion']}",
+            f"  Response: {d['response']}; status: {d['status']}",
+        ]
+    if not memo["dissent"]:
+        lines.append("None recorded.")
+    lines += [
+        "",
+        "### Decision record",
+        "Left blank by the reviewer; human decisions appear under Approvals.",
+    ]
+    return lines
 
 
 def render_html(report: dict[str, Any]) -> str:
@@ -177,6 +249,31 @@ def render_html(report: dict[str, Any]) -> str:
         f"<tr><td>{a['event_id']}</td><td>{e(a['at'])}</td><td>{e(a['step'])}</td><td>{e(a['event_type'])}</td>"
         f"<td>{e(a['actor'])}</td></tr>"
         for a in report["audit"]
+    )
+    statistics = ""
+    if report.get("statistics"):
+        statistics = "<h2>Statistics</h2><div class='wrap'><table><tr><th>Metric</th><th>Value</th></tr>"
+        statistics += "".join(
+            f"<tr><td>{e(name.replace('_', ' '))}</td><td>{e(json.dumps(value))}</td></tr>"
+            for name, value in report["statistics"].items()
+        )
+        statistics += "</table></div>"
+    approvals = "<h2>Approvals</h2>"
+    if report["approvals"]:
+        approvals += (
+            "<ul>"
+            + "".join(
+                f"<li><strong>{e(a['approver'])}: {e(a['decision'])}</strong> — {e(a['reason'])} "
+                f"<span class='step'>({e(a['created_at'])})</span></li>"
+                for a in report["approvals"]
+            )
+            + "</ul>"
+        )
+    else:
+        approvals += "<p>No human decision has been recorded.</p>"
+    memos = "".join(
+        f"<section><h2>{e(m['step'])} memo</h2><pre style='white-space:pre-wrap'>{e(chr(10).join(memo_lines(m)))}</pre></section>"
+        for m in report.get("review_memos", [])
     )
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Run {e(run["run_id"])}</title>
@@ -199,6 +296,10 @@ of <code>{e(exp["research_family"])}</code></p>
 <p class="notice">{e(report["prices_simulated_notice"])}</p>
 <h2>Gate: {e(report["gate"]["recommendation"])}</h2><ul>{"".join("<li>" + e(r) + "</li>" for r in report["gate"]["reasons"])}</ul>
 <h2>Steps</h2><div class="wrap"><table><tr><th>Step</th><th>Status</th><th>Attempts</th><th>Artifact</th></tr>{rows}</table></div>
+{statistics}
 <h2>Findings</h2><ul>{findings}</ul>
+{memos}
+{approvals}
+<h2>Usage</h2><p>{report["usage"]["tokens"]} tokens; ${report["usage"]["cost_usd"]:.6f} recorded model cost.</p>
 <h2>Audit trail</h2><div class="wrap"><table><tr><th>#</th><th>Time</th><th>Step</th><th>Event</th><th>Actor</th></tr>{audit}</table></div>
 </body></html>"""

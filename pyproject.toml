@@ -50,9 +50,15 @@ packages = ["src/research_factory"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "skills" = "research_factory/_skills"
+"evals/golden" = "research_factory/_evals/golden"
 
 [tool.hatch.build.targets.sdist]
-include = ["src/research_factory", "tests", "skills", "docs", "README.md", "LICENSE"]
+include = [
+  "src/research_factory", "tests", "skills", "docs", "evals", "examples", "scripts",
+  "README.md", "LICENSE", "IMPLEMENTATION_HANDOFF.md", "CHANGELOG.md",
+  "Dockerfile", ".dockerignore", "docker-compose.yml", "fly.toml", "Makefile",
+  ".gitignore", ".env.example", ".github", ".gitattributes", "uv.lock",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

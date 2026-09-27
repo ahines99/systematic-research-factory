@@ -40,5 +40,7 @@ A licensed dataset with public-display rights becomes affordable, or the project
 
 ## Notes
 
+- 2026-09-27 (five-specialist audit): the committed snapshot has 44 companies, 1,325 filing/version records, 10 exits and 8 IPOs. Listing windows are filing-derived proxies (prospectus/Form 25 dates and documented fallback offsets), not a verified exchange security master. Some EPS values are derived: Q4 can use annual weighted shares, and seven records use EPS subtraction. Revision classifications use ratio heuristics and do not verify corporate actions. The earlier "real fundamentals" and "survivorship-safe" descriptions apply to source provenance and the simulated universe, not exact historical membership or universally reported quarterly EPS.
+
 - 2026-09-23 (audit Q7): exits of acquired and failed companies are price-neutral in the semi-synthetic dataset. The earlier −90% delisting return for failed companies was a hindsight effect nobody planted, so the only planted effect is the acceptance-timed signal.
 - 2026-09-23 (audit Q2, Q3): EDGAR quarters are keyed by period end, and fiscal Q4 is derived from net income over weighted-average shares, so stock splits no longer corrupt Q4 EPS.

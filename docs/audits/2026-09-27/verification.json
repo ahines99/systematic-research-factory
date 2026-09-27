@@ -1,0 +1,62 @@
+{
+  "commit": "91e3023",
+  "date": "2026-09-27",
+  "python314": {
+    "version": "3.14.5",
+    "passed": 187,
+    "skipped": 3,
+    "seconds": 42.17
+  },
+  "python312": {
+    "version": "3.12.10",
+    "passed": 187,
+    "skipped": 3,
+    "seconds": 93.69,
+    "coverage_enabled": true
+  },
+  "postgres": {
+    "version": "16.9",
+    "passed": 53,
+    "skipped": 1,
+    "seconds": 10.74,
+    "scope": [
+      "tests/test_persistence.py",
+      "tests/test_postgres.py",
+      "tests/test_workflow.py"
+    ],
+    "temporary_cluster_stopped": true
+  },
+  "ruff": "passed",
+  "format_files": 109,
+  "mypy_source_files": 62,
+  "lock_offline_check": "passed",
+  "rules_evals": {
+    "cases": 30,
+    "passed": 30,
+    "checks": 260
+  },
+  "git_remote": null,
+  "git_tags": [],
+  "commands": {
+    "pytest314": ".venv/Scripts/python.exe -m pytest -q -p no:cacheprovider",
+    "pytest312": ".venv312/Scripts/python.exe -m pytest -q -p no:cacheprovider --cov=research_factory --cov-report=json:var/audit-2026-09-27/coverage.json --cov-report=term:skip-covered",
+    "postgres": "DATABASE_URL=<isolated local PostgreSQL> .venv/Scripts/python.exe -m pytest -q -p no:cacheprovider tests/test_persistence.py tests/test_postgres.py tests/test_workflow.py",
+    "ruff": ".venv/Scripts/ruff.exe check .",
+    "format": ".venv/Scripts/ruff.exe format --check .",
+    "mypy": ".venv/Scripts/python.exe -m mypy src/research_factory",
+    "lock": ".venv/Scripts/uv.exe lock --check --offline",
+    "eval": ".venv/Scripts/python.exe -m research_factory.cli eval --provider rules --out var/audit-2026-09-27/scorecard.json",
+    "dependency_export": ".venv/Scripts/uv.exe export --locked --offline --all-extras --no-dev --format requirements-txt --no-hashes --no-emit-project --output-file var/audit-2026-09-27/requirements.txt",
+    "dependency_audit": ".venv/Scripts/python.exe -m pip_audit --disable-pip --no-deps --strict --timeout 15 -r var/audit-2026-09-27/requirements.txt -f json -o var/audit-2026-09-27/dependency-audit.json"
+  },
+  "audit_documentation_check": {
+    "command": ".venv/Scripts/python.exe -m pytest -q -p no:cacheprovider tests/test_docs.py",
+    "passed": 3,
+    "seconds": 0.34
+  },
+  "dependency_audit": {
+    "dependency_records": 66,
+    "known_vulnerabilities": 0,
+    "scope": "locked runtime dependencies with all extras; excludes container OS and dev group"
+  }
+}

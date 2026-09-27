@@ -21,8 +21,14 @@ services:
       RSF_MODEL_PROVIDER: ${RSF_MODEL_PROVIDER:-rules}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       RSF_HTTP_ALLOWED_HOSTS: '["localhost:*","127.0.0.1:*"]'
-    ports: ["8000:8000"]
+    ports: ["127.0.0.1:8000:8000"]
     command: ["sh", "-c", "rsf init-db && rsf demo && rsf serve --host 0.0.0.0 --port 8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
     volumes: [blobs:/home/rsf/blobs]
   # Optional (RSF-070): an OpenTelemetry collector is not required for v1.0 (ADR-0007).
 volumes:

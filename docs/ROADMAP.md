@@ -1,10 +1,12 @@
 # Roadmap to production
 
-Last reviewed: 2026-09-23. Ticket prefix: `RSF-`.
+Last reviewed: 2026-09-27. Ticket prefix: `RSF-`.
 
-**Status (2026-09-23, after the audit):** 65 tickets done, 12 waiting on the owner, 6 skipped (four optional tickets per ADR-0007, the optional load test, and the separate v0.1.0 release per ADR-0009). Everything that can be verified without the owner's accounts is implemented and tested; see [go-live-review.md](go-live-review.md). Status values: `done`; `owner` (code and config are complete, but the done-when needs the owner's accounts, a GitHub remote, an API key or a recording); `skipped`.
+For the current finishing sequence, ownership, portfolio presentation and release acceptance, use [Roadmap to a finished portfolio project](PORTFOLIO_ROADMAP.md). This file remains the underlying engineering ticket specification.
 
-This roadmap takes the repository from its current state (a spec plus a stub MCP server) to a deployed v1.0. Milestones M0–M5 match the six milestones in [IMPLEMENTATION_HANDOFF.md](../IMPLEMENTATION_HANDOFF.md) and end at the **v0.1 MVP**. Milestones M6–M9 take the MVP to **v1.0 production**. Some M6–M9 tickets are optional ([ADR-0007](adr/0007-v1-scope.md)).
+**Status:** an unreleased working candidate. The 2026-09-27 five-agent audit supersedes the earlier completion certification; see [remediation evidence](audits/2026-09-27/remediation.md). Ticket status `done` means implemented and locally verified within its stated scope; it does not mean deployed. `owner` means external acceptance remains; `skipped` is an explicit scope decision. The index is reconciled below rather than relying on the old completion count.
+
+The original roadmap started from a specification and stub. The repository now implements all nine workflow stages, interfaces, data fixtures and delivery configuration. Milestones M0–M5 describe the MVP; M6–M9 describe the production candidate. Some tickets are explicitly optional ([ADR-0007](adr/0007-v1-scope.md)).
 
 ## What "production" means here
 
@@ -50,7 +52,7 @@ These can run in parallel with the critical path: CI (RSF-004), Skill content (R
 | RSF-039 | Set `ANTHROPIC_API_KEY` and run `rsf eval --provider anthropic` to record the Claude baseline (the rules baseline is recorded) |
 | RSF-052 | Record the demo using [demo-script.md](demo-script.md) (README claims are verified and linked) |
 | RSF-060 | First CI run of the PostgreSQL job. The PostgreSQL tests already pass against a local PostgreSQL 16.9 |
-| RSF-061 | Build the image (no Docker on the build machine): `docker compose up --build` |
+| RSF-077 | Replay a genuine earlier release in its preserved runtime after a first release exists; the stored candidate archive provides local/CI regression coverage now |
 | RSF-065 | Add the R2 bucket lock rule. R2 tokens can't exclude delete, so the lock is what stops deletes; the app already refuses overwrites |
 | RSF-067 | Create the Fly.io, Neon and R2 resources and deploy ([deployment.md](deployment.md)) |
 | RSF-068 | Run and time the restore drill ([runbook.md](runbook.md#restoring-from-backup-rsf-068)) |
@@ -74,9 +76,11 @@ All open decisions were resolved on 2026-09-23 and recorded in [docs/adr/](adr/R
 | [0008](adr/0008-review-time-trial-counting.md) | Count trials at review time; floor the Sharpe variance | RSF-021, 045 |
 | [0009](adr/0009-production-defaults.md) | Opus by default, a $3/day cap, the rules reviewer for guests, no separate v0.1 release, public repository, skip the load test | RSF-039, 053, 071, 076, 079 |
 
-## Audit follow-up (2026-09-23)
+## Historical audit follow-up (2026-09-23)
 
-A three-agent audit (code, quantitative methods, docs and operations) found 14 code, 11 quantitative and 15 docs and operations findings. All were fixed, except those that need the owner (the R2 bucket lock, the first CI run, the Claude baseline). The findings and fixes are listed in [go-live-review.md](go-live-review.md#audit-follow-up), and the regressions are pinned in `tests/test_audit_regressions.py`. The audit changed these tickets:
+The following records the earlier review, not current assurance; additional defects were subsequently reproduced. Current remediation and acceptance are tracked in the [2026-09-27 record](audits/2026-09-27/remediation.md).
+
+A three-agent audit (code, quantitative methods, docs and operations) found 14 code, 11 quantitative and 15 docs and operations findings. Its contemporaneous report marked the account-independent fixes complete. The [historical evidence](go-live-review.md#historical-evidence) and `tests/test_audit_regressions.py` preserve that work; the later five-agent audit found additional defects. The earlier audit changed these tickets:
 
 | Ticket | Change |
 |---|---|
@@ -151,7 +155,7 @@ A three-agent audit (code, quantitative methods, docs and operations) found 14 c
 | RSF-059 | Data snapshots for reproducibility | M6 | v1.0 | M | 055, 057 | done |
 | RSF-081 | Licensed vendor price adapter | M6 | optional | L | 057 | skipped |
 | RSF-060 | PostgreSQL backend | M7 | v1.0 | M | 011 | owner |
-| RSF-061 | Container image and compose stack | M7 | v1.0 | M | 060 | owner |
+| RSF-061 | Container image and compose stack | M7 | v1.0 | M | 060 | done |
 | RSF-062 | Streamable HTTP with API-key authentication | M7 | v1.0 | M | 061 | done |
 | RSF-063 | Roles and server-side authorization | M7 | v1.0 | M | 062 | done |
 | RSF-064 | Secrets and configuration | M7 | v1.0 | S | 061 | done |
@@ -168,7 +172,7 @@ A three-agent audit (code, quantitative methods, docs and operations) found 14 c
 | RSF-074 | Security testing | M9 | v1.0 | M | 051, 063 | done |
 | RSF-075 | Supply-chain controls | M9 | v1.0 | S | 004, 061 | done |
 | RSF-076 | Concurrency and load test | M9 | optional | M | 060, 062 | skipped |
-| RSF-077 | Reproducibility audit | M9 | v1.0 | M | 059, 060 | done |
+| RSF-077 | Reproducibility audit | M9 | v1.0 | M | 059, 060 | owner |
 | RSF-078 | Release pipeline | M9 | v1.0 | M | 067, 075 | owner |
 | RSF-079 | Public demo instance | M9 | v1.0 | M | 063, 078, 082 | owner |
 | RSF-082 | Pre-recorded demo runs | M9 | v1.0 | M | 049, 059, 077 | done |
@@ -191,7 +195,7 @@ The project folder is not under version control.
 
 ### RSF-002 · Fix package layout and build system
 `S` · depends on: —
-`src/` is currently used both as a package (`from src.mcp_server import mcp`) and as a setuptools src-layout root. A wheel build installs `mcp_server`, `domain` and `workflows` as top-level modules and then fails. Tests pass only via `python -m pytest` from the repo root.
+The original scaffold mixed `src` package imports with a setuptools src layout. The current `research_factory` package has a proper build layout; wheel and source-distribution checks now run outside the checkout, including required evaluation and fixture resources.
 **Done when:**
 - The code lives in `src/research_factory/` and imports are `research_factory.*`.
 - `pyproject.toml` declares a `[build-system]` (hatchling) and the package location.
@@ -376,7 +380,7 @@ Implements `workflows/base.py` from the spec, with persistence.
 
 ### RSF-028 · MCP prompts
 `S` · depends on: RSF-025
-**Done when:** the spec's `review_run` prompt is implemented (it is missing today), and a `red_team_signal` prompt is added.
+**Done when:** the spec's `review_run` prompt and a `red_team_signal` prompt are implemented. Both now exist; their external full-review procedures remain distinct from the automated workflow's scoped review adapters.
 
 ### RSF-029 · Server-side policy enforcement
 `M` · depends on: RSF-026
@@ -411,11 +415,11 @@ Implements `workflows/base.py` from the spec, with persistence.
 
 ### RSF-033 · Golden dataset to 25 cases, including adversarial
 `M` · depends on: RSF-032
-**Done when:** there are at least 25 cases, including prompt injection embedded in filing text, stale data, duplicate entities, contradictory evidence and missing required fields.
+**Done when:** there are at least 25 cases, including prompt injection through actual model-input routes, explicit raw-filing exclusion, stale data, duplicate entities, contradictory evidence and missing required fields.
 
 ### RSF-034 · Skill: point-in-time-research
 `M` · depends on: —
-The four current Skills are the same boilerplate with only the name changed. That fails the spec's check that "at least one Skill is dynamically useful and not just duplicate prompt text".
+The original stubs were boilerplate. Four distinct procedures, maintained references and a timestamp helper now exist; the targeted PIT evaluation exposes skill-on/off inputs. Demonstrating a real model outcome improvement still needs the live comparison below.
 **Done when:**
 - The Skill has a specific trigger description.
 - Its procedure covers EDGAR acceptance time versus filing date versus period end, restatements, survivorship and delistings, ticker reuse, corporate actions, and time-zone and trading-calendar alignment.
@@ -455,7 +459,7 @@ The four current Skills are the same boilerplate with only the name changed. Tha
 ### RSF-040 · Implementation review and committee steps
 `M` · depends on: RSF-039
 **Done when:**
-- Implementation review assesses capacity, turnover and cost realism from backtest artifacts.
+- Implementation review assesses measured turnover, simulated cost drag and delay sensitivity from backtest artifacts. Real-market capacity and unavailable stress analyses are explicitly outside its targeted scope, not claimed as verified.
 - The committee step produces the RSF-037 memo.
 - Both are evaluated.
 
@@ -667,7 +671,7 @@ Implements [ADR-0004](adr/0004-authentication-api-keys.md).
 
 ### RSF-074 · Security testing
 `M` · depends on: RSF-051, RSF-063
-**Done when:** there are automated tests for prompt injection (a corpus of filing text with embedded instructions), approval bypass, authentication bypass, cross-role access and fetching of attacker-supplied source URIs, and every threat-model item has a passing test.
+**Done when:** there are automated tests for prompt injection (a corpus of hostile source text through the routes actually supplied to the model, with raw filing exclusion tested separately), approval bypass, authentication bypass, cross-role access and fetching of attacker-supplied source URIs, and every threat-model item has a passing test.
 
 ### RSF-075 · Supply-chain controls
 `S` · depends on: RSF-004, RSF-061

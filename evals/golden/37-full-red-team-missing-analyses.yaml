@@ -1,0 +1,9 @@
+id: 37-full-red-team-missing-analyses
+title: An explicitly requested full red team cannot certify missing analyses
+kind: judgment
+dimensions:
+- evidence_fidelity
+- uncertainty_calibration
+judgment:
+  step_slug: full_red_team
+  expect_verdict: needs_more_evidence

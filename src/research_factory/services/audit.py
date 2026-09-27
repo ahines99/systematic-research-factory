@@ -71,4 +71,11 @@ class AuditLog:
         return self.repo.append(event)
 
     def events(self, run_id: str | None = None) -> list[AuditEvent]:
-        return self.repo.list(run_id=run_id)
+        events: list[AuditEvent] = []
+        cursor = 0
+        while True:
+            page = self.repo.list(run_id=run_id, after_event_id=cursor)
+            events.extend(page)
+            if len(page) < 10_000:
+                return events
+            cursor = page[-1].event_id or cursor

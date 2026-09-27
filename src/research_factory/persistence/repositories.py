@@ -6,11 +6,13 @@ The same SQL implementation serves SQLite (development, tests, in-memory) and Po
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
-from sqlalchemy import Connection, Engine, Table, and_, func, insert, or_, select, update
+from sqlalchemy import Connection, Engine, Table, and_, func, insert, literal, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
 from ..domain.errors import ConflictError, NotFoundError
@@ -78,7 +80,9 @@ class FindingRepository(Protocol):
 
 class AuditRepository(Protocol):
     def append(self, event: AuditEvent) -> AuditEvent: ...
-    def list(self, run_id: str | None = None, limit: int = 10_000) -> list[AuditEvent]: ...
+    def list(
+        self, run_id: str | None = None, limit: int = 10_000, after_event_id: int = 0
+    ) -> list[AuditEvent]: ...
 
 
 class ApprovalRepository(Protocol):
@@ -121,13 +125,17 @@ def insert_ignore(conn: Connection, table: Table, values: dict[str, Any], keys: 
         from sqlalchemy.dialects import postgresql
 
         stmt: Any = (
-            postgresql.insert(table).values(**values).on_conflict_do_nothing(index_elements=list(keys))
+            postgresql.insert(table)
+            .values(**values)
+            .on_conflict_do_nothing(index_elements=list(keys) or None)
         )
     else:
         from sqlalchemy.dialects import sqlite
 
-        stmt = sqlite.insert(table).values(**values).on_conflict_do_nothing(index_elements=list(keys))
-    return bool(conn.execute(stmt).rowcount)
+        stmt = sqlite.insert(table).values(**values).on_conflict_do_nothing(index_elements=list(keys) or None)
+    # psycopg may report -1 for INSERT rowcount; RETURNING distinguishes an
+    # inserted row from ON CONFLICT DO NOTHING on both supported databases.
+    return conn.execute(stmt.returning(literal(1))).scalar_one_or_none() is not None
 
 
 class SqlExperimentRepository:
@@ -138,15 +146,25 @@ class SqlExperimentRepository:
         try:
             with self.engine.begin() as conn:
                 conn.execute(
-                    insert(s.experiments).values(
+                    update(s.research_guard)
+                    .where(s.research_guard.c.guard_id == 1)
+                    .values(revision=s.research_guard.c.revision + 1)
+                )
+                inserted = insert_ignore(
+                    conn,
+                    s.experiments,
+                    dict(
                         experiment_id=record.experiment_id,
                         research_family=record.research_family,
                         trial_number=record.trial_number,
                         document=record.experiment.model_dump(mode="json", exclude={"experiment_id"}),
                         created_by=record.created_by,
                         created_at=record.created_at,
-                    )
+                    ),
+                    (),
                 )
+                if not inserted:
+                    raise ConflictError("experiment or trial number already exists")
         except IntegrityError as exc:
             raise ConflictError("experiment or trial number already exists") from exc
 
@@ -201,6 +219,18 @@ class SqlExperimentRepository:
 
     def record_result(self, experiment_id: str, sharpe_per_period: float, n_obs: int, at: datetime) -> None:
         with self.engine.begin() as conn:
+            if insert_ignore(
+                conn,
+                s.trial_results,
+                {
+                    "experiment_id": experiment_id,
+                    "sharpe_per_period": sharpe_per_period,
+                    "n_obs": n_obs,
+                    "recorded_at": at,
+                },
+                ("experiment_id",),
+            ):
+                return
             existing = conn.execute(
                 select(s.trial_results).where(s.trial_results.c.experiment_id == experiment_id)
             ).first()
@@ -208,14 +238,6 @@ class SqlExperimentRepository:
                 if abs(existing.sharpe_per_period - sharpe_per_period) > 1e-12 or existing.n_obs != n_obs:
                     raise ConflictError("a different result is already recorded for this experiment")
                 return
-            conn.execute(
-                insert(s.trial_results).values(
-                    experiment_id=experiment_id,
-                    sharpe_per_period=sharpe_per_period,
-                    n_obs=n_obs,
-                    recorded_at=at,
-                )
-            )
 
     def family_sharpes(
         self, research_family: str, *, max_trial: int | None = None, recorded_before: datetime | None = None
@@ -246,6 +268,7 @@ def _run_from_row(row: Any) -> WorkflowRun:
         status_reason=row.status_reason,
         created_at=row.created_at,
         updated_at=row.updated_at,
+        execution_manifest=row.execution_manifest,
     )
 
 
@@ -353,21 +376,29 @@ class SqlStepResultRepository:
         values = result.model_dump(mode="python")
         values["status"] = str(result.status)
         with self.engine.begin() as conn:
+            if insert_ignore(conn, s.step_results, values, ("run_id", "step")):
+                return
             existing = conn.execute(
                 select(s.step_results).where(
                     and_(s.step_results.c.run_id == result.run_id, s.step_results.c.step == result.step)
                 )
             ).first()
-            if existing is None:
-                conn.execute(insert(s.step_results).values(**values))
-                return
+            assert existing is not None
             if existing.status == StepStatus.COMPLETED:
                 raise ConflictError(f"step {result.step} of run {result.run_id} is already completed")
-            conn.execute(
+            changed = conn.execute(
                 update(s.step_results)
-                .where(and_(s.step_results.c.run_id == result.run_id, s.step_results.c.step == result.step))
+                .where(
+                    and_(
+                        s.step_results.c.run_id == result.run_id,
+                        s.step_results.c.step == result.step,
+                        s.step_results.c.status != str(StepStatus.COMPLETED),
+                    )
+                )
                 .values(**values)
             )
+            if changed.rowcount != 1:
+                raise ConflictError(f"step {result.step} was concurrently completed")
 
     @staticmethod
     def _row(row: Any) -> StepResult:
@@ -381,6 +412,9 @@ class SqlStepResultRepository:
             error_code=row.error_code,
             error_message=row.error_message,
             created_at=row.created_at,
+            fail_run=row.fail_run,
+            run_decision=ApprovalDecision(row.run_decision) if row.run_decision else None,
+            gate_context=row.gate_context,
         )
 
     def get(self, run_id: str, step: str) -> StepResult | None:
@@ -421,6 +455,21 @@ class SqlEvidenceRepository:
     def add(self, ref: EvidenceRef) -> None:
         """Idempotent: re-adding the same evidence ID is a no-op."""
         with self.engine.begin() as conn:
+            if insert_ignore(
+                conn,
+                s.evidence,
+                {
+                    "evidence_id": ref.evidence_id,
+                    "content_hash": ref.content_hash,
+                    "source_uri": ref.source_uri,
+                    "source_type": ref.source_type,
+                    "as_of": ref.as_of,
+                    "retrieved_at": ref.retrieved_at,
+                    "metadata": ref.metadata,
+                },
+                ("evidence_id",),
+            ):
+                return
             exists = conn.execute(
                 select(s.evidence.c.content_hash).where(s.evidence.c.evidence_id == ref.evidence_id)
             ).first()
@@ -428,17 +477,6 @@ class SqlEvidenceRepository:
                 if exists.content_hash != ref.content_hash:
                     raise ConflictError("evidence ID collision with different content")
                 return
-            conn.execute(
-                insert(s.evidence).values(
-                    evidence_id=ref.evidence_id,
-                    content_hash=ref.content_hash,
-                    source_uri=ref.source_uri,
-                    source_type=ref.source_type,
-                    as_of=ref.as_of,
-                    retrieved_at=ref.retrieved_at,
-                    metadata=ref.metadata,
-                )
-            )
 
     def get(self, evidence_id: str) -> EvidenceRef | None:
         with self.engine.connect() as conn:
@@ -580,8 +618,15 @@ class SqlAuditRepository:
             event_id = int(key[0])
         return event.model_copy(update={"event_id": event_id})
 
-    def list(self, run_id: str | None = None, limit: int = 10_000) -> list[AuditEvent]:
-        q = select(s.audit_events).order_by(s.audit_events.c.event_id).limit(limit)
+    def list(
+        self, run_id: str | None = None, limit: int = 10_000, after_event_id: int = 0
+    ) -> list[AuditEvent]:
+        q = (
+            select(s.audit_events)
+            .where(s.audit_events.c.event_id > after_event_id)
+            .order_by(s.audit_events.c.event_id)
+            .limit(limit)
+        )
         if run_id is not None:
             q = q.where(s.audit_events.c.run_id == run_id)
         with self.engine.connect() as conn:
@@ -627,6 +672,7 @@ class SqlApprovalRepository:
                     decision=ApprovalDecision(r.decision),
                     reason=r.reason,
                     created_at=r.created_at,
+                    gate_context=r.gate_context,
                 )
                 for r in rows
             ]
@@ -718,11 +764,70 @@ class SqlUsageRepository:
         return int(tokens), float(cost)
 
 
+WriteFence = tuple[str, str, Callable[[], datetime]]
+
+
+def _check_fence(conn: Connection, fence: WriteFence) -> None:
+    run_id, owner, now = fence
+    changed = conn.execute(
+        update(s.workflow_runs)
+        .where(
+            and_(
+                s.workflow_runs.c.run_id == run_id,
+                s.workflow_runs.c.lease_owner == owner,
+                s.workflow_runs.c.lease_expires_at >= now(),
+            )
+        )
+        .values(updated_at=s.workflow_runs.c.updated_at)
+    )
+    if changed.rowcount != 1:
+        raise ConflictError("the run lease is no longer owned by this worker")
+
+
+class _TransactionalEngine:
+    """Route repository operations into a short, synchronous unit of work.
+
+    Context-local routing keeps independent requests on independent connections. Never
+    hold a unit of work over an await or dispatch work from inside one.
+    """
+
+    def __init__(
+        self, engine: Engine, current: ContextVar[Connection | None], fence: ContextVar[WriteFence | None]
+    ):
+        self.engine = engine
+        self.current = current
+        self.fence = fence
+
+    @contextmanager
+    def begin(self) -> Iterator[Connection]:
+        conn = self.current.get()
+        if conn is not None:
+            yield conn
+        else:
+            with self.engine.begin() as opened:
+                fence = self.fence.get()
+                if fence is not None:
+                    _check_fence(opened, fence)
+                yield opened
+
+    @contextmanager
+    def connect(self) -> Iterator[Connection]:
+        conn = self.current.get()
+        if conn is not None:
+            yield conn
+        else:
+            with self.engine.connect() as opened:
+                yield opened
+
+
 class Repositories:
     """All repositories over one engine."""
 
     def __init__(self, engine: Engine):
         self.engine = engine
+        self._current: ContextVar[Connection | None] = ContextVar("repository_transaction", default=None)
+        self._fence: ContextVar[WriteFence | None] = ContextVar("repository_write_fence", default=None)
+        engine = cast(Engine, _TransactionalEngine(engine, self._current, self._fence))
         self.experiments: ExperimentRepository = SqlExperimentRepository(engine)
         self.runs: RunRepository = SqlRunRepository(engine)
         self.steps: StepResultRepository = SqlStepResultRepository(engine)
@@ -732,6 +837,60 @@ class Repositories:
         self.approvals: ApprovalRepository = SqlApprovalRepository(engine)
         self.api_keys: ApiKeyRepository = SqlApiKeyRepository(engine)
         self.usage: UsageRepository = SqlUsageRepository(engine)
+
+    @contextmanager
+    def fenced(self, run_id: str, owner: str, now: Callable[[], datetime]) -> Iterator[None]:
+        """Fence *all* step writes, including evidence emitted before the checkpoint."""
+        token = self._fence.set((run_id, owner, now))
+        try:
+            yield
+        finally:
+            self._fence.reset(token)
+
+    @contextmanager
+    def transaction(
+        self,
+        *,
+        run_id: str | None = None,
+        owner: str | None = None,
+        now: datetime | None = None,
+        guard_ledger: bool = False,
+    ) -> Iterator[None]:
+        """Atomically publish related records, optionally fencing a workflow owner.
+
+        The no-op UPDATE takes the same database row lock used by claim/takeover.
+        A unique owner token cannot commit after another owner claims the run, even
+        when its coroutine resumes after a long suspension.
+        """
+        if self._current.get() is not None:
+            raise RuntimeError("nested repository transactions are not supported")
+        with self.engine.begin() as conn:
+            if guard_ledger:
+                conn.execute(
+                    update(s.research_guard)
+                    .where(s.research_guard.c.guard_id == 1)
+                    .values(revision=s.research_guard.c.revision)
+                )
+            if run_id is not None:
+                predicate = s.workflow_runs.c.run_id == run_id
+                if owner is not None:
+                    if now is None:
+                        raise ValueError("a fenced transaction requires the current time")
+                    predicate = and_(
+                        predicate,
+                        s.workflow_runs.c.lease_owner == owner,
+                        s.workflow_runs.c.lease_expires_at >= now,
+                    )
+                result = conn.execute(
+                    update(s.workflow_runs).where(predicate).values(updated_at=s.workflow_runs.c.updated_at)
+                )
+                if result.rowcount != 1:
+                    raise ConflictError("the run lease is no longer owned by this worker")
+            token = self._current.set(conn)
+            try:
+                yield
+            finally:
+                self._current.reset(token)
 
 
 __all__: Sequence[str] = [

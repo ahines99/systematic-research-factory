@@ -16,13 +16,17 @@ import html
 import time
 from collections import defaultdict, deque
 from dataclasses import replace
-from typing import Any
+from typing import Any, Literal
 
+import anyio
 from mcp.server.transport_security import TransportSecuritySettings
+from pydantic import BaseModel, ConfigDict, ValidationError
+from sqlalchemy import text
 from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from . import __version__
 from .auth import GUEST as GUEST_PRINCIPAL
@@ -37,6 +41,69 @@ from .services.budget import GUEST
 from .services.container import Services
 
 LIVE_SCENARIOS = {"clean-approved", "leak-caught", "overfit-rejected"}
+MAX_REQUEST_BYTES = 4 * 1024 * 1024
+
+
+class LiveRunRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    scenario: Literal["clean-approved", "leak-caught", "overfit-rejected"] = "clean-approved"
+
+
+class RequestBodyLimit:
+    """Bound every HTTP request before a route parses it, including chunked bodies."""
+
+    def __init__(self, app: ASGIApp, max_bytes: int = MAX_REQUEST_BYTES):
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = dict(scope.get("headers", []))
+        declared = headers.get(b"content-length")
+        if declared is not None:
+            try:
+                length = int(declared)
+                if length < 0:
+                    raise ValueError
+            except ValueError:
+                await JSONResponse(
+                    {"error": {"code": "INVALID_INPUT", "message": "invalid Content-Length"}}, 400
+                )(scope, receive, send)
+                return
+            if length > self.max_bytes:
+                await self._reject(scope, receive, send)
+                return
+        body = bytearray()
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            chunk = message.get("body", b"")
+            if len(body) + len(chunk) > self.max_bytes:
+                await self._reject(scope, receive, send)
+                return
+            body.extend(chunk)
+            if not message.get("more_body", False):
+                break
+        delivered = False
+
+        async def bounded_receive() -> Message:
+            nonlocal delivered
+            if not delivered:
+                delivered = True
+                return {"type": "http.request", "body": bytes(body), "more_body": False}
+            return await receive()
+
+        await self.app(scope, bounded_receive, send)
+
+    @staticmethod
+    async def _reject(scope: Scope, receive: Receive, send: Send) -> None:
+        await JSONResponse(
+            {"error": {"code": "INVALID_INPUT", "message": "request body exceeds 4 MiB"}}, 413
+        )(scope, receive, send)
 
 
 class RateLimiter:
@@ -78,7 +145,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         self.trust_proxy_headers = trust_proxy_headers
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if request.url.path == "/healthz":
+        if request.url.path in {"/healthz", "/readyz"}:
             return await call_next(request)
         token = bearer_token(request.headers.get("authorization"))
         if request.headers.get("authorization") and token is None:
@@ -133,6 +200,29 @@ def create_app(services: Services) -> Starlette:
     async def healthz(_: Request) -> Response:
         return JSONResponse({"status": "ok", "version": __version__})
 
+    @mcp.custom_route("/readyz", methods=["GET"])
+    async def readyz(_: Request) -> Response:
+        """Read-only check of the database and a stored public-demo evidence blob."""
+
+        def check() -> None:
+            with services.engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+            runs = services.repos.runs.list(limit=20, requested_by=DEMO_REQUESTER)
+            for run in runs:
+                for step in services.repos.steps.list(run.run_id):
+                    if step.step == "Data acquisition" and step.artifact_evidence_id:
+                        acquisition = services.evidence.load_json(step.artifact_evidence_id)
+                        services.evidence.load_bytes(acquisition["snapshot_evidence_id"])
+                        return
+            raise RuntimeError("public demo has not been seeded")
+
+        try:
+            with anyio.fail_after(5):
+                await anyio.to_thread.run_sync(check, abandon_on_cancel=True)
+        except Exception:
+            return JSONResponse({"status": "not_ready", "version": __version__}, 503)
+        return JSONResponse({"status": "ready", "version": __version__})
+
     @mcp.custom_route("/demo", methods=["GET"])
     async def demo_index(_: Request) -> Response:
         runs = services.repos.runs.list(limit=200, requested_by=DEMO_REQUESTER)
@@ -174,11 +264,8 @@ def create_app(services: Services) -> Starlette:
     @mcp.custom_route("/demo/live-run", methods=["POST"])
     async def live_run(request: Request) -> Response:
         try:
-            body = await request.json()
-        except ValueError:
-            body = {}
-        name = body.get("scenario", "clean-approved") if isinstance(body, dict) else "clean-approved"
-        if name not in LIVE_SCENARIOS:
+            payload = LiveRunRequest.model_validate(await request.json())
+        except (ValueError, ValidationError):
             return JSONResponse(
                 {
                     "error": {
@@ -188,6 +275,7 @@ def create_app(services: Services) -> Starlette:
                 },
                 400,
             )
+        name = payload.scenario
         try:
             services.budget.check_guest_run()
         except BudgetExceededError as exc:
@@ -228,4 +316,5 @@ def create_app(services: Services) -> Starlette:
         limiter=RateLimiter(settings.guest_requests_per_minute),
         trust_proxy_headers=settings.trust_proxy_headers,
     )
+    app.add_middleware(RequestBodyLimit)
     return app

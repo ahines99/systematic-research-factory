@@ -1,0 +1,297 @@
+{
+  "image": "python3.12 initial remediation image",
+  "grype": "0.119.0",
+  "result": "blocked",
+  "matches": [
+    {
+      "package": "libssl3",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-63076",
+      "severity": "High",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-63076"
+    },
+    {
+      "package": "openssl",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-63076",
+      "severity": "High",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-63076"
+    },
+    {
+      "package": "libssl3",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-54874",
+      "severity": "High",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-54874"
+    },
+    {
+      "package": "openssl",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-54874",
+      "severity": "High",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-54874"
+    },
+    {
+      "package": "libssl3",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-63072",
+      "severity": "High",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-63072"
+    },
+    {
+      "package": "openssl",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-63072",
+      "severity": "High",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-63072"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2026-17084",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.15.0rc2"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-17084"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2025-12781",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.13.10",
+        "3.14.1",
+        "3.15.0a2"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2025-12781"
+    },
+    {
+      "package": "libssl3",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-63074",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-63074"
+    },
+    {
+      "package": "openssl",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-63074",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-63074"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2026-6019",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.13.14",
+        "3.14.5rc1",
+        "3.15.0b1"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-6019"
+    },
+    {
+      "package": "pip",
+      "version": "25.0.1",
+      "advisory": "GHSA-wf93-45jw-7689",
+      "severity": "Medium",
+      "fixed_in": [
+        "26.1.2"
+      ],
+      "source": "https://github.com/advisories/GHSA-wf93-45jw-7689"
+    },
+    {
+      "package": "pip",
+      "version": "25.0.1",
+      "advisory": "GHSA-4xh5-x5gv-qwph",
+      "severity": "Medium",
+      "fixed_in": [
+        "25.3"
+      ],
+      "source": "https://github.com/advisories/GHSA-4xh5-x5gv-qwph"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2026-15806",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.15.0rc2"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-15806"
+    },
+    {
+      "package": "libssl3",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-42767",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-42767"
+    },
+    {
+      "package": "openssl",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-42767",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-42767"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2025-15366",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.13.15",
+        "3.14.7",
+        "3.15.0a6"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2025-15366"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2025-15367",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.15.0a6"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2025-15367"
+    },
+    {
+      "package": "libssl3",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-75803",
+      "severity": "Critical",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-75803"
+    },
+    {
+      "package": "openssl",
+      "version": "3.0.20-1~deb12u2",
+      "advisory": "CVE-2026-75803",
+      "severity": "Critical",
+      "fixed_in": [
+        "3.0.22-1~deb12u1"
+      ],
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-75803"
+    },
+    {
+      "package": "pip",
+      "version": "25.0.1",
+      "advisory": "GHSA-qwm4-qh6w-59xr",
+      "severity": "Medium",
+      "fixed_in": [
+        "26.2.0"
+      ],
+      "source": "https://github.com/advisories/GHSA-qwm4-qh6w-59xr"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2026-82049",
+      "severity": "High",
+      "fixed_in": [
+        "3.14.0b1"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-82049"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2026-15310",
+      "severity": "Low",
+      "fixed_in": [
+        "3.15.0rc2"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-15310"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2026-3446",
+      "severity": "Medium",
+      "fixed_in": [
+        "3.13.13",
+        "3.14.4",
+        "3.15.0a8"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-3446"
+    },
+    {
+      "package": "pip",
+      "version": "25.0.1",
+      "advisory": "GHSA-6vgw-5pg2-w6jp",
+      "severity": "Low",
+      "fixed_in": [
+        "26.0"
+      ],
+      "source": "https://github.com/advisories/GHSA-6vgw-5pg2-w6jp"
+    },
+    {
+      "package": "pip",
+      "version": "25.0.1",
+      "advisory": "GHSA-jp4c-xjxw-mgf9",
+      "severity": "Medium",
+      "fixed_in": [
+        "26.1"
+      ],
+      "source": "https://github.com/advisories/GHSA-jp4c-xjxw-mgf9"
+    },
+    {
+      "package": "pip",
+      "version": "25.0.1",
+      "advisory": "GHSA-58qw-9mgm-455v",
+      "severity": "Medium",
+      "fixed_in": [
+        "26.1"
+      ],
+      "source": "https://github.com/advisories/GHSA-58qw-9mgm-455v"
+    },
+    {
+      "package": "python",
+      "version": "3.12.14",
+      "advisory": "CVE-2026-3479",
+      "severity": "Negligible",
+      "fixed_in": [
+        "3.13.13",
+        "3.14.4",
+        "3.15.0a8"
+      ],
+      "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-3479"
+    }
+  ]
+}

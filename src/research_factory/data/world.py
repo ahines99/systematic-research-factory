@@ -9,9 +9,11 @@ from __future__ import annotations
 import base64
 import gzip
 import io
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from functools import cached_property
+from types import MappingProxyType
 from typing import Any
 
 import numpy as np
@@ -21,6 +23,27 @@ from ..domain.identity import canonical_json, sha256_hex
 from .calendar import close_epochs
 
 FloatArray = npt.NDArray[np.float64]
+
+
+def _readonly(array: npt.NDArray[Any]) -> npt.NDArray[Any]:
+    """An owned immutable byte buffer, so callers cannot re-enable NumPy writes."""
+    return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
+
+
+def _freeze_metadata(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType({key: _freeze_metadata(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_metadata(item) for item in value)
+    return value
+
+
+def _metadata_document(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _metadata_document(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [_metadata_document(item) for item in value]
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,7 +121,7 @@ class MarketDataset:
     securities: tuple[Security, ...]
     filings: tuple[Filing, ...]
     prices_simulated: bool
-    planted: dict[str, Any] = field(default_factory=dict)
+    planted: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         t, n = len(self.trading_days), len(self.security_ids)
@@ -106,14 +129,17 @@ class MarketDataset:
             raise ValueError("price arrays must be [sessions, securities]")
         if tuple(s.security_id for s in self.securities) != self.security_ids:
             raise ValueError("securities must be in security_ids order")
+        for name in ("trading_days", "raw_close", "split_ratio"):
+            object.__setattr__(self, name, _readonly(getattr(self, name)))
+        object.__setattr__(self, "planted", _freeze_metadata(self.planted))
 
     @cached_property
     def closes(self) -> npt.NDArray[np.int64]:
-        return close_epochs(self.trading_days)
+        return _readonly(close_epochs(self.trading_days))
 
     @cached_property
-    def index(self) -> dict[str, int]:
-        return {sid: i for i, sid in enumerate(self.security_ids)}
+    def index(self) -> Mapping[str, int]:
+        return MappingProxyType({sid: i for i, sid in enumerate(self.security_ids)})
 
     @cached_property
     def adjusted_returns(self) -> FloatArray:
@@ -124,12 +150,12 @@ class MarketDataset:
             r = cur / prev - 1.0
         out = np.full_like(self.raw_close, np.nan)
         out[1:] = r
-        return out
+        return _readonly(out)
 
     @cached_property
     def listed_mask(self) -> npt.NDArray[np.bool_]:
         days = [d.item() for d in self.trading_days]
-        return np.array([[s.is_listed(d) for s in self.securities] for d in days], dtype=bool)
+        return _readonly(np.array([[s.is_listed(d) for s in self.securities] for d in days], dtype=bool))
 
     def day(self, t: int) -> date:
         return self.trading_days[t].item()  # type: ignore[no-any-return]
@@ -171,7 +197,7 @@ class MarketDataset:
                 for s in self.securities
             ],
             "filings": [filing_to_dict(f) for f in self.filings],
-            "planted": self.planted,
+            "planted": _metadata_document(self.planted),
         }
 
     def to_bytes(self) -> bytes:

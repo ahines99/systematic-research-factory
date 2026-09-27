@@ -13,12 +13,13 @@ Conventions (documented, tested):
   execution session.
 * Returns are split-adjusted. A delisting return is realized on the last listed session;
   afterwards the position earns nothing (cash) until the next rebalance.
+* Orders are checked again at execution. Delisted names become cash; unavailable quotes
+  cancel the order and retain any existing position. Unfilled orders incur no costs,
+  and remaining orders keep their original weights (no hindsight reranking).
 
 Simplifications, deliberately conservative or neutral (audit Q11):
 
 * Constant weights imply small daily rebalancing trades whose costs are not charged.
-* Removing a delisted name at the next rebalance is charged as turnover, although no trade
-  is possible after delisting.
 * No cost is charged for unwinding the final positions at the end of the sample.
 """
 
@@ -34,6 +35,7 @@ from ..data.calendar import execution_lag_sessions
 from ..data.world import MarketDataset
 from ..domain.project_models import BacktestSpec
 from .features import FeatureTable
+from .quality import validate_backtest_coverage
 
 FloatArray = npt.NDArray[np.float64]
 
@@ -51,6 +53,7 @@ class BacktestResult:
     quantile: float
     universe_by_decision: list[dict[str, Any]]
     ic_by_decision: list[dict[str, Any]]
+    unfilled_orders: list[dict[str, Any]]
 
     def to_document(self, dataset: MarketDataset) -> dict[str, Any]:
         return {
@@ -66,6 +69,7 @@ class BacktestResult:
             "positions": self.positions,
             "universe_by_decision": self.universe_by_decision,
             "ic_by_decision": self.ic_by_decision,
+            "unfilled_orders": self.unfilled_orders,
         }
 
 
@@ -101,6 +105,7 @@ def run_backtest(
     expected_sign: int = 1,
     extra_lag_sessions: int = 0,
 ) -> BacktestResult:
+    validate_backtest_coverage(dataset, spec)
     returns = dataset.adjusted_returns
     t_count, n = returns.shape
     held_returns = np.nan_to_num(returns, nan=0.0)
@@ -113,6 +118,7 @@ def run_backtest(
     positions: list[dict[str, Any]] = []
     universe_log: list[dict[str, Any]] = []
     ic_log: list[dict[str, Any]] = []
+    unfilled_orders: list[dict[str, Any]] = []
     previous = np.zeros(n)
     executions: list[tuple[int, FloatArray]] = []
 
@@ -136,21 +142,39 @@ def run_backtest(
             shorts, longs = order[:k], order[-k:]
             target[longs] = 0.5 / k
             target[shorts] = -0.5 / k
-            positions.append(
-                {
-                    "decision": dataset.day(t).isoformat(),
-                    "execution": dataset.day(execute).isoformat(),
-                    "long": sorted(dataset.security_ids[i] for i in longs),
-                    "short": sorted(dataset.security_ids[i] for i in shorts),
-                }
-            )
             # Information coefficient: score vs. forward return over the holding window.
             hold_end = min(execute + spec.hold_days, end_idx)
             fwd = np.prod(1.0 + held_returns[execute + 1 : hold_end + 1][:, idx], axis=0) - 1.0
             ic = spearman(scores, fwd)
             if ic is not None:
                 ic_log.append({"decision": dataset.day(t).isoformat(), "ic": ic, "n": len(idx)})
-        traded = float(np.abs(target - previous).sum())
+        listed_at_execution = dataset.listed_mask[execute]
+        tradable = (
+            listed_at_execution & np.isfinite(dataset.raw_close[execute]) & (dataset.raw_close[execute] > 0)
+        )
+        for i in np.flatnonzero(~tradable & ((target != 0) | (previous != 0))):
+            unfilled_orders.append(
+                {
+                    "decision": dataset.day(t).isoformat(),
+                    "execution": dataset.day(execute).isoformat(),
+                    "security_id": dataset.security_ids[i],
+                    "requested_weight": float(target[i]),
+                    "reason": "not_listed" if not listed_at_execution[i] else "unavailable_price",
+                }
+            )
+        # Delisted holdings already settled through their final return; no closing trade.
+        existing = np.where(listed_at_execution, previous, 0.0)
+        target[~tradable] = existing[~tradable]
+        if np.any(target):
+            positions.append(
+                {
+                    "decision": dataset.day(t).isoformat(),
+                    "execution": dataset.day(execute).isoformat(),
+                    "long": sorted(dataset.security_ids[i] for i in np.flatnonzero(target > 0)),
+                    "short": sorted(dataset.security_ids[i] for i in np.flatnonzero(target < 0)),
+                }
+            )
+        traded = float(np.abs(target - existing).sum())
         cost[execute] += traded * spec.transaction_cost_bps / 10_000.0
         turnover_log.append(
             {
@@ -189,4 +213,5 @@ def run_backtest(
         quantile=spec.quantile,
         universe_by_decision=universe_log,
         ic_by_decision=ic_log,
+        unfilled_orders=unfilled_orders,
     )

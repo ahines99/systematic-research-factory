@@ -5,6 +5,24 @@ description: Adversarially attacks a systematic equity signal before it reaches 
 
 # Signal red team
 
+## Execution modes and available capabilities
+
+The complete procedure below applies to an explicitly assigned **full red-team review**.
+Automated economic-rationale/implementation steps are targeted reviews: `review_scope` states
+their assigned checks and excludes full red-team signoff. They cannot claim that all attacks
+were refuted. A missing material input within the assigned scope requires `needs_evidence=true`.
+In `full_red_team` JSON output, populate `attacks` with all ten named attacks, including
+`not_tested` rows and actionable `evidence_request` values. Untested high/blocking attacks
+require `needs_evidence=true`; unrefuted blocking attacks require `reject`. Numbers are rendered
+through calculation `metric_refs`, not invented in criterion/observation prose.
+
+`run_backtest` and `get_statistics` accept **only `experiment_id`**. For supported cost, delay
+or date variants, first `freeze_hypothesis` with a modified spec, then pass its new ID to those
+tools. Contributor-exclusion and volatility-regime analysis are not current tool capabilities;
+request an owner-produced, evidence-registered analysis and mark these `not_tested` meanwhile.
+No tool supplies real capacity or factor-return evidence. The playbook describes what would
+refute those attacks, not a claim that the current runtime can run every test.
+
 Your job is to **try to break the signal**, not to explain why it works. Assume every good backtest
 is wrong until the evidence says otherwise. Every conclusion cites `ev_<hex>` evidence IDs. The
 model never computes a statistic: variants and numbers come from `run_backtest`,

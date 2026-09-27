@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     Column,
     DateTime,
     Dialect,
@@ -33,6 +34,14 @@ NAMING = {
     "pk": "pk_%(table_name)s",
 }
 metadata = MetaData(naming_convention=NAMING)
+
+# Serializes a new trial with the instant a committee decision is committed.
+research_guard = Table(
+    "research_guard",
+    metadata,
+    Column("guard_id", Integer, primary_key=True),
+    Column("revision", Integer, nullable=False),
+)
 
 
 class UTCDateTime(TypeDecorator[datetime]):
@@ -94,6 +103,7 @@ workflow_runs = Table(
     Column("updated_at", UTCDateTime, nullable=False),
     Column("lease_owner", String(64)),
     Column("lease_expires_at", UTCDateTime),
+    Column("execution_manifest", JSON, nullable=False, server_default="{}"),
     Index("ix_workflow_runs_requested_by_created", "requested_by", "created_at"),
 )
 
@@ -129,6 +139,9 @@ step_results = Table(
     Column("error_code", String(64)),
     Column("error_message", Text),
     Column("created_at", UTCDateTime, nullable=False),
+    Column("fail_run", Boolean, nullable=False, server_default="0"),
+    Column("run_decision", String(32)),
+    Column("gate_context", String(64)),
 )
 
 findings = Table(
@@ -181,7 +194,8 @@ approvals = Table(
     Column("decision", String(32), nullable=False),
     Column("reason", Text, nullable=False),
     Column("created_at", UTCDateTime, nullable=False),
-    Index("uq_approvals_run_step", "run_id", "step", unique=True),  # one decision per committee pause
+    Column("gate_context", String(64), nullable=False, server_default="legacy"),
+    Index("uq_approvals_run_step_context", "run_id", "step", "gate_context", unique=True),
 )
 
 api_keys = Table(

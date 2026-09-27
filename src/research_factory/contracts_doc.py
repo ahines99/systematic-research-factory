@@ -23,6 +23,7 @@ from .domain.project_models import (
     WorkflowRun,
 )
 from .judgment.contract import JudgmentOutput
+from .persistence import budget as _budget  # noqa: F401 — register budget tables in metadata
 from .persistence.schema import APPEND_ONLY_TABLES, metadata
 
 MODELS: list[tuple[type[BaseModel], str]] = [

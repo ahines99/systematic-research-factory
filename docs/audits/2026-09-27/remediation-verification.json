@@ -1,0 +1,510 @@
+{
+  "generated_at": "2026-09-27T21:43:52.278140+00:00",
+  "baseline_commit": "91e3023",
+  "status": "unreleased candidate; local verification only",
+  "production_source_sha256": "be644e8895c310919ae4e6cffacc9d0ae52a886ffee8512cc50057774c4e3d0e",
+  "checks": {
+    "python312": [
+      {
+        "command": [
+          ".\\.venv312\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "-q",
+          "--tb=short",
+          "--cov",
+          "--cov-report=json:var/remediation/coverage.json",
+          "--cov-report=term"
+        ],
+        "started": "2026-09-27T21:26:33.005008+00:00",
+        "duration_seconds": 115.63,
+        "exit_code": 0,
+        "log": "var\\remediation\\python312-0.log",
+        "log_tail": [
+          "12 files skipped due to complete coverage.",
+          "Coverage JSON written to file var/remediation/coverage.json",
+          "=========================== short test summary info ===========================",
+          "SKIPPED [1] tests\\test_persistence.py:90: TRUNCATE triggers are PostgreSQL-specific; SQLite has no TRUNCATE",
+          "SKIPPED [1] tests\\test_postgres.py:34: needs DATABASE_URL pointing at PostgreSQL",
+          "SKIPPED [1] tests\\test_postgres.py:46: needs DATABASE_URL pointing at PostgreSQL",
+          "SKIPPED [1] tests\\test_remediation_judgment.py:120: needs PostgreSQL test database",
+          "286 passed, 4 skipped in 113.39s (0:01:53)"
+        ],
+        "log_sha256": "3af85100e62604ab9c91195e73512d6b8c36f548ef7d9c025abdde6072d058a9"
+      }
+    ],
+    "python314": [
+      {
+        "command": [
+          ".\\.venv\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "-q",
+          "--tb=short"
+        ],
+        "started": "2026-09-27T21:41:33.005707+00:00",
+        "duration_seconds": 65.93,
+        "exit_code": 0,
+        "log": "var\\remediation\\python314-0.log",
+        "log_tail": [
+          "........................................................................ [ 98%]",
+          "...                                                                      [100%]",
+          "=========================== short test summary info ===========================",
+          "SKIPPED [1] tests\\test_persistence.py:90: TRUNCATE triggers are PostgreSQL-specific; SQLite has no TRUNCATE",
+          "SKIPPED [1] tests\\test_postgres.py:34: needs DATABASE_URL pointing at PostgreSQL",
+          "SKIPPED [1] tests\\test_postgres.py:46: needs DATABASE_URL pointing at PostgreSQL",
+          "SKIPPED [1] tests\\test_remediation_judgment.py:120: needs PostgreSQL test database",
+          "287 passed, 4 skipped in 63.82s (0:01:03)"
+        ],
+        "log_sha256": "b451ea9bc55cbc0e559fab4cb74a7ee8b16d59d5af9b74279491606a7a492736"
+      }
+    ],
+    "linux": {
+      "command": "Linux/Python3.12 locked dependency image; pytest -q --tb=short",
+      "exit_code": 0,
+      "duration_seconds": 126.14,
+      "log": "var/remediation/linux-py312.log",
+      "log_tail": [
+        "........................................................................ [ 99%]",
+        "..                                                                       [100%]",
+        "=========================== short test summary info ============================",
+        "SKIPPED [1] .\\tests\\test_persistence.py:90: TRUNCATE triggers are PostgreSQL-specific; SQLite has no TRUNCATE",
+        "SKIPPED [1] .\\tests\\test_postgres.py:34: needs DATABASE_URL pointing at PostgreSQL",
+        "SKIPPED [1] .\\tests\\test_postgres.py:46: needs DATABASE_URL pointing at PostgreSQL",
+        "SKIPPED [1] .\\tests\\test_remediation_judgment.py:120: needs PostgreSQL test database",
+        "286 passed, 4 skipped in 122.07s (0:02:02)"
+      ],
+      "log_sha256": "b09b8fdc7f1762f4b80dec9e4bf444fdd84414e8b1708337e404ccc8e53a472f"
+    },
+    "linux314": {
+      "command": "Linux/Python314 locked dependency image; pytest -q --tb=short",
+      "exit_code": 0,
+      "duration_seconds": 117.75,
+      "log": "var/remediation/linux-py314.log",
+      "log_tail": [
+        "........................................................................ [ 98%]",
+        "...                                                                      [100%]",
+        "=========================== short test summary info ============================",
+        "SKIPPED [1] .\\tests\\test_persistence.py:90: TRUNCATE triggers are PostgreSQL-specific; SQLite has no TRUNCATE",
+        "SKIPPED [1] .\\tests\\test_postgres.py:34: needs DATABASE_URL pointing at PostgreSQL",
+        "SKIPPED [1] .\\tests\\test_postgres.py:46: needs DATABASE_URL pointing at PostgreSQL",
+        "SKIPPED [1] .\\tests\\test_remediation_judgment.py:120: needs PostgreSQL test database",
+        "287 passed, 4 skipped in 112.93s (0:01:52)"
+      ],
+      "log_sha256": "7d5828ddc4da4ecc9ea4d5a5338486474e27a052a49d37ccc5c2da79611ec05f"
+    },
+    "postgres": [
+      {
+        "command": [
+          ".\\.venv312\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "tests/test_persistence.py",
+          "tests/test_postgres.py",
+          "tests/test_remediation_judgment.py",
+          "tests/test_remediation_workflow.py",
+          "-q",
+          "--tb=short"
+        ],
+        "started": "2026-09-27T21:25:47.892746+00:00",
+        "duration_seconds": 15.03,
+        "exit_code": 0,
+        "log": "var\\remediation\\postgres-0.log",
+        "log_tail": [
+          ".............s......................................................     [100%]",
+          "=========================== short test summary info ===========================",
+          "SKIPPED [1] tests\\test_persistence.py:90: TRUNCATE triggers are PostgreSQL-specific; SQLite has no TRUNCATE",
+          "67 passed, 1 skipped in 13.55s"
+        ],
+        "log_sha256": "2fc785d9d965b7e2dc6e56ba5fde1e4d200fc9d972b13e82ea674a14a201f24d"
+      }
+    ],
+    "static": [
+      {
+        "command": [
+          ".\\.venv\\Scripts\\ruff.exe",
+          "check",
+          "src",
+          "tests",
+          "scripts"
+        ],
+        "started": "2026-09-27T21:41:48.970447+00:00",
+        "duration_seconds": 0.03,
+        "exit_code": 0,
+        "log": "var\\remediation\\static-0.log",
+        "log_tail": [
+          "All checks passed!"
+        ],
+        "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      {
+        "command": [
+          ".\\.venv\\Scripts\\ruff.exe",
+          "format",
+          "--check",
+          "src",
+          "tests",
+          "scripts"
+        ],
+        "started": "2026-09-27T21:41:49.005807+00:00",
+        "duration_seconds": 0.03,
+        "exit_code": 0,
+        "log": "var\\remediation\\static-1.log",
+        "log_tail": [
+          "92 files already formatted"
+        ],
+        "log_sha256": "cafa7c5a1693e3113785dde7c8ea539245576e1e61cf368219dab32d2dba8315"
+      },
+      {
+        "command": [
+          ".\\.venv\\Scripts\\python.exe",
+          "-m",
+          "mypy"
+        ],
+        "started": "2026-09-27T21:41:49.043554+00:00",
+        "duration_seconds": 0.75,
+        "exit_code": 0,
+        "log": "var\\remediation\\static-2.log",
+        "log_tail": [
+          "Success: no issues found in 70 source files"
+        ],
+        "log_sha256": "53eff321367cb7c84b853eaf52a4405886e013d20aee3ea61f3809ce5b4b3384"
+      },
+      {
+        "command": [
+          ".\\.venv\\Scripts\\uv.exe",
+          "lock",
+          "--check",
+          "--offline"
+        ],
+        "started": "2026-09-27T21:41:49.794288+00:00",
+        "duration_seconds": 0.45,
+        "exit_code": 0,
+        "log": "var\\remediation\\static-3.log",
+        "log_tail": [
+          "Using CPython 3.12.10 interpreter at: C:\\Users\\Alex Hines\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "Resolved 83 packages in 1ms"
+        ],
+        "log_sha256": "0e703cd022ad62f229e381126be95eacb271c48500d53fe703e678d0d2489a10"
+      }
+    ],
+    "eval": [
+      {
+        "command": [
+          ".\\.venv312\\Scripts\\python.exe",
+          "-m",
+          "research_factory.cli",
+          "eval",
+          "--provider",
+          "rules",
+          "--out",
+          "docs/audits/2026-09-27/remediation-scorecard.json"
+        ],
+        "started": "2026-09-27T21:25:47.893169+00:00",
+        "duration_seconds": 16.95,
+        "exit_code": 0,
+        "log": "var\\remediation\\eval-0.log",
+        "log_tail": [
+          "37/37 cases passed; scorecard written to docs\\audits\\2026-09-27\\remediation-scorecard.json",
+          "  tool_correctness         65/65",
+          "  evidence_fidelity        61/61",
+          "  calculation_fidelity     111/111",
+          "  permission_fidelity      6/6",
+          "  uncertainty_calibration  19/19",
+          "  recovery                 3/3",
+          "  cost_latency             74/74"
+        ],
+        "log_sha256": "61f708213c97f671ae0221d44ffaac60c1e639e4825a3ca92555ce356ffa6f22"
+      }
+    ],
+    "container": {
+      "image_id": "sha256:f3d9c5f28273fb6e240e6cc363a0b6878fc28c571b62ce1d24013e36169fab89",
+      "uid": "10001",
+      "postgres": "PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "readyz": true,
+      "mcp": true,
+      "valid_viewer_key": true,
+      "invalid_key_rejected": true,
+      "original_reports_survive_restart": true,
+      "replay_identical": true,
+      "duration_seconds": 26.54
+    },
+    "distributions": [
+      {
+        "command": [
+          ".\\.venv\\Scripts\\uv.exe",
+          "build",
+          "--out-dir",
+          "var/remediation/distributions"
+        ],
+        "started": "2026-09-27T21:41:33.012531+00:00",
+        "duration_seconds": 2.33,
+        "exit_code": 0,
+        "log": "var\\remediation\\distributions-0.log",
+        "log_tail": [
+          "Building source distribution...",
+          "Building wheel from source distribution...",
+          "Successfully built var\\remediation\\distributions\\systematic_research_factory-0.1.0.tar.gz",
+          "Successfully built var\\remediation\\distributions\\systematic_research_factory-0.1.0-py3-none-any.whl"
+        ],
+        "log_sha256": "e56e63469791bca986a535a4d6f63b908aec67527e80913e29dfc861a14849e3"
+      },
+      {
+        "command": [
+          ".\\.venv312\\Scripts\\python.exe",
+          "scripts/check_distributions.py",
+          "var/remediation/distributions"
+        ],
+        "started": "2026-09-27T21:41:35.349225+00:00",
+        "duration_seconds": 99.85,
+        "exit_code": 0,
+        "log": "var\\remediation\\distributions-1.log",
+        "log_tail": [
+          "........................................................................ [ 98%]",
+          "...                                                                      [100%]",
+          "=========================== short test summary info ===========================",
+          "SKIPPED [1] tests\\test_persistence.py:90: TRUNCATE triggers are PostgreSQL-specific; SQLite has no TRUNCATE",
+          "SKIPPED [1] tests\\test_postgres.py:34: needs DATABASE_URL pointing at PostgreSQL",
+          "SKIPPED [1] tests\\test_postgres.py:46: needs DATABASE_URL pointing at PostgreSQL",
+          "SKIPPED [1] tests\\test_remediation_judgment.py:120: needs PostgreSQL test database",
+          "287 passed, 4 skipped in 68.65s (0:01:08)"
+        ],
+        "log_sha256": "36829d6de24f428e1e5a00a01590e222ad0ebb31d700fcf85026c076545ac490"
+      }
+    ]
+  },
+  "coverage": {
+    "covered_lines": 5297,
+    "num_statements": 5666,
+    "percent_covered": 91.03299856527977,
+    "percent_covered_display": "91",
+    "missing_lines": 369,
+    "excluded_lines": 94,
+    "percent_statements_covered": 93.48746911401341,
+    "percent_statements_covered_display": "93",
+    "num_branches": 1304,
+    "num_partial_branches": 188,
+    "covered_branches": 1048,
+    "missing_branches": 256,
+    "percent_branches_covered": 80.3680981595092,
+    "percent_branches_covered_display": "80"
+  },
+  "offline_evaluation": {
+    "provider": "rules",
+    "total": 37,
+    "passed": 37,
+    "adversarial": 9,
+    "model_exercised_cases": 0,
+    "dimensions": {
+      "tool_correctness": {
+        "passed": 65,
+        "total": 65
+      },
+      "evidence_fidelity": {
+        "passed": 61,
+        "total": 61
+      },
+      "calculation_fidelity": {
+        "passed": 111,
+        "total": 111
+      },
+      "permission_fidelity": {
+        "passed": 6,
+        "total": 6
+      },
+      "uncertainty_calibration": {
+        "passed": 19,
+        "total": 19
+      },
+      "recovery": {
+        "passed": 3,
+        "total": 3
+      },
+      "cost_latency": {
+        "passed": 74,
+        "total": 74
+      }
+    }
+  },
+  "image_scan": {
+    "scanner": "grype0.119.0",
+    "exit_code": 0,
+    "duration_seconds": 52.67,
+    "policy": "only-fixed; fail on high or critical",
+    "image_id": "sha256:f3d9c5f28273fb6e240e6cc363a0b6878fc28c571b62ce1d24013e36169fab89",
+    "matches": [
+      {
+        "package": "python",
+        "version": "3.14.7",
+        "advisory": "CVE-2026-17084",
+        "severity": "Medium",
+        "fixed_in": [
+          "3.15.0rc2"
+        ],
+        "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-17084"
+      },
+      {
+        "package": "python",
+        "version": "3.14.7",
+        "advisory": "CVE-2026-15806",
+        "severity": "Medium",
+        "fixed_in": [
+          "3.15.0rc2"
+        ],
+        "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-15806"
+      },
+      {
+        "package": "python",
+        "version": "3.14.7",
+        "advisory": "CVE-2025-15367",
+        "severity": "Medium",
+        "fixed_in": [
+          "3.15.0a6"
+        ],
+        "source": "https://nvd.nist.gov/vuln/detail/CVE-2025-15367"
+      },
+      {
+        "package": "python",
+        "version": "3.14.7",
+        "advisory": "CVE-2026-15310",
+        "severity": "Low",
+        "fixed_in": [
+          "3.15.0rc2"
+        ],
+        "source": "https://nvd.nist.gov/vuln/detail/CVE-2026-15310"
+      }
+    ],
+    "database": {
+      "status": {
+        "schemaVersion": "v6.1.9",
+        "from": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-27T00:36:47Z_1790490630.tar.zst?checksum=sha256%3A0567d832ad6f47af3f67f0d8aa36397f8a3557dc51311cff68e2bb4332ba3c56",
+        "built": "2026-09-27T06:30:30Z",
+        "path": "/cache/6/vulnerability.db",
+        "valid": true
+      },
+      "providers": {
+        "alma": {
+          "captured": "2026-09-27T00:37:10Z",
+          "input": "xxh64:db73183617e221d9"
+        },
+        "alpine": {
+          "captured": "2026-09-27T00:37:13Z",
+          "input": "xxh64:bb3d841b121ddafd"
+        },
+        "amazon": {
+          "captured": "2026-09-27T00:37:00Z",
+          "input": "xxh64:5cb08437b0ae5ac0"
+        },
+        "arch": {
+          "captured": "2026-09-27T00:36:49Z",
+          "input": "xxh64:0a73d2045c141ca7"
+        },
+        "bitnami": {
+          "captured": "2026-09-27T00:37:23Z",
+          "input": "xxh64:a177c0855fe1b319"
+        },
+        "chainguard": {
+          "captured": "2026-09-27T00:40:34Z",
+          "input": "xxh64:795ae9bbd598ac33"
+        },
+        "chainguard-libraries": {
+          "captured": "2026-09-27T00:36:47Z",
+          "input": "xxh64:930d0f5a060ad9db"
+        },
+        "debian": {
+          "captured": "2026-09-27T00:37:12Z",
+          "input": "xxh64:b5acab4425429aab"
+        },
+        "echo": {
+          "captured": "2026-09-27T00:37:26Z",
+          "input": "xxh64:b6fec91372f39bd3"
+        },
+        "eol": {
+          "captured": "2026-09-27T00:37:05Z",
+          "input": "xxh64:c3b0415d6ee72283"
+        },
+        "epss": {
+          "captured": "2026-09-27T00:37:20Z",
+          "input": "xxh64:134e66b18932be9a"
+        },
+        "fedora": {
+          "captured": "2026-09-27T00:36:59Z",
+          "input": "xxh64:ad7fb8a8104e7352"
+        },
+        "github": {
+          "captured": "2026-09-27T00:37:40Z",
+          "input": "xxh64:a88846987b0fc18a"
+        },
+        "govulndb": {
+          "captured": "2026-09-27T00:37:17Z",
+          "input": "xxh64:ba4f20c4c1b160f8"
+        },
+        "hummingbird": {
+          "captured": "2026-09-27T00:39:28Z",
+          "input": "xxh64:17482a8afc36c628"
+        },
+        "kev": {
+          "captured": "2026-09-27T00:37:09Z",
+          "input": "xxh64:5ab90d5b829ffedb"
+        },
+        "mariner": {
+          "captured": "2026-09-27T00:36:58Z",
+          "input": "xxh64:be074d704967a661"
+        },
+        "minimos": {
+          "captured": "2026-09-27T00:36:53Z",
+          "input": "xxh64:fc8e9e979c012c42"
+        },
+        "nvd": {
+          "captured": "2026-09-27T00:37:53Z",
+          "input": "xxh64:4f01c35560d192d4"
+        },
+        "oracle": {
+          "captured": "2026-09-27T00:37:01Z",
+          "input": "xxh64:f8e4412f587f1966"
+        },
+        "photon": {
+          "captured": "2026-09-27T00:36:59Z",
+          "input": "xxh64:59cc242e4baae5a3"
+        },
+        "rhel": {
+          "captured": "2026-09-27T00:39:40Z",
+          "input": "xxh64:502f465039128d50"
+        },
+        "secureos": {
+          "captured": "2026-09-27T00:42:16Z",
+          "input": "xxh64:9be738cf9250e0a6"
+        },
+        "sles": {
+          "captured": "2026-09-27T00:39:33Z",
+          "input": "xxh64:ff29cd2e7b57cd99"
+        },
+        "ubuntu": {
+          "captured": "2026-09-27T00:39:17Z",
+          "input": "xxh64:4503763587d51678"
+        },
+        "wolfi": {
+          "captured": "2026-09-27T00:37:36Z",
+          "input": "xxh64:6416be47769a5e0c"
+        }
+      }
+    }
+  },
+  "replay_archives": {
+    "candidate-linux-py312.tar.gz": {
+      "sha256": "8185db1237773b4bb790389be8aa5b2aedbcc3dc609ecc44238c5f43999cdafc",
+      "bytes": 2015002
+    },
+    "candidate-linux-py314.tar.gz": {
+      "sha256": "9d752b641ad8ba572072f35dc3670992117c22a3ce94ba57661fe56c1c43c2af",
+      "bytes": 2014024
+    }
+  },
+  "qualifications": [
+    "Windows 3.12 and Linux 3.12 original full runs preceded the second replay-fixture parameter and synchronized heartbeat test; extracted final sdist tests cover the final tree on Windows 3.12.",
+    "Initial Linux 3.14 run: 286 passed, one heartbeat timing test failed, four skipped. The synchronized fixed-clock test replaces a 90ms wall-clock lease; no production source change.",
+    "Ordinary database-only skips are covered by a separate PostgreSQL run; SQLite TRUNCATE remains inapplicable.",
+    "Image scan policy passes with three Medium and one Low Python advisory match remaining.",
+    "No remote CI, hosted deployment, paid provider calls, or prior published-release replay claimed."
+  ]
+}

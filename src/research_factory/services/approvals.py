@@ -22,6 +22,7 @@ from typing import Any
 
 from ..domain.clock import Clock
 from ..domain.errors import ConflictError, ForbiddenError, InvalidInputError, NotFoundError
+from ..domain.identity import content_id
 from ..domain.models import Finding, Severity
 from ..domain.project_models import ApprovalDecision, ApprovalRecord, RunStatus
 from ..persistence.repositories import Repositories
@@ -67,9 +68,64 @@ class ApprovalService:
         self.clock = clock
 
     def pending_gate(self, run_id: str) -> Gate:
+        reviewed = self.repos.steps.get(run_id, COMMITTEE_STEP)
+        if reviewed is not None and reviewed.gate_context != self.context(run_id):
+            return Gate(
+                ApprovalDecision.NEEDS_MORE_EVIDENCE,
+                ["The review inputs changed; resume the run to refresh the committee gate."],
+            )
         return compute_gate(self.repos.findings.list_for_run(run_id))
 
+    def context(self, run_id: str) -> str:
+        """Bind approval to exact evidence, related trials and the recorded policy."""
+        run = self.repos.runs.get(run_id)
+        if run is None:
+            raise NotFoundError(f"run {run_id} not found")
+        record = self.repos.experiments.get(run.experiment_id)
+        assert record is not None
+        hyp = record.experiment.hypothesis
+        related = sorted(
+            r.experiment_id
+            for r in self.repos.experiments.list_all()
+            if r.research_family == record.research_family
+            or (
+                r.experiment.hypothesis.feature.name == hyp.feature.name
+                and r.experiment.hypothesis.universe.dataset == hyp.universe.dataset
+            )
+        )
+        findings = sorted(
+            (
+                f.model_dump(mode="json")
+                for f in self.repos.findings.list_for_run(run_id)
+                if f.step != COMMITTEE_STEP
+            ),
+            key=lambda f: f["finding_id"],
+        )
+        artifacts = sorted(
+            (s.step, s.artifact_evidence_id)
+            for s in self.repos.steps.list(run_id)
+            if s.step != COMMITTEE_STEP
+        )
+        return content_id(
+            "gate",
+            {
+                "trials": related,
+                "findings": findings,
+                "artifacts": artifacts,
+                "policy": run.execution_manifest.get("thresholds"),
+            },
+            length=48,
+        )
+
     def record(
+        self, *, run_id: str, approver: str, role: str, decision: ApprovalDecision, reason: str
+    ) -> ApprovalRecord:
+        with self.repos.transaction(run_id=run_id, guard_ledger=True):
+            return self._record_locked(
+                run_id=run_id, approver=approver, role=role, decision=decision, reason=reason
+            )
+
+    def _record_locked(
         self, *, run_id: str, approver: str, role: str, decision: ApprovalDecision, reason: str
     ) -> ApprovalRecord:
         run = self.repos.runs.get(run_id)
@@ -101,6 +157,7 @@ class ApprovalService:
             decision=decision,
             reason=reason,
             created_at=self.clock.now(),
+            gate_context=self.context(run_id),
         )
         self.repos.approvals.add(record)
         self.audit.append(

@@ -1,0 +1,17 @@
+id: 33-pit-date-only
+title: A filed date without acceptance time is insufficient evidence
+kind: judgment
+dimensions:
+- evidence_fidelity
+- uncertainty_calibration
+judgment:
+  step_slug: point_in_time_review
+  payload:
+    filing: &id001
+      filingDate: '2024-05-02'
+      reportDate: '2024-03-31'
+      version: original
+    decision_ts: '2024-05-02T20:00:00Z'
+  evidence_documents:
+    filing: *id001
+  expect_verdict: needs_evidence

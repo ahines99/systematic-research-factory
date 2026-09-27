@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     http_allowed_origins: tuple[str, ...] = ("http://127.0.0.1:*", "http://localhost:*")
     guest_requests_per_minute: int = 30
     trust_proxy_headers: bool = False  # set true only behind Fly's proxy (fly-client-ip)
-    lease_seconds: float = 900.0  # how long a worker may hold a run before another may take over
+    lease_seconds: float = Field(default=900.0, gt=0)  # heartbeat duration before takeover is permitted
     public_base_url: str = "http://127.0.0.1:8000"
 
 

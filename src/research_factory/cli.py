@@ -99,6 +99,30 @@ def cmd_usage(args: argparse.Namespace) -> int:
         tokens, cost = services.repos.usage.totals_for_run(run.run_id)
         if tokens or cost:
             print(f"{run.run_id}  {tokens:>8} tokens  ${cost:.4f}  {run.status}")
+    if args.pending:
+        from .persistence.budget import BudgetReservations
+
+        _print(BudgetReservations(services.engine).outstanding())
+    return 0
+
+
+def cmd_reconcile_usage(args: argparse.Namespace) -> int:
+    """Record verified provider usage for a completed request whose outcome was uncertain."""
+    from .persistence.budget import BudgetReservations
+
+    services = _services(args)
+    BudgetReservations(services.engine).reconcile(
+        args.reservation_id,
+        actor=args.actor,
+        reason=args.reason,
+        confirmed_finished=args.confirmed_finished,
+        now=services.clock.now(),
+        model=args.model,
+        input_tokens=args.input_tokens,
+        output_tokens=args.output_tokens,
+        cost_usd=args.cost_usd,
+    )
+    _print({"reservation_id": args.reservation_id, "status": "reconciled"})
     return 0
 
 
@@ -211,10 +235,22 @@ def cmd_eval(args: argparse.Namespace) -> int:
     from .evals import run_eval_suite, write_scorecard
     from .judgment import prompts
 
-    prompts.set_skills_enabled(not args.no_skills)
-    scorecard = anyio.run(run_eval_suite, Path(args.cases), args.provider or Settings().model_provider)
-    write_scorecard(scorecard, Path(args.out))
-    print(f"{scorecard['passed']}/{scorecard['total']} cases passed; scorecard written to {args.out}")
+    previous = prompts.skills_enabled()
+    provider = args.provider or Settings().model_provider
+    out = (
+        Path(args.out)
+        if args.out
+        else Path("var") / f"scorecard-{provider}-{'no-skills' if args.no_skills else 'skills'}.json"
+    )
+    try:
+        prompts.set_skills_enabled(not args.no_skills)
+        scorecard = anyio.run(
+            run_eval_suite, Path(args.cases), provider, args.database_url or Settings().database_url
+        )
+    finally:
+        prompts.set_skills_enabled(previous)
+    write_scorecard(scorecard, out)
+    print(f"{scorecard['passed']}/{scorecard['total']} cases passed; scorecard written to {out}")
     for dim, row in scorecard["dimensions"].items():
         print(f"  {dim:24s} {row['passed']}/{row['total']}")
     return 0 if scorecard["passed"] == scorecard["total"] else 5
@@ -288,7 +324,22 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=cmd_cancel)
     s = sub.add_parser("usage", help="model spend today and per run")
     s.add_argument("--limit", type=int, default=50)
+    s.add_argument("--pending", action="store_true", help="include unresolved model-call reservations")
     s.set_defaults(func=cmd_usage)
+    s = sub.add_parser(
+        "reconcile-usage", help="settle an uncertain completed model request from provider records"
+    )
+    s.add_argument("reservation_id")
+    s.add_argument("--actor", required=True)
+    s.add_argument("--reason", required=True, help="provider verification and supporting billing reference")
+    s.add_argument(
+        "--confirmed-finished", action="store_true", help="confirm the worker and provider request have ended"
+    )
+    s.add_argument("--model", required=True)
+    s.add_argument("--input-tokens", type=int, required=True)
+    s.add_argument("--output-tokens", type=int, required=True)
+    s.add_argument("--cost-usd", type=float, required=True)
+    s.set_defaults(func=cmd_reconcile_usage)
     s = sub.add_parser("approve", help="record a committee decision and resume")
     s.add_argument("run_id")
     s.add_argument("--decision", required=True, choices=[d.value for d in ApprovalDecision])
@@ -326,11 +377,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=cmd_keys)
     s = sub.add_parser("eval", help="run the golden evaluation suite")
     s.add_argument("--provider", choices=["rules", "anthropic"], default=argparse.SUPPRESS)
-    s.add_argument("--cases", default="evals/golden")
+    bundled_cases = Path(__file__).parent / "_evals" / "golden"
+    checkout_cases = Path(__file__).resolve().parents[2] / "evals" / "golden"
+    s.add_argument("--cases", default=str(bundled_cases if bundled_cases.is_dir() else checkout_cases))
     s.add_argument(
         "--no-skills", action="store_true", help="omit Agent Skills from judgment prompts (A/B test)"
     )
-    s.add_argument("--out", default="var/scorecard.json")
+    s.add_argument("--out", help="output path; defaults to var/scorecard-PROVIDER-skills.json (or no-skills)")
     s.set_defaults(func=cmd_eval)
     s = sub.add_parser("serve", help="serve MCP over Streamable HTTP with API-key auth and the guest demo")
     s.add_argument("--host", default="127.0.0.1")

@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from mcp.server.mcpserver import Context
@@ -38,7 +38,6 @@ class ServerDeps:
     services: Services
     keys: ApiKeyService
     local_principal: Principal = LOCAL_OPERATOR
-    tool_calls: list[str] = field(default_factory=list)
 
 
 def error_payload(error: DomainError) -> str:
@@ -74,7 +73,6 @@ async def governed[T](
     body: Callable[[Principal], Awaitable[T]],
 ) -> T:
     """Run one tool call under authentication, policy and audit."""
-    deps.tool_calls.append(tool)
     audit = deps.services.audit
     principal: Principal | None = None
     bind(tool_name=tool)

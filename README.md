@@ -1,8 +1,8 @@
 # Systematic Research Factory
 
-A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM assists only at judgment steps, can't compute numbers, and can't make decisions.
+A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM drafts evidence-cited reviews. Code computes and renders numeric claims; a deterministic gate and a separate human control decisions. Qualitative prose still needs review.
 
-> **Status:** v1.0 implemented, audited and fixed; deployment waits on the owner's accounts ([go-live review](docs/go-live-review.md)). 187 tests (plus 3 PostgreSQL-only tests, verified on PostgreSQL 16.9), strict typing and 30 golden evaluation cases all pass. A three-agent audit's findings are fixed, each with a regression test ([tests/test_audit_regressions.py](tests/test_audit_regressions.py)).
+> **Status:** unreleased v1.0 candidate (package `0.1.0`). A five-specialist audit and remediation cover workflow integrity, data, budgets, evaluations and delivery. See the [current verification and remaining work](docs/audits/2026-09-27/remediation.md) and [go-live review](docs/go-live-review.md). Hosted release, live model baselines and operational drills remain pending.
 
 ## The problem
 
@@ -20,10 +20,10 @@ Adding an LLM makes each of these easier to commit and harder to notice. This pr
 ```bash
 uv sync --locked                                 # Python 3.12+; includes the dev tools
 uv run rsf demo --out-dir var/reports            # six scenarios end to end in seconds, no API key
-uv run rsf eval                                  # 30 golden cases, seven dimensions
+uv run rsf eval                                  # 37 golden cases, seven dimensions
 uv run rsf run --file examples/experiments/earnings_drift.yaml
 uv run rsf show <run_id> --format html --out var/run.html
-uv run rsf replay <run_id>                       # byte-identical replay from the archived snapshot
+uv run rsf replay <run_id>                       # deterministic replay requires the recorded code/dependency runtime
 uv run pytest
 ```
 
@@ -43,30 +43,31 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 |---|---|
 | Deterministic core | Point-in-time data access, features with lineage, backtest, leakage audit, statistics. All arithmetic lives here. |
 | MCP server | 16 typed tools, 4 resources, 2 prompts. Every call is authenticated, checked against a policy table, audited, and fails with a typed error code. No trading tools exist. |
-| Agent Skills | Procedures for point-in-time research, statistics, red-teaming and the committee, loaded into the judgment prompts. |
+| Agent Skills | Four procedures plus bundled references; scoped review adapters and a targeted point-in-time evaluation. A scoped automated review is not a complete external red-team signoff. |
 | Workflow state machine | Persists every step, resumes without re-running completed steps, retries transient failures, and pauses for humans, outages and budget caps. |
 
-**Data:** filings are real, from SEC EDGAR (44 companies, 2019–2023, including acquisitions, failures and IPOs). Prices are simulated for the same companies, with a planted signal of known strength that the market reacts to only at SEC *acceptance* time. A period-end leak therefore inflates results by a known amount, even on real filing timing, and the audit has to catch it. Prices are always labelled simulated; nothing here is a claim about real returns ([ADR-0003](docs/adr/0003-market-data-semi-synthetic.md)).
+**Data:** a curated SEC-derived snapshot has 44 companies and 1,325 filing/version records (2019–2023), including 10 exits and 8 IPOs. Listing windows are filing-derived proxies; some EPS values are derived and revision categories are heuristic. Prices are simulated for the same companies, with a planted signal of known strength that the market reacts to only at SEC *acceptance* time. A period-end leak therefore inflates results by a known amount, even on real filing timing, and the audit has to catch it. Prices are always labelled simulated; nothing here is a claim about real returns ([ADR-0003](docs/adr/0003-market-data-semi-synthetic.md)).
 
 ## Why this is not just a chatbot
 
 | Claim | Where it's enforced | Proven by |
 |---|---|---|
-| The model never does the maths | [research/](src/research_factory/research/) computes everything; judgment output is [schema-validated](src/research_factory/judgment/contract.py) | [test_research.py](tests/test_research.py) (hand-computed backtest, the deflated-Sharpe worked example), independent recomputation in every [eval](src/research_factory/evals.py) case |
+| Structured numeric claims are artifact-bound | [research/](src/research_factory/research/) computes metrics; structured review references are resolved and formatted by [contract.py](src/research_factory/judgment/contract.py) | Hand-computed backtest/statistics tests and fabricated-value/reference regressions; prose meaning still needs review |
 | Hypotheses can't be quietly edited, and overfitting can't hide | Content-hash experiment IDs; the [ledger](src/research_factory/services/ledger.py) counts every trial, including related trials frozen later or under another family name ([ADR-0008](docs/adr/0008-review-time-trial-counting.md)); database triggers make it append-only | [test_contracts.py](tests/test_contracts.py), golden case [08-overfit-many-trials](evals/golden/08-overfit-many-trials.yaml) |
 | Time is enforced, not requested | `as_of` is required on every query ([pit.py](src/research_factory/data/pit.py)); the [leakage audit](src/research_factory/research/leakage.py) re-derives knowledge times from evidence and recomputes every feature value from the inputs it cites | [test_data.py](tests/test_data.py), golden cases 02–06 and 15 |
-| Claims must cite evidence | Uncited or invented evidence IDs are rejected ([contract.py](src/research_factory/judgment/contract.py)) | `test_uncited_or_invented_evidence_is_rejected` in [test_workflow.py](tests/test_workflow.py), golden case 21 |
+| Claims must cite evidence | Uncited or invented evidence IDs and unbound numeric claims are rejected; citation existence does not prove qualitative entailment ([contract.py](src/research_factory/judgment/contract.py)) | `test_uncited_or_invented_evidence_is_rejected` in [test_workflow.py](tests/test_workflow.py), golden case 21 |
 | Humans approve decisions | A deterministic [gate](src/research_factory/services/approvals.py); the model's memo can't be more permissive than the gate; the approver must hold the role, can't be the requester, and can't approve against the gate | [test_workflow.py](tests/test_workflow.py), [test_http.py](tests/test_http.py), golden cases 23–25 |
-| It's evaluated, not demoed | 30 [golden cases](evals/golden/), 7 adversarial, scored on seven dimensions in CI | [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
-| Results are reproducible | Content-addressed evidence; replay from archived snapshots | `test_replay_from_archived_snapshot_is_byte_identical` in [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
+| It's evaluated, not demoed | 37 [golden cases](evals/golden/), adversarial cases, scored on seven dimensions in CI | [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
+| Deterministic results are reproducible in their recorded runtime | Content-addressed snapshots, archived thresholds and source/dependency fingerprints; replay makes no model calls | `test_replay_from_archived_snapshot_is_byte_identical` in [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
 
 ## Documentation
 
 | Document | Contents |
 |---|---|
+| [docs/PORTFOLIO_ROADMAP.md](docs/PORTFOLIO_ROADMAP.md) | Remaining portfolio gaps, detailed assistant/owner actions, dependencies and acceptance criteria |
 | [docs/architecture.md](docs/architecture.md) | Layers, the workflow, evidence and provenance, reproducibility, deployment |
 | [docs/data_contracts.md](docs/data_contracts.md) | Every contract and table, generated from the code |
-| [docs/threat_model.md](docs/threat_model.md) | 15 threats, each mapped to a mitigation and a test |
+| [docs/threat_model.md](docs/threat_model.md) | Threats, mitigations, tests and residual risks |
 | [docs/deployment.md](docs/deployment.md) · [docs/runbook.md](docs/runbook.md) | Fly.io + Neon + R2 setup, release, rollback, operations |
 | [docs/ROADMAP.md](docs/ROADMAP.md) · [docs/adr/](docs/adr/README.md) | Tickets and architecture decisions |
 | [IMPLEMENTATION_HANDOFF.md](IMPLEMENTATION_HANDOFF.md) | The original specification and its acceptance checklist |

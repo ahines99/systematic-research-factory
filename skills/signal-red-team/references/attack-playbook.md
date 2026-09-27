@@ -134,7 +134,9 @@ still passes the statistical gates.
 **Procedure**
 1. P&L contribution by security from the backtest artifact: the top-10 share of gross P&L and a
    Herfindahl index of the absolute contributions.
-2. `get_statistics` on returns excluding the top 10 contributors, and excluding the top 1% of days.
+2. Ask the research lead to register deterministic statistics excluding the top 10 contributors
+   and top 1% of days. These exclusions are not arguments to the current `get_statistics` tool.
+   Until that evidence exists, this attack is `not_tested`, with a `NEEDS_EVIDENCE` request.
 3. Check whether the top contributors share one industry or one event, for example a single
    acquisition.
 
@@ -147,10 +149,12 @@ survive both exclusions.
 **Claim:** the edge belongs to one period or market state.
 
 **Procedure**
-1. `get_statistics` by calendar year, and for the first half vs the second half of the sample.
-2. Split by a volatility regime defined with **trailing** data only (for example trailing 63-day
+1. Freeze new experiments with explicit calendar-year or half-sample date ranges, then call
+   `get_statistics(experiment_id)` for each. Do not pass date filters to `get_statistics` itself.
+2. Request an evidence-registered external analysis for a volatility regime defined with **trailing** data only (for example trailing 63-day
    market volatility above or below its trailing median). A regime label that uses future data is
-   itself a leak.
+   itself a leak. The current MCP has no regime-filter argument; mark this check `not_tested`
+   until the requested analysis is available.
 3. Check whether the edge decays over time. Published anomalies tend to weaken after publication
    (McLean & Pontiff 2016, "Does Academic Research Destroy Stock Return Predictability?").
 

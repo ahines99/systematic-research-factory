@@ -1,62 +1,45 @@
 # v1.0 go-live review (RSF-080)
 
-Reviewed 2026-09-23 against the production criteria in [ROADMAP.md](ROADMAP.md#what-production-means-here).
+Reviewed 2026-09-27 against the [roadmap](ROADMAP.md). Package version remains `0.1.0`; no release is tagged or deployed from this checkout.
 
-**Verdict: not yet live.** All code, tests and configuration for v1.0 are complete and verified locally, including the fixes from the three-agent audit (see [Audit follow-up](#audit-follow-up)). The remaining work needs the owner's accounts, a GitHub remote, an API key or a recording; it is listed below. `v1.0.0` should be tagged only after they are done.
+**Verdict: unreleased candidate, not yet live.** The five-specialist [audit](audits/2026-09-27/README.md) found defects despite the previously passing tests. The [remediation record](audits/2026-09-27/remediation.md) is the current source of implementation status, validation results and remaining limitations. The earlier claim that all account-independent work was complete is superseded.
 
-| Criterion | Evidence | Status |
+| Capability | Local acceptance evidence | External acceptance still required |
 |---|---|---|
-| A hosted, authenticated MCP server runs the full workflow on real SEC EDGAR filings with semi-synthetic prices | `rsf serve` app with API-key auth and roles (`http_app.py`, `auth.py`), tested over HTTP (`tests/test_http.py`). EDGAR universe snapshot of 44 companies (`data/snapshots/`). Golden cases 14–15. `fly.toml`, `Dockerfile` | Code verified; **hosting pending owner** |
-| Runs are durable, resumable, idempotent and reproducible | Persisted step results, resume after restart (`test_resume_after_process_restart`), idempotent reuse, one worker per run via leases (`test_c4_only_one_worker_can_advance_a_run`), byte-identical replay from archived snapshots (`test_replay_from_archived_snapshot_is_byte_identical`, `test_replay_ignores_live_data_changes`) | Done |
-| Numbers come from deterministic, tested code; model judgments are schema-validated, cited and evaluated | Hand-computed and property tests (`tests/test_research.py`), independent recomputation in every eval case, judgment contract (`judgment/contract.py`), 30 golden cases passing (`rsf eval`); every value recomputed from its cited evidence in the leakage audit | Done for the rules provider. **A Claude baseline, with and without Skills, is pending an API key** (`rsf eval --provider anthropic`, then `--no-skills`) |
-| Approvals are enforced server-side by role; no path to order placement | `ApprovalService`, permission table, tests in `test_workflow.py` and `test_http.py`. The tool surface is asserted to contain no trading tools (`test_tool_surface_is_exact_and_has_no_trading`) | Done |
-| Structured logs, model-spend caps, backups, a runbook and a release pipeline exist and have been exercised | Redacted JSON logs (`observability.py`), budgets (`services/budget.py`, tests), [runbook.md](runbook.md), `.github/workflows/release.yml` | Logs and caps done. **Backup drill and first release run pending owner** |
-| A public demo lets anyone browse pre-recorded runs without logging in, at a bounded cost | `/demo` pages, six recorded scenarios (`rsf demo`), guest rate limit and daily live-run cap (`test_demo_pages_and_guest_live_runs`); guest live runs use the free rules reviewer (`test_c3_guest_live_runs_use_the_rules_reviewer`) | Code verified; **hosting pending owner** |
+| Authenticated research workflow | Nine stages, role and ownership checks, six recorded demo scenarios, HTTP/MCP tests | Hosted Fly/Neon/R2 operation and client smoke |
+| Durable execution | Atomic checkpoints and terminal outcomes, owner-fenced writes, heartbeats, conflict-safe insertions, stale approval rejection | Hosted restart and restore drill |
+| Reproducible deterministic artifacts | Archived configuration and snapshots, source/dependency fingerprints, deterministic-only replay, stored candidate archive | Replay an actual previous release using its preserved runtime after the first release exists |
+| Grounded reviews | Schema/citation validation, numeric artifact references rendered by code, explicit uncertainty pauses, targeted skill evaluation | Live model baselines and a measured skills treatment/control comparison |
+| Bounded paid dispatch | Transactional reservations, output limits, late/refusal accounting, audited reconciliation | Verify supported provider behavior and actual billed usage with the owner's API account |
+| Distribution and operations | Build, package and container checks; readiness validates database and archived blobs; release deploys the scanned digest | First hosted CI/release run, R2 retention, restore and rollback, measured idle cost |
 
-## Verification performed
+Passing local tests does not establish investment performance, complete semantic correctness of model prose, or production readiness. Prices are simulated. Listing windows and some EPS values are derived proxies; see [architecture](architecture.md#datasets).
 
-- 187 automated tests pass on Python 3.14 (dev) and on Python 3.12 using the locked dependencies (`uv.lock`), including from a fresh clone.
-- The PostgreSQL tests (migrations, append-only and TRUNCATE triggers, a full workflow, concurrent runs) pass against a local PostgreSQL 16.9: 35 passed in the persistence, workflow and PostgreSQL modules. CI runs them again in its `postgres` job.
-- `ruff`, `ruff format --check` and `mypy --strict` are clean over 66 source files.
-- `rsf serve` was run as a real process: health, demo pages, guest and keyed MCP calls, a 401 for a bad key, a guest live run and JSON step logs were all checked with curl.
-- The golden evaluation suite passes 30 of 30 cases, including 7 adversarial ones; all 7 dimensions are green.
-- `pip-audit` found no known vulnerabilities in the locked dependency set.
-- The wheel contains the Skills, the EDGAR snapshot and the migrations.
+The final local image passes the configured high/critical vulnerability gate after Python/OpenSSL updates. Three Medium and one Low Python scanner matches remain tracked in the remediation report; reassess them before release.
 
-## Not verified here, and why
+## Required owner or external actions
 
-| Item | Why it wasn't run | What to do |
-|---|---|---|
-| CI on GitHub (RSF-004), incl. the PostgreSQL job (RSF-060) | No remote repository. (The PostgreSQL tests were run locally.) | Push to GitHub (public), confirm the `ci` workflow is green, and protect `main` |
-| Container build (RSF-061) | No Docker on the build machine | `docker compose up --build`, or let the release workflow build it |
-| Fly.io + Neon + R2 deployment (RSF-065, RSF-067, RSF-079) | Needs the owner's accounts and secrets | Follow [deployment.md](deployment.md), including the R2 bucket lock |
-| Restore drill (RSF-068) | Needs a Neon project | Follow [runbook.md](runbook.md#restoring-from-backup-rsf-068) and record the time here |
-| First tagged release (RSF-078) and demo recording (RSF-052) | Needs a GitHub remote and a person at the keyboard | Bump the version to `1.0.0`, then tag `v1.0.0` after the items above; record using [demo-script.md](demo-script.md) |
+| Tickets | Action and acceptance |
+|---|---|
+| RSF-004, RSF-060 | Configure a GitHub remote, push the reviewed changes, run all CI jobs, and protect `main`. No remote is configured in this checkout. |
+| RSF-034, RSF-039 | Supply an API key and preserve distinct live model/skills-on/skills-off scorecards, including exact input, prompt, skill, model and runtime provenance. A deterministic rules run cannot prove a skill improves a model. |
+| RSF-065, RSF-067 | Provision Fly, Neon and R2; configure credentials, host allowlists and R2 retention; verify real overwrite/delete behavior under that policy. |
+| RSF-068 | Time a restore into isolated infrastructure, read the restored evidence, and replay with the recorded runtime. Record duration and failures. |
+| RSF-078, RSF-079 | Exercise delivery of the scanned digest, seed public demo runs, run readiness/MCP/authenticated-client checks, rehearse rollback, and measure idle cost against the roadmap's approximate monthly ceiling. |
+| RSF-052 | Record the corrected demo with simulated-data and review-scope limitations visible. |
+| RSF-077 | Preserve the first released image and archive; after a subsequent release, prove replay of that prior release in its original runtime. The stored candidate fixture is useful but is not an earlier published release. |
+| RSF-080 | Review pre-tag evidence; update both version declarations, regenerate `uv.lock`, update the changelog and run release checks. Tag only after pre-tag approval. Record post-deployment acceptance separately. |
 
-## Audit follow-up
+This order avoids requiring the first release to exist before its own tag. External actions are pending acceptance, not claims that the repository has no implementation for them. No cloud account, production credentials or paid calls were used for this remediation.
 
-On 2026-09-23 three agents audited the code, the quantitative methods, and the docs and operations. Every finding with a code or docs fix was fixed; the regressions are pinned in `tests/test_audit_regressions.py`, `tests/test_research.py` and `tests/test_edgar.py`.
+## Historical evidence
 
-| Area | Findings | Resolution |
-|---|---|---|
-| Access control | C1 guests could read private runs through resources; C2 researchers could resume others' runs; C9 guest queries wrote evidence and trusted a spoofable IP header | Resources check the HTTP principal; resume and cancel need ownership or the approver role; guests write nothing; the proxy header is trusted only when configured |
-| Spend | C3 guest live runs could use the paid model | Guests use the rules reviewer ([ADR-0009](adr/0009-production-defaults.md)) |
-| Concurrency and recovery | C4 two workers could advance one run; C5 unexpected errors left runs `running`; C6 retried steps kept stale findings; C7 timeouts did not stop blocking work; C8 analysis runs resumed as full runs | Leases, `INTERNAL` pauses, superseded findings, abandonable threads, `engine_for_run`; `rsf cancel` added |
-| Integrity | C10–C14: duplicate decisions, PostgreSQL TRUNCATE, idempotent inserts, approval input errors | Unique index, TRUNCATE triggers, `insert_ignore`, typed errors |
-| Statistics | Q1 near-duplicate trials switched deflation off; Q5 trials counted only at freeze | Variance floor; review-time trial count across families ([ADR-0008](adr/0008-review-time-trial-counting.md)) |
-| Data | Q2/Q3 EDGAR quarters mislabeled and Q4 broken by splits; Q6 revisions untagged; Q7 hindsight exit returns | Period-end keys, split-robust Q4, revision tags, neutral exits; snapshot rebuilt from the cache ([ADR-0003](adr/0003-market-data-semi-synthetic.md) notes) |
-| Leakage audit | Q4 lineage could be honest-looking while values leaked | Lineage completeness and value recomputation checks |
-| Methodology | Q8–Q11 skill guidance, horizon mismatch, cost model | Skills updated; `hold_days` must equal `horizon_days`; cost simplifications documented |
-| Docs and ops | D1–D15 stale counts, the unsafe `v0.1.0` tag, unpinned actions, release ordering | Docs corrected, the tag deleted, actions pinned to verified releases, the image scanned before push |
-
-The owner decisions were recorded in [ADR-0009](adr/0009-production-defaults.md). The optional load test (RSF-076) was skipped.
-
-## Open risks
-
-See [threat_model.md](threat_model.md#residual-risks). In short: bearer keys are not scoped to IP addresses, the guest rate limit is per machine, the injection scanner is heuristic (the real control is structural), and artifact hashes can differ between CPU architectures in the last floating-point bit.
+The 2026-09-23 three-agent fixes remain represented by `tests/test_audit_regressions.py`. The 2026-09-27 audit at commit `91e3023` is preserved unchanged as a historical baseline; its test counts and defect descriptions describe that commit. Current results belong in the separate remediation record.
 
 ## Drill log
 
-| Date | Drill | Duration | Result |
-|---|---|---|---|
-| | Restore from Neon point-in-time branch + `rsf replay` | | |
+| Date | Environment and immutable version | Drill | Duration | Result |
+|---|---|---|---|---|
+| Pending | | Restore, archived evidence and replay | | |
+| Pending | | Release rollback and client/storage smoke | | |
+| Pending | | Idle cost observation | | |

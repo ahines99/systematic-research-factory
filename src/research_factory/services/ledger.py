@@ -7,6 +7,8 @@ there is no way to edit an experiment in place.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from contextlib import AbstractContextManager
 from typing import Any
 
 from ..domain.clock import Clock
@@ -17,13 +19,25 @@ from .audit import AuditLog
 
 
 class ResearchLedger:
-    def __init__(self, repo: ExperimentRepository, audit: AuditLog, clock: Clock):
+    def __init__(
+        self,
+        repo: ExperimentRepository,
+        audit: AuditLog,
+        clock: Clock,
+        *,
+        transaction: Callable[[], AbstractContextManager[None]],
+    ):
         self.repo = repo
         self.audit = audit
         self.clock = clock
+        self.transaction = transaction
 
     def freeze(self, experiment: Experiment, created_by: str) -> tuple[ExperimentRecord, bool]:
         """Register an experiment. Returns (record, created). Re-freezing is idempotent."""
+        with self.transaction():
+            return self._freeze(experiment, created_by)
+
+    def _freeze(self, experiment: Experiment, created_by: str) -> tuple[ExperimentRecord, bool]:
         existing = self.repo.get(experiment.experiment_id)
         if existing is not None:
             return existing, False
