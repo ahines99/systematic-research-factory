@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   historical-replay:
-    name: preserved candidate replay (Python ${{ matrix.python }})
+    name: historical artifact comparison (Python ${{ matrix.python }})
     runs-on: ubuntu-24.04
     container:
       image: ${{ matrix.image }}
@@ -44,8 +44,8 @@ jobs:
         with:
           version: "0.12.18"
       - run: uv sync --project var/replay-source --locked --python /usr/local/bin/python
-      - name: replay stored expectations with the preserved implementation
-        run: uv run --no-sync --project var/replay-source python scripts/check_replay_archive.py tests/fixtures/replay/${{ matrix.archive }}
+      - name: compare stored expectations with the preserved implementation
+        run: uv run --no-sync --project var/replay-source python scripts/check_replay_archive.py tests/fixtures/replay/${{ matrix.archive }} --cross-host
 
   test:
     name: lint, types, tests (Python ${{ matrix.python }})

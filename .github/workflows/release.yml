@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  UV_PYTHON: "3.14"
+
 concurrency:
   group: production-release
   cancel-in-progress: false
@@ -127,4 +130,4 @@ jobs:
           app=$(python3 -c "import tomllib; print(tomllib.load(open('fly.toml','rb'))['app'])")
           curl --fail --retry 10 --retry-delay 6 --retry-all-errors "https://${app}.fly.dev/healthz"
           flyctl ssh console -C "rsf --provider rules demo"
-          uv run python scripts/smoke_deployment.py "https://${app}.fly.dev" --version "${GITHUB_REF_NAME#v}" --require-key
+          uv run --no-sync python scripts/smoke_deployment.py "https://${app}.fly.dev" --version "${GITHUB_REF_NAME#v}" --require-key

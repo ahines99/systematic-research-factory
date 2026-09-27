@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import tarfile
 import tempfile
 from pathlib import Path
@@ -22,7 +23,31 @@ from research_factory.services.container import build_services
 from research_factory.workflows.execution import runtime_identity
 
 
-async def check(path: Path) -> None:
+def historical_difference_allowed(step: str, before: dict[str, Any], after: dict[str, Any]) -> bool:
+    """Only the observed BLAS reduction drift, never a changed decision or arbitrary tolerance.
+
+    This is a numerical comparison, NOT a byte-identical replay. Archive checksums and
+    all other fields remain exact. New or larger differences require investigation.
+    """
+    if step != "Statistical review":
+        return False
+    old, new = dict(before), dict(after)
+    for document in (old, new):
+        document["checks"] = [dict(check) for check in document["checks"]]
+    for old_values, new_values, key in (
+        (old, new, "newey_west_t"),
+        (old["checks"][1], new["checks"][1], "value"),
+    ):
+        a, b = old_values[key], new_values[key]
+        if not isinstance(a, float) or not isinstance(b, float):
+            return False
+        if not math.isfinite(a) or not math.isfinite(b) or abs(a - b) > 4 * math.ulp(a):
+            return False
+        new_values[key] = a
+    return old == new
+
+
+async def check(path: Path, cross_host: bool = False) -> None:
     summary = json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))
     if hashlib.sha256(path.read_bytes()).hexdigest() != summary["archive_sha256"]:
         raise ValueError("archive checksum does not match reviewed manifest")
@@ -42,6 +67,7 @@ async def check(path: Path) -> None:
 
         services.dataset = forbidden  # type: ignore[method-assign]
         services.provider.judge = forbidden  # type: ignore[method-assign]
+        differences = []
         try:
             assert len(baseline["scenarios"]) == 6
             for name, scenario in baseline["scenarios"].items():
@@ -53,9 +79,17 @@ async def check(path: Path) -> None:
                         if before != after:
                             old = services.repos.steps.get(run_id, step)
                             new = services.repos.steps.get(result.replay_run_id, step)
-                            assert old and new and old.artifact_evidence_id and new.artifact_evidence_id
+                            assert old is not None
+                            assert new is not None
+                            assert old.artifact_evidence_id is not None
+                            assert new.artifact_evidence_id is not None
                             old_doc = services.evidence.load_json(old.artifact_evidence_id)
                             new_doc = services.evidence.load_json(new.artifact_evidence_id)
+                            assert cross_host
+                            assert historical_difference_allowed(step, old_doc, new_doc)
+                            differences.append(
+                                {"scenario": name, "step": step, "before": before, "after": after}
+                            )
                             print(
                                 json.dumps(
                                     {
@@ -70,9 +104,22 @@ async def check(path: Path) -> None:
                                     sort_keys=True,
                                 )
                             )
-                assert result.identical, (name, result.compared)
-                assert {key: after for key, (_, after) in result.compared.items()} == scenario["artifacts"]
-            print(json.dumps({"archive": path.name, "scenarios": 6, "identical": True}))
+                if not cross_host:
+                    assert result.identical, (name, result.compared)
+                    assert {key: after for key, (_, after) in result.compared.items()} == scenario[
+                        "artifacts"
+                    ]
+            print(
+                json.dumps(
+                    {
+                        "archive": path.name,
+                        "scenarios": 6,
+                        "identical": not differences,
+                        "comparison": "cross-host" if cross_host else "exact",
+                        "differences": differences,
+                    }
+                )
+            )
         finally:
             services.engine.dispose()
 
@@ -80,4 +127,10 @@ async def check(path: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
-    anyio.run(check, parser.parse_args().archive.resolve())
+    parser.add_argument(
+        "--cross-host",
+        action="store_true",
+        help="Allow only documented <=4 ULP HAC reduction drift; never claim exact replay",
+    )
+    args = parser.parse_args()
+    anyio.run(check, args.archive.resolve(), args.cross_host)

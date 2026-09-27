@@ -25,6 +25,7 @@ dependencies = [
   "starlette>=0.40",
   "uvicorn>=0.30",
   "tzdata>=2024.1",
+  "threadpoolctl==3.6.0",
 ]
 
 [project.optional-dependencies]
@@ -105,7 +106,7 @@ mypy_path = "src"
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["yaml.*", "boto3.*", "botocore.*", "opentelemetry.*", "psycopg.*"]
+module = ["yaml.*", "boto3.*", "botocore.*", "opentelemetry.*", "psycopg.*", "threadpoolctl.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from threadpoolctl import threadpool_info
 
 from .. import __version__
 from ..config import Settings
@@ -39,8 +40,14 @@ def runtime_identity() -> dict[str, Any]:
     return {
         "package_version": __version__,
         "source_sha256": sha256_hex(source),
-        "python": ".".join(platform.python_version_tuple()[:2]),
+        "python": platform.python_version(),
+        "python_build": list(platform.python_build()),
+        "libc": list(platform.libc_ver()),
         "numpy": np.__version__,
+        "numpy_simd": np.show_config(mode="dicts")["SIMD Extensions"],
+        "numerical_libraries": [
+            {key: value for key, value in item.items() if key != "filepath"} for item in threadpool_info()
+        ],
         "platform": f"{platform.system()}-{platform.machine()}",
         "dependencies": {
             name: version(name)
