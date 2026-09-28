@@ -2,7 +2,7 @@
 
 A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM drafts evidence-cited reviews. Code computes and renders numeric claims; a deterministic gate and a separate human control decisions. Qualitative prose still needs review.
 
-> **Status:** unreleased v1.0 candidate (package `0.1.0`). Public source, hosted CI, an offline demo and a 240-run controlled simulation study are available. Live-model evaluation, hosted operations, video and final release remain pending. See the [current status and owner actions](docs/PORTFOLIO_STATUS.md).
+> **Status:** unreleased v1.0 candidate (package `1.0.0`, awaiting release tag). Public source, hosted CI, an offline demo and a 240-run controlled simulation study are available. Live-model evaluation, hosted operations, video and final release remain pending. See the [current status and owner actions](docs/PORTFOLIO_STATUS.md).
 
 [![CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml)
 

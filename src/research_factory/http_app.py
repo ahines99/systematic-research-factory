@@ -235,6 +235,7 @@ def create_app(services: Services) -> Starlette:
         runs = services.repos.runs.list(limit=200, requested_by=DEMO_REQUESTER)
         titles = {s.name: s for s in scenarios()}
         items = []
+        seen: set[str] = set()
         for run in runs:
             record = services.ledger.get(run.experiment_id)
             hyp = record.experiment.hypothesis
@@ -242,6 +243,16 @@ def create_app(services: Services) -> Starlette:
                 (s for s in titles.values() if s.experiment.hypothesis.hypothesis_id == hyp.hypothesis_id),
                 None,
             )
+            # The recovery demonstration intentionally reuses the clean experiment.
+            # Its persisted acquisition retry distinguishes the actual run behavior.
+            if match is not None and match.name == "clean-approved":
+                acquisition = services.repos.steps.get(run.run_id, "Data acquisition")
+                if acquisition is not None and acquisition.attempts > 1:
+                    match = titles["fault-survived"]
+            scenario_key = match.name if match else hyp.hypothesis_id
+            if scenario_key in seen:
+                continue
+            seen.add(scenario_key)
             title = match.title if match else hyp.hypothesis_id
             story = match.story if match else hyp.statement
             items.append(

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "systematic-research-factory"
-version = "0.1.0"
+version = "1.0.0"
 description = "Governed, point-in-time-clean systematic research with an LLM only at judgment steps."
 readme = "README.md"
 license = "MIT"

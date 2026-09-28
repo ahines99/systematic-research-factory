@@ -6,6 +6,11 @@ All notable changes to this project. Versions follow [Semantic Versioning](https
 
 This is an unreleased candidate. Current local evidence and external acceptance are recorded in the [remediation report](docs/audits/2026-09-27/remediation.md) and [go-live review](docs/go-live-review.md). There is no separate 0.1.0 release: the MVP and the v1.0 work ship together as `v1.0.0` ([ADR-0009](docs/adr/0009-production-defaults.md)).
 
+### Hosted acceptance fixes
+- Distinguish the recovery demo using its recorded acquisition retry; show the latest run for each scenario after reseeding.
+- Require six distinct scenario cards in desktop/mobile browser acceptance.
+- Prepare matching `1.0.0` package declarations and lock metadata; tagging remains a separate release action.
+
 ### Added
 - Contracts for hypotheses, backtest specs, experiments, runs, findings, evidence, audit events and approvals; content-hash experiment IDs.
 - Deterministic synthetic world with a planted signal, look-ahead and survivorship traps.
