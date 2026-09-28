@@ -139,7 +139,7 @@ jobs:
           docker push "$target"
           copied=$(docker inspect "$target" --format '{{json .RepoDigests}}' | python3 -c 'import json,sys; print(next(x.split("@",1)[1] for x in json.load(sys.stdin) if x.startswith("registry.fly.io/")))')
           test "$copied" = "$DIGEST"
-          flyctl deploy --image "registry.fly.io/${app}@${DIGEST}" --strategy rolling
+          flyctl deploy --image "registry.fly.io/${app}@${DIGEST}" --ha=false --strategy rolling
       - name: seed free demo and verify readiness and client access
         env:
           RSF_SMOKE_API_KEY: ${{ secrets.RSF_SMOKE_API_KEY }}

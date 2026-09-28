@@ -1,0 +1,81 @@
+name: hosted candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: checks
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: production
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      UV_PYTHON: "3.14"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: superfly/flyctl-actions/setup-flyctl@fc53c09e1bc3be6f54706524e3b82c4f462f77be # 1.5
+      - id: meta
+        run: |
+          app=$(python3 -c "import tomllib; print(tomllib.load(open('fly.toml','rb'))['app'])")
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "image=registry.fly.io/${app}:candidate-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: build candidate once
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          platforms: linux/amd64
+          provenance: false
+          tags: ${{ steps.meta.outputs.image }}
+      - name: scan before publishing
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          grype-version: v0.119.0
+          image: ${{ steps.meta.outputs.image }}
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: true
+          output-format: json
+          output-file: candidate-scan.json
+      - name: publish and deploy scanned digest
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          APP: ${{ steps.meta.outputs.app }}
+        run: |
+          flyctl auth docker
+          docker push "$IMAGE"
+          source=$(docker inspect "$IMAGE" --format '{{index .RepoDigests 0}}')
+          printf '%s\n' "$source" > candidate-image.txt
+          flyctl deploy --app "$APP" --image "$source" --ha=false --strategy rolling
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.18"
+      - name: seed and verify
+        env:
+          APP: ${{ steps.meta.outputs.app }}
+          RSF_SMOKE_API_KEY: ${{ secrets.RSF_SMOKE_API_KEY }}
+        run: |
+          uv sync --locked --python 3.14
+          curl --fail --retry 10 --retry-delay 6 --retry-all-errors "https://${APP}.fly.dev/healthz"
+          flyctl ssh console --app "$APP" -C "rsf --provider rules demo"
+          uv run --no-sync python scripts/smoke_deployment.py "https://${APP}.fly.dev" --require-key --record-runs candidate-runs.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: hosted-candidate-evidence
+          path: |
+            candidate-image.txt
+            candidate-scan.json
+            candidate-runs.json
