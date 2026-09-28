@@ -1,10 +1,16 @@
-# Roadmap to a finished portfolio project
+# Historical v1 portfolio finishing plan
 
-> **Execution update:** Alex subsequently accepted the recommendations and supplied the public repository. See [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md) for completed work, accepted budgets and the current owner queue. The gaps and future-tense tasks below preserve the original planning assessment; they are not a claim that completed publication work is still missing.
+> **V1 scope closed, 2026-09-28:** the released project is complete and presentation-ready. Use [canonical positioning](PORTFOLIO_POSITIONING.md) for the approved resume entry and current presentation queue. A future empirical market-data study is separate v2 work. The original assessment below is preserved as historical planning, not an open v1 feature backlog.
 
-Prepared 2026-09-27 from the current worktree, the five-agent audit and remediation evidence, release workflows, demo surfaces, and existing scope decisions. This is the actionable finishing plan. [ROADMAP.md](ROADMAP.md) remains the engineering ticket specification; the [remediation report](audits/2026-09-27/remediation.md) remains the record of completed repairs.
+> **Execution update:** the public repository, account setup, hosted acceptance and v1.0.0 publication are complete. The recovery-card label fix is also complete. See [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md) for delivered evidence, accepted budgets and the current owner queue. The gaps, unchecked checklist and future-tense tasks below preserve the original planning assessment; they are not current instructions to repeat completed work.
 
-**Assessment:** the research engine is substantially implemented and locally verified. The remaining work is release integration, live-provider and hosted acceptance, presentation, publication, and a small maintenance handoff. It is not ready to call a finalized public portfolio project yet. This review did not repeat the full code audit or rerun the application suites; verification counts below refer to the recorded remediation runs.
+The accepted positioning gives equal emphasis to quantitative research engineering and AI platform engineering, serving a systematic quantitative researcher within a small team. Current follow-through is personal presentation, blinded ratings, cost observation and routine maintenance. These do not reopen v1 engineering scope. Any empirical extension follows the [separate v2 research sequence](PORTFOLIO_POSITIONING.md#separate-v2-empirical-study), beginning with a research question rather than additional platform features.
+
+## Original plan — 2026-09-27
+
+Prepared 2026-09-27 from the then-current worktree, the five-agent audit and remediation evidence, release workflows, demo surfaces, and existing scope decisions. The following was the actionable finishing plan at that date. [ROADMAP.md](ROADMAP.md) remains the engineering ticket specification; the [remediation report](audits/2026-09-27/remediation.md) remains the record of completed repairs.
+
+**Assessment at that date:** the research engine was substantially implemented and locally verified. The remaining work was release integration, live-provider and hosted acceptance, presentation, publication, and a small maintenance handoff. It was not yet a finalized public portfolio project. That review did not repeat the full code audit or rerun the application suites; verification counts below refer to the recorded remediation runs.
 
 Confirmed audience: **equal emphasis on AI engineering and quantitative research**, per Alex's direction. The finished project must demonstrate both governed AI systems and credible research methodology. Preserve the accepted public-repository, Fly/Neon/R2, free guest demo, and first-release `v1.0.0` decisions unless Alex changes them. No new paid calls, infrastructure, publication, or release is authorized by this planning document.
 
@@ -166,6 +172,8 @@ These are planning ranges for focused engineering effort, not measured remaining
 
 ## Your action queue, in order
 
+Historical queue from 2026-09-27. For the current personal and maintenance queue, use [Owner actions](PORTFOLIO_STATUS.md#owner-actions); account creation and publication are complete.
+
 1. **Positioning:** equal AI-engineering and quant-research emphasis is confirmed. Supply a deadline and narrower target roles if useful.
 2. **Publication identity:** choose the public GitHub repository under your account/organization, and grant access or create it yourself. Keep ownership and billing with you.
 3. **Accounts and budgets:** enable Anthropic API, Fly, Neon and R2; install credentials securely; approve a bounded evaluation allowance, hosting ceiling and retention choices. Existing defaults are $1/run and $3/day for model spend, plus an approximately $25/month hosting target. Those defaults are not a promise about actual bills or authorization to spend more.
@@ -175,6 +183,8 @@ These are planning ranges for focused engineering effort, not measured remaining
 7. **Ownership:** receive billing/security alerts and perform the brief ongoing maintenance review. I can help with future updates when requested; this session does not create unattended monitoring.
 
 ## Immediate next work I can do without account setup
+
+Historical proposed starting point, preserved for planning provenance. It is not the current next-work queue.
 
 Start P02–P05: prepare the reviewed source changes, reconcile active documentation, implement the replay release lifecycle, and prepare residual-advisory decisions. Draft P15–P18 presentation assets, the P07 model-evaluation protocol and P25 quantitative protocol in parallel with your account setup; begin P26 after the study design is frozen. Do not rerun all completed tests merely to recreate old evidence; run focused checks as changes land and the full release suite at the freeze.
 
@@ -204,6 +214,8 @@ Checked 2026-09-27; recheck before spending or deployment.
 - Fly documents stopped-machine storage charges and has announced pricing changes effective October 1, 2026. Auto-stop is a cost control, not a zero-cost guarantee; use the rates in effect for the planned launch. [Fly resource pricing](https://fly.io/docs/about/pricing/), [October pricing notice](https://fly.io/pricing-update/).
 
 ## Final acceptance checklist
+
+Original planning checklist, preserved without retroactively checking off its original scope. V1 acceptance and the treatment of personal video, human ratings and time-dependent cost observation are recorded in [current status](PORTFOLIO_STATUS.md) and [canonical positioning](PORTFOLIO_POSITIONING.md).
 
 - [ ] Public repository and exact release revision are available; hosted CI is green.
 - [ ] A clean clone can run the offline demo and default evaluations.
