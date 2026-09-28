@@ -2,7 +2,7 @@
 
 All notable changes to this project. Versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] â€” v1.0 candidate
+## [Unreleased] — v1.0 candidate
 
 This is an unreleased candidate. Current local evidence and external acceptance are recorded in the [remediation report](docs/audits/2026-09-27/remediation.md) and [go-live review](docs/go-live-review.md). There is no separate 0.1.0 release: the MVP and the v1.0 work ship together as `v1.0.0` ([ADR-0009](docs/adr/0009-production-defaults.md)).
 
