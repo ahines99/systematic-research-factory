@@ -28,6 +28,10 @@ const path = require('node:path');
         await page.screenshot({path: path.join(out, `${label}-${name}.png`), fullPage: true});
         results.push({page: label, viewport: name, http_status: response.status(), horizontal_overflow: false});
         if (label === 'demo') {
+          const titles = await page.locator('ul.runs li a strong').allTextContents();
+          if (titles.length !== 6 || new Set(titles).size !== 6 || !titles.includes('Data outage survived')) {
+            throw new Error('Demo must show six distinct scenarios, including recovery');
+          }
           const link = page.locator('a[href^="/demo/runs/"]').first();
           await link.click();
           await page.waitForLoadState('networkidle');

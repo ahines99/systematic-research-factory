@@ -235,6 +235,7 @@ def create_app(services: Services) -> Starlette:
         runs = services.repos.runs.list(limit=200, requested_by=DEMO_REQUESTER)
         titles = {s.name: s for s in scenarios()}
         items = []
+        seen: set[str] = set()
         for run in runs:
             record = services.ledger.get(run.experiment_id)
             hyp = record.experiment.hypothesis
@@ -242,15 +243,25 @@ def create_app(services: Services) -> Starlette:
                 (s for s in titles.values() if s.experiment.hypothesis.hypothesis_id == hyp.hypothesis_id),
                 None,
             )
+            # The recovery demonstration intentionally reuses the clean experiment.
+            # Its persisted acquisition retry distinguishes the actual run behavior.
+            if match is not None and match.name == "clean-approved":
+                acquisition = services.repos.steps.get(run.run_id, "Data acquisition")
+                if acquisition is not None and acquisition.attempts > 1:
+                    match = titles["fault-survived"]
+            scenario_key = match.name if match else hyp.hypothesis_id
+            if scenario_key in seen:
+                continue
+            seen.add(scenario_key)
             title = match.title if match else hyp.hypothesis_id
             story = match.story if match else hyp.statement
             items.append(
                 f"<li><a href='/demo/runs/{html.escape(run.run_id)}'><strong>{html.escape(title)}</strong></a> "
-                f"<span class='muted'>{html.escape(str(run.status))}{(' · ' + html.escape(str(run.decision))) if run.decision else ''}"
+                f"<span class='muted'>{html.escape(str(run.status))}{(' Â· ' + html.escape(str(run.decision))) if run.decision else ''}"
                 f"</span><br>{html.escape(story)}</li>"
             )
         body = (
-            "<p class='label'>Systematic Research Factory · Research controls in action</p>"
+            "<p class='label'>Systematic Research Factory Â· Research controls in action</p>"
             "<h1>A convincing backtest still has to earn approval.</h1>"
             "<p>Explore six recorded runs from hypothesis to evidence and decision. "
             "Start with the clean case, then compare a timing leak and repeated experimentation.</p>"
@@ -260,7 +271,7 @@ def create_app(services: Services) -> Starlette:
             "<h2>Inspect the evidence</h2>"
             f"<ul class='runs'>{''.join(items) or '<li>Recorded reports will appear here after the demo is seeded.</li>'}</ul>"
             "<footer><a href='https://github.com/ahines99/systematic-research-factory'>Source and reproduction instructions</a>"
-            " · <a href='https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/note.md'>"
+            " Â· <a href='https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/note.md'>"
             "Quantitative research study</a><p class='muted'>Research only. No trading or order-routing tools.</p></footer>"
         )
         return _page("Recorded runs", body)

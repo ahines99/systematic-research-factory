@@ -2,11 +2,11 @@
 
 A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM drafts evidence-cited reviews. Code computes and renders numeric claims; a deterministic gate and a separate human control decisions. Qualitative prose still needs review.
 
-> **Status:** unreleased v1.0 candidate (package `0.1.0`). Public source, hosted CI, an offline demo and a 240-run controlled simulation study are available. Live-model evaluation, hosted operations, video and final release remain pending. See the [current status and owner actions](docs/PORTFOLIO_STATUS.md).
+> **Status:** unreleased v1.0 candidate (package `1.0.0`, awaiting release tag). Public source, hosted CI, an offline demo and a 240-run controlled simulation study are available. Live-model evaluation, hosted operations, video and final release remain pending. See the [current status and owner actions](docs/PORTFOLIO_STATUS.md).
 
 [![CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml)
 
-**[Explore the portfolio](https://ahines99.github.io/systematic-research-factory/)** · [Case study](docs/CASE_STUDY.md) · [Quantitative research note](docs/research/note.md) · [Recorded reports](docs/samples/README.md)
+**[Explore the portfolio](https://ahines99.github.io/systematic-research-factory/)** Â· [Case study](docs/CASE_STUDY.md) Â· [Quantitative research note](docs/research/note.md) Â· [Recorded reports](docs/samples/README.md)
 
 The public reports use deterministic rules and scripted approval actors. All prices are simulated. They demonstrate workflow behavior, not live-model quality or real investment returns.
 
@@ -40,9 +40,9 @@ Serve it over MCP: `uv run rsf mcp-stdio` for a local client, or `uv run rsf ser
 ## How it works
 
 ```text
-Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakage audit
-      → Statistical review → Economic rationale review → Implementation review
-      → Research committee (deterministic gate + drafted memo + human decision)
+Hypothesis freeze â†’ Data acquisition â†’ Feature build â†’ Backtest â†’ Leakage audit
+      â†’ Statistical review â†’ Economic rationale review â†’ Implementation review
+      â†’ Research committee (deterministic gate + drafted memo + human decision)
 ```
 
 | Layer | Role |
@@ -52,7 +52,7 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 | Agent Skills | Four procedures plus bundled references; scoped review adapters and a targeted point-in-time evaluation. A scoped automated review is not a complete external red-team signoff. |
 | Workflow state machine | Persists every step, resumes without re-running completed steps, retries transient failures, and pauses for humans, outages and budget caps. |
 
-**Data:** a curated SEC-derived snapshot has 44 companies and 1,325 filing/version records (2019–2023), including 10 exits and 8 IPOs. Listing windows are filing-derived proxies; some EPS values are derived and revision categories are heuristic. Prices are simulated with a planted signal that reacts at SEC *acceptance* time. Period-end availability is an intentionally invalid counterfactual; its performance effect is measured, not assumed to be constant. The separate [frozen study](docs/research/note.md) uses fully synthetic worlds and reports all controls and sensitivities. See the [data sheet](docs/research/data-sheet.md) and [ADR-0003](docs/adr/0003-market-data-semi-synthetic.md).
+**Data:** a curated SEC-derived snapshot has 44 companies and 1,325 filing/version records (2019â€“2023), including 10 exits and 8 IPOs. Listing windows are filing-derived proxies; some EPS values are derived and revision categories are heuristic. Prices are simulated with a planted signal that reacts at SEC *acceptance* time. Period-end availability is an intentionally invalid counterfactual; its performance effect is measured, not assumed to be constant. The separate [frozen study](docs/research/note.md) uses fully synthetic worlds and reports all controls and sensitivities. See the [data sheet](docs/research/data-sheet.md) and [ADR-0003](docs/adr/0003-market-data-semi-synthetic.md).
 
 ## Why this is not just a chatbot
 
@@ -60,9 +60,9 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 |---|---|---|
 | Structured numeric claims are artifact-bound | [research/](src/research_factory/research/) computes metrics; structured review references are resolved and formatted by [contract.py](src/research_factory/judgment/contract.py) | Hand-computed backtest/statistics tests and fabricated-value/reference regressions; prose meaning still needs review |
 | Hypotheses can't be quietly edited, and overfitting can't hide | Content-hash experiment IDs; the [ledger](src/research_factory/services/ledger.py) counts every trial, including related trials frozen later or under another family name ([ADR-0008](docs/adr/0008-review-time-trial-counting.md)); database triggers make it append-only | [test_contracts.py](tests/test_contracts.py), golden case [08-overfit-many-trials](evals/golden/08-overfit-many-trials.yaml) |
-| Time is enforced, not requested | `as_of` is required on every query ([pit.py](src/research_factory/data/pit.py)); the [leakage audit](src/research_factory/research/leakage.py) re-derives knowledge times from evidence and recomputes every feature value from the inputs it cites | [test_data.py](tests/test_data.py), golden cases 02–06 and 15 |
+| Time is enforced, not requested | `as_of` is required on every query ([pit.py](src/research_factory/data/pit.py)); the [leakage audit](src/research_factory/research/leakage.py) re-derives knowledge times from evidence and recomputes every feature value from the inputs it cites | [test_data.py](tests/test_data.py), golden cases 02â€“06 and 15 |
 | Claims must cite evidence | Uncited or invented evidence IDs and unbound numeric claims are rejected; citation existence does not prove qualitative entailment ([contract.py](src/research_factory/judgment/contract.py)) | `test_uncited_or_invented_evidence_is_rejected` in [test_workflow.py](tests/test_workflow.py), golden case 21 |
-| Humans approve decisions | A deterministic [gate](src/research_factory/services/approvals.py); the model's memo can't be more permissive than the gate; the approver must hold the role, can't be the requester, and can't approve against the gate | [test_workflow.py](tests/test_workflow.py), [test_http.py](tests/test_http.py), golden cases 23–25 |
+| Humans approve decisions | A deterministic [gate](src/research_factory/services/approvals.py); the model's memo can't be more permissive than the gate; the approver must hold the role, can't be the requester, and can't approve against the gate | [test_workflow.py](tests/test_workflow.py), [test_http.py](tests/test_http.py), golden cases 23â€“25 |
 | It's evaluated, not demoed | 37 [golden cases](evals/golden/), adversarial cases, scored on seven dimensions in CI | [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
 | Deterministic results are reproducible in their recorded runtime | Content-addressed snapshots, archived thresholds and source/dependency fingerprints; replay makes no model calls | `test_replay_from_archived_snapshot_is_byte_identical` in [test_demo_cli_evals.py](tests/test_demo_cli_evals.py) |
 
@@ -71,13 +71,13 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 | Document | Contents |
 |---|---|
 | [docs/PORTFOLIO_STATUS.md](docs/PORTFOLIO_STATUS.md) | Current execution status, accepted decisions and exact owner/account actions |
-| [docs/CASE_STUDY.md](docs/CASE_STUDY.md) · [docs/research/note.md](docs/research/note.md) | AI/quant case study, frozen simulation results and limitations |
+| [docs/CASE_STUDY.md](docs/CASE_STUDY.md) Â· [docs/research/note.md](docs/research/note.md) | AI/quant case study, frozen simulation results and limitations |
 | [docs/PORTFOLIO_ROADMAP.md](docs/PORTFOLIO_ROADMAP.md) | Remaining portfolio gaps, detailed assistant/owner actions, dependencies and acceptance criteria |
 | [docs/architecture.md](docs/architecture.md) | Layers, the workflow, evidence and provenance, reproducibility, deployment |
 | [docs/data_contracts.md](docs/data_contracts.md) | Every contract and table, generated from the code |
 | [docs/threat_model.md](docs/threat_model.md) | Threats, mitigations, tests and residual risks |
-| [docs/deployment.md](docs/deployment.md) · [docs/runbook.md](docs/runbook.md) | Fly.io + Neon + R2 setup, release, rollback, operations |
-| [docs/ROADMAP.md](docs/ROADMAP.md) · [docs/adr/](docs/adr/README.md) | Tickets and architecture decisions |
+| [docs/deployment.md](docs/deployment.md) Â· [docs/runbook.md](docs/runbook.md) | Fly.io + Neon + R2 setup, release, rollback, operations |
+| [docs/ROADMAP.md](docs/ROADMAP.md) Â· [docs/adr/](docs/adr/README.md) | Tickets and architecture decisions |
 | [IMPLEMENTATION_HANDOFF.md](IMPLEMENTATION_HANDOFF.md) | The original specification and its acceptance checklist |
 | [skills/](skills/) | The four Agent Skills |
 
