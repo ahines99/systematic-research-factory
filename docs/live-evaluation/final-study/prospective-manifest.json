@@ -1,0 +1,40 @@
+{
+  "declared_at": "2026-09-28T01:15:53.388435+00:00",
+  "source_commit": "d0dd403561a5615846852a7b1cab53e4896d6cc0",
+  "owner_authorization": "Pilot $5, UTC daily cap $20, lifetime experiment $20 inclusive of all prior usage and unresolved holds; per-run $1 unchanged.",
+  "case_files": {
+    "01-clean-pass.yaml": "6ea6957196c69dae715cfb469c2ee1c54bf1d1a7af8ee4f3c503d4e600c49e8f",
+    "14-edgar-real-filings.yaml": "b46e924cdea7a9ad4861ade8d2da09d18da0f216aaed1e95ed37e775e85ffb9d",
+    "31-pit-after-close.yaml": "fb975b70902e0c6e8be91b80e558fc405b0589ecb1b42fb6d1b80182e13febe0",
+    "32-pit-amended-version.yaml": "8489cb0c7ea05a09f0b8858c7d68d51f39a54623cb9f43ef9e643c1793ffb4e7",
+    "33-pit-date-only.yaml": "35b1519efdb89e5cda755811e6319ee2c498d4b90fea80dda0eab3882535ebeb",
+    "34-pit-clean-version.yaml": "c4818d09ff3c0ddf4aed289fe411420e3fccb32eb57c97e7f9f3d44716f84fcc",
+    "37-full-red-team-missing-analyses.yaml": "3207d1b239da57ac19b010b0560a62a29290f7bd46e71492c3be4263fde43b6a"
+  },
+  "runtime_override": {
+    "max_cost_usd_per_day": 20
+  },
+  "paired_plan": {
+    "repeats": 3,
+    "arm_order": [
+      [
+        "on",
+        "off"
+      ],
+      [
+        "off",
+        "on"
+      ],
+      [
+        "on",
+        "off"
+      ]
+    ]
+  },
+  "limitations": [
+    "Prior development pilots informed frozen source. No further prompt or threshold changes during this study.",
+    "Full workflow latency failures remain failures; negative output-contract outcomes are publishable.",
+    "Stop on new uncertain calls; retain original unresolved hold."
+  ],
+  "runner_sha256": "4dbb2511c2f7cb71b36426f10abf6c7ae5af1d190b17fdd8960c9d3ae8fb6eb3"
+}

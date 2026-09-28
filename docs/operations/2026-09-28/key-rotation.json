@@ -1,0 +1,9 @@
+{
+  "checked_at": "2026-09-28T01:25:15.592026+00:00",
+  "old_key_id": "46e472a2dcb4",
+  "new_key_id": "9557c1ab4e24",
+  "new_before_revoke_http": 200,
+  "old_after_revoke_http": 401,
+  "new_after_revoke_http": 200,
+  "github_production_secret_updated": true
+}

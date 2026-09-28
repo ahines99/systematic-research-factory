@@ -1,6 +1,6 @@
 # Systematic Research Factory
 
-An AI engineering and quantitative research portfolio project by Alex Hines, developed with AI coding assistance. Candidate implementation; hosted operations and live-model evidence are not yet complete.
+An AI engineering and quantitative research portfolio project by Alex Hines, developed with AI coding assistance. Public research implementation with independently reported offline controls, live-provider limitations and hosted acceptance evidence.
 
 ## Problem
 
@@ -31,9 +31,9 @@ Hosted CI exposed a useful limitation: identical code and container image did no
 
 ## Evidence and claim boundaries
 
-Review the [live CI checks](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml), [five-specialist audit and remediation](audits/2026-09-27/remediation.md), [golden cases](../evals/golden/), [raw study](research/results/study.json), and [sample reports](samples/README.md). The offline suite has 37 cases; its success is not evidence that skills improve a paid model. The [live evaluation protocol](live-evaluation-protocol.md) must be executed and reported before making that claim.
+Review the [live CI checks](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml), [five-specialist audit and remediation](audits/2026-09-27/remediation.md), [golden cases](../evals/golden/), [raw study](research/results/study.json), and [sample reports](samples/README.md). The offline suite has 37 cases; its success is not evidence that skills improve a paid model. The [live evaluation protocol](live-evaluation-protocol.md) preserves development pilots and a frozen paired study. Live pilots exposed genuine failures: a task-specific verdict mismatch, an interrupted response, ambiguous numeric identifiers and incompatible model-generated metric references. Fixes preserve strict validation and publish negative outcomes; a valid schema or one successful targeted review does not establish general model reliability.
 
-The current delivery and account dependencies are in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md). A successful first release still needs live API accounting, hosted retention/recovery/rollback evidence, a recorded walkthrough and owner signoff. Research only: no brokerage or trading capability exists.
+The current delivery and account dependencies are in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md). Operational acceptance and release status are recorded separately from the research results. The owner records the personal walkthrough, reviews blinded model outputs and observes actual hosting costs over time. Research only: no brokerage or trading capability exists.
 
 ## Interview walkthrough
 

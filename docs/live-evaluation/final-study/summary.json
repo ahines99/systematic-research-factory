@@ -1,0 +1,232 @@
+{
+  "generated_at": "2026-09-28T01:51:38.006211+00:00",
+  "planned_observations": 42,
+  "completed_observations": 42,
+  "arms": {
+    "skills-on": {
+      "passed": 15,
+      "observed": 21,
+      "planned": 21,
+      "cost_usd": 4.9284,
+      "median_seconds": 23.845,
+      "model_exercised": 21
+    },
+    "skills-off": {
+      "passed": 14,
+      "observed": 21,
+      "planned": 21,
+      "cost_usd": 2.37196,
+      "median_seconds": 18.02,
+      "model_exercised": 21
+    }
+  },
+  "complete_pairs": 21,
+  "pairs": [
+    {
+      "repeat": 1,
+      "case": "01-clean-pass",
+      "on_pass": false,
+      "off_pass": false,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 1,
+      "case": "14-edgar-real-filings",
+      "on_pass": false,
+      "off_pass": false,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 1,
+      "case": "31-pit-after-close",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 1,
+      "case": "32-pit-amended-version",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 1,
+      "case": "33-pit-date-only",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 1,
+      "case": "34-pit-clean-version",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 1,
+      "case": "37-full-red-team-missing-analyses",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 2,
+      "case": "01-clean-pass",
+      "on_pass": false,
+      "off_pass": false,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 2,
+      "case": "14-edgar-real-filings",
+      "on_pass": false,
+      "off_pass": false,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 2,
+      "case": "31-pit-after-close",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 2,
+      "case": "32-pit-amended-version",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 2,
+      "case": "33-pit-date-only",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 2,
+      "case": "34-pit-clean-version",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 2,
+      "case": "37-full-red-team-missing-analyses",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 3,
+      "case": "01-clean-pass",
+      "on_pass": false,
+      "off_pass": false,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 3,
+      "case": "14-edgar-real-filings",
+      "on_pass": false,
+      "off_pass": false,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 3,
+      "case": "31-pit-after-close",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 3,
+      "case": "32-pit-amended-version",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 3,
+      "case": "33-pit-date-only",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 3,
+      "case": "34-pit-clean-version",
+      "on_pass": true,
+      "off_pass": true,
+      "on_minus_off": 0
+    },
+    {
+      "repeat": 3,
+      "case": "37-full-red-team-missing-analyses",
+      "on_pass": true,
+      "off_pass": false,
+      "on_minus_off": 1
+    }
+  ],
+  "paired_outcomes": {
+    "both_pass": 14,
+    "on_only": 1,
+    "off_only": 0,
+    "both_fail": 6
+  },
+  "experiment_accounting": {
+    "confirmed_usd": 9.4799,
+    "unresolved_held_usd": 0.99998,
+    "confirmed_responses": 74
+  },
+  "sha256": {
+    "original-input-manifest.json": "bdeefc830c7e420af59a8d5005dd573a34009da1326c3b43ab29f7699c90f842",
+    "pilot-01-clean-pass.json": "bd9882f63049f97925fae5d1b2fc026fff2566222146024bf9de41e748df5c54",
+    "prospective-manifest.json": "1b1c19261efa371dd7f0a8515afc3e2aef94e987d313b2f0718e625c834ebe60",
+    "repeat-1-off-01-clean-pass.json": "d98f9a2fca6f929a4455108e0c6e5d6e21d4ea9c873b56b590c7b16a947adc87",
+    "repeat-1-off-14-edgar-real-filings.json": "7bb188fe46aa38987bbd014f46837329a035d84818c891448e983bfb61706e0a",
+    "repeat-1-off-31-pit-after-close.json": "d399810f14c0b5af349ea03ec613cefb7ad26f5d3d165d1b6ec239d3b75b1bd2",
+    "repeat-1-off-32-pit-amended-version.json": "9eae8e9e50c4c89253b4f4bb5cebe4d31e2a23a1d2a73950f73c6d0cc42d8115",
+    "repeat-1-off-33-pit-date-only.json": "d79e3804b8628332ca5ae42836f06bbbcf03dd2e61a51e19fde7e1663c934e2c",
+    "repeat-1-off-34-pit-clean-version.json": "067d892543b63edbfbc2e6b4bba5e72fb59f6c9c6a8be35834f27e675a4588bb",
+    "repeat-1-off-37-full-red-team-missing-analyses.json": "cb7793bd676393abe3e43f9219be132dd9cf6a4b4d1a4234dd6124d92d4f28eb",
+    "repeat-1-on-01-clean-pass.json": "6445efc1c5be598b7a64d5ae022242fd5a6ff452c388ee2e7af2a6c23b5ce85c",
+    "repeat-1-on-14-edgar-real-filings.json": "bf8d81ed9112bf3a2f2751f2abf2cae0c3a984ef9cfaef3c076dd91c62de8799",
+    "repeat-1-on-31-pit-after-close.json": "8c49c61869ec786f080dae77bc5bec973e7c91f3e875532f4224e3529c751071",
+    "repeat-1-on-32-pit-amended-version.json": "b67e2ac2488a84be870f4503e38691cc57a36ce36c4802f6d3e36c67cf59cd62",
+    "repeat-1-on-33-pit-date-only.json": "284244de652b4a508f31bc4881f0460199e46e1d32c3c81193c59f35e506ff9c",
+    "repeat-1-on-34-pit-clean-version.json": "657c55ed69f75dbfda9f3ed70efc193fb032f7a02ae385220d74f205cf1f5a60",
+    "repeat-1-on-37-full-red-team-missing-analyses.json": "0ae3905f7e4d25b554ff8fce58eac650c60c9f7aba9e014fc3e301afdfb151f9",
+    "repeat-2-off-01-clean-pass.json": "311c4a4e932ec1cfcb9ae84e6eb52550104dfe6aacd1bcf99eeb6dd2ede62acf",
+    "repeat-2-off-14-edgar-real-filings.json": "5a80e6405558caa4ea5cb5acecc2b3593348c15ceaa465b238e5b2274e25e7d3",
+    "repeat-2-off-31-pit-after-close.json": "96e3c8164c0544203f55dea2c716c61a7c8ea591570d814300a2bc3faed7cc7f",
+    "repeat-2-off-32-pit-amended-version.json": "43158aeadf655d21a6d47532655e361fadd76cc2d1ed1a5fa58e0a55090faa03",
+    "repeat-2-off-33-pit-date-only.json": "294825117de53e1439ee8c3640d9d036229d470c87baf08f4e3cbc67a99ee3be",
+    "repeat-2-off-34-pit-clean-version.json": "35f2e58005d49cfa8e074fa4f1f1992344cb26e8b6e7cfcb4d31fabc2a3ceacb",
+    "repeat-2-off-37-full-red-team-missing-analyses.json": "5694ead0ecf4cd8e85736472ed229faf6628438563206bcc054adb0c862b1bca",
+    "repeat-2-on-01-clean-pass.json": "69f977d3b8a8026040dfd4c29f3d675bf98d5342556785311ba064f85cc4bdca",
+    "repeat-2-on-14-edgar-real-filings.json": "b3f49dd330732295d1a1e554a206845caa10649fc737d49b286c8bb853f40162",
+    "repeat-2-on-31-pit-after-close.json": "954b6867e72d8a08db6f684ca6b8dc303dd3415593e1d00aa6f36b2dbdd01147",
+    "repeat-2-on-32-pit-amended-version.json": "4189d61e26a9230169e586bf235725f92e7ac16639857fc791e5d6514ffc93e2",
+    "repeat-2-on-33-pit-date-only.json": "c2e37f5b46f8bae1ab978639c2f7122cf1d60fb92927950ed5903f560eec42d6",
+    "repeat-2-on-34-pit-clean-version.json": "6ade0434c60b281c5fd600904d501c268a8ca5e3cde4ddbabd356c457af42153",
+    "repeat-2-on-37-full-red-team-missing-analyses.json": "9514b45867a23e6a40873e6dd0542bd7f72a1db3f52f9f3512f8737fbaf0135b",
+    "repeat-3-off-01-clean-pass.json": "f974e856d81874aa21b3b1889ffe94aebf6fb7162314c9f2c5722061e629648d",
+    "repeat-3-off-14-edgar-real-filings.json": "a590d916250b7dc5933e700af1d8c66707b960ef35ebb92684e4279e8996e742",
+    "repeat-3-off-31-pit-after-close.json": "9bdf1fc40c860e2d2312658f9b21ab4ecc6a2a669cf1d0d5f57f4566ca42a1d3",
+    "repeat-3-off-32-pit-amended-version.json": "b870eb14ddd4e3d5bc2e80f1265094cfd5c1cc3ba1998823a89f7920a7e86ed1",
+    "repeat-3-off-33-pit-date-only.json": "cad6e850788605b6c78424d9b11c8e7700e3b2e00fcdf0d3f8b0392d38de48e2",
+    "repeat-3-off-34-pit-clean-version.json": "b990fc76b9d2526f4161bcc521a8b3d8dd8bed6abc30291e5115bbc79340805c",
+    "repeat-3-off-37-full-red-team-missing-analyses.json": "9d5557a1169ff4f3d88ceb7b6db8ff292de654d0431f3e67390169d2e94e1e73",
+    "repeat-3-on-01-clean-pass.json": "587fb4f44fce70109f37749861e390f913b97e9016e3f4962dd2af7786dfc14f",
+    "repeat-3-on-14-edgar-real-filings.json": "6bc5dcbf8ae30926d6742e3e2b264e51628f81fd8bab10dd71999545981532cf",
+    "repeat-3-on-31-pit-after-close.json": "6450b6d11d34353f94c8f2b867e583d0ea87b21e2b9c3290f238945f75c375aa",
+    "repeat-3-on-32-pit-amended-version.json": "744f05dfa02a432ff20647a35903508ff9c0808388b7454f547924859c921716",
+    "repeat-3-on-33-pit-date-only.json": "5dce251f5af18767084bfccb46e7aa949c60ca13ebdb5e773a6d39ccbba6fc2a",
+    "repeat-3-on-34-pit-clean-version.json": "e2aa1166b8303f2878cd0afd300d22dbbcc52b4e6ccc0d2722b5bef976fcae27",
+    "repeat-3-on-37-full-red-team-missing-analyses.json": "e6c653a758a32f662968252909ab8dcdce8a0cc6dbd90c58a45d9b78420d4d01",
+    "runner-identity.json": "954b06b67d08f865d41b7328539d3caf02884bcbde14df4aa3055c8bd2d42817"
+  }
+}

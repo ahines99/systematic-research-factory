@@ -1,0 +1,22 @@
+{
+  "project_id": "late-glade-26290529",
+  "parent_branch_id": "br-blue-poetry-b4u5590o",
+  "branch_id": "br-royal-fire-b4q28p9h",
+  "branch_name": "rsf-validation-873484d-20260928",
+  "endpoint_id": "ep-spring-salad-b46qpvhe",
+  "created_at": "2026-09-28T00:17:44.763550+00:00",
+  "purpose": "disposable contract validation",
+  "cleaned_up": true,
+  "finished_at": "2026-09-28T00:22:49.893645+00:00",
+  "postgres_version": "18.6 (6569466)",
+  "tls_verified": true,
+  "tls_check": "client libpq ssl_in_use; server pg_stat_ssl does not measure the client-facing TLS connection",
+  "returncode": 0,
+  "elapsed_seconds": 234.47,
+  "log": "neon-validation-tests.log",
+  "source_commit": "873484d2bdb2b08942ca4a774551564350200290",
+  "cleanup_verified_at": "2026-09-28T00:23:12.125865+00:00",
+  "passed": 67,
+  "skipped": 1,
+  "skip_reason": "SQLite parameter of PostgreSQL-only TRUNCATE test; PostgreSQL check executed"
+}

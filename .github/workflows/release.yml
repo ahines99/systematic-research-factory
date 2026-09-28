@@ -62,6 +62,8 @@ jobs:
           fail-build: true
           severity-cutoff: high
           only-fixed: true
+          output-format: json
+          output-file: release-scan.json
       - uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           image: ${{ steps.meta.outputs.image }}
@@ -92,12 +94,13 @@ jobs:
           uv run --no-sync rsf --provider rules demo --out-dir var/evidence-reports --manifest var/evidence-reports/manifest.json
           uv run --no-sync python scripts/package_evidence.py --source-revision "$GITHUB_SHA" --out var/release-evidence --distributions var/distributions --scorecard var/evidence-scorecard.json --reports var/evidence-reports
           cp var/release-evidence.zip release-evidence.zip
-          sha256sum sbom.cdx.json image-digest.txt release-evidence.zip > SHA256SUMS
+          sha256sum sbom.cdx.json release-scan.json image-digest.txt release-evidence.zip > SHA256SUMS
           (cd var/distributions && sha256sum *) >> SHA256SUMS
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             sbom.cdx.json
+            release-scan.json
             image-digest.txt
             SHA256SUMS
             var/distributions/*
@@ -148,3 +151,14 @@ jobs:
           curl --fail --retry 10 --retry-delay 6 --retry-all-errors "https://${app}.fly.dev/healthz"
           flyctl ssh console -C "rsf --provider rules demo"
           uv run --no-sync python scripts/smoke_deployment.py "https://${app}.fly.dev" --version "${GITHUB_REF_NAME#v}" --require-key
+      - name: verify released pages in desktop and mobile browsers
+        run: |
+          app=$(python3 -c "import tomllib; print(tomllib.load(open('fly.toml','rb'))['app'])")
+          npm install --prefix /tmp/rsf-browser --no-save playwright@1.63.0
+          /tmp/rsf-browser/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/rsf-browser/node_modules node scripts/browser_smoke.cjs "https://${app}.fly.dev" var/release-browser
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: released-browser-evidence
+          path: var/release-browser/

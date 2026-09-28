@@ -1,0 +1,50 @@
+[
+  {
+    "sample": 1,
+    "repeat": 3,
+    "case": "32-pit-amended-version",
+    "skills_enabled": true
+  },
+  {
+    "sample": 2,
+    "repeat": 2,
+    "case": "32-pit-amended-version",
+    "skills_enabled": true
+  },
+  {
+    "sample": 3,
+    "repeat": 3,
+    "case": "37-full-red-team-missing-analyses",
+    "skills_enabled": false
+  },
+  {
+    "sample": 4,
+    "repeat": 1,
+    "case": "33-pit-date-only",
+    "skills_enabled": false
+  },
+  {
+    "sample": 5,
+    "repeat": 1,
+    "case": "31-pit-after-close",
+    "skills_enabled": true
+  },
+  {
+    "sample": 6,
+    "repeat": 3,
+    "case": "14-edgar-real-filings",
+    "skills_enabled": true
+  },
+  {
+    "sample": 7,
+    "repeat": 2,
+    "case": "32-pit-amended-version",
+    "skills_enabled": false
+  },
+  {
+    "sample": 8,
+    "repeat": 3,
+    "case": "33-pit-date-only",
+    "skills_enabled": false
+  }
+]

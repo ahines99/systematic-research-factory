@@ -2,3 +2,6 @@
 *.png binary
 *.whl binary
 docs/live-evaluation/**/*.json -text
+
+docs/operations/**/*.json -text
+docs/live-evaluation/**/*.txt -text

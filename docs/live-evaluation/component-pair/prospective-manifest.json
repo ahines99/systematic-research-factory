@@ -1,0 +1,14 @@
+{
+  "declared_at": "2026-09-28T01:10:23.713652+00:00",
+  "source_commit": "2ea1a5d7ee97cfbf1664f83823f5fc44c3f406bc",
+  "case": "31-pit-after-close",
+  "case_file_sha256": "fb975b70902e0c6e8be91b80e558fc405b0589ecb1b42fb6d1b80182e13febe0",
+  "arms": [
+    "skills-on",
+    "skills-off"
+  ],
+  "repeats": 1,
+  "max_cost_usd_per_run": 0.35,
+  "selection_limitation": "Selected after the targeted PIT pilot passed. Diagnostic paired example only, not the planned seven-case study or an unbiased skills-effect estimate.",
+  "accounting": "same original ledger; all prior holds counted"
+}

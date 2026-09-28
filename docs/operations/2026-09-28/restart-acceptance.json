@@ -1,0 +1,54 @@
+{
+  "checked_at": "2026-09-28T01:26:23.251947+00:00",
+  "image_digest": "sha256:e53a73e28057107a5e896ab938066980ed761de61d9f8b2686197ad7c0e31981",
+  "machine_id": "683ddd5ead6e58",
+  "region": "iad",
+  "allocation": {
+    "cpu_kind": "shared",
+    "cpus": 1,
+    "memory_mb": 1024
+  },
+  "memory": {
+    "system": {
+      "MemTotal": "985220 kB",
+      "MemFree": "603064 kB",
+      "MemAvailable": "626832 kB"
+    },
+    "processes": [
+      {
+        "Name": "rsf",
+        "Pid": "638",
+        "VmRSS": "194900 kB",
+        "VmHWM": "194900 kB"
+      },
+      {
+        "Name": "python",
+        "Pid": "650",
+        "VmRSS": "15736 kB",
+        "VmHWM": "16024 kB"
+      }
+    ]
+  },
+  "public_runs_before": [
+    "run_cea87f1f9f414d9fbd1b",
+    "run_7ba7fd1f7d684d2dac9d",
+    "run_1c06e4b8b32c4905af21",
+    "run_d49c36588fc04ea69836",
+    "run_be2f39c0fe9e4985bae8",
+    "run_95498dc2da8a47f0bbf0"
+  ],
+  "cold_start_health_seconds": 6.688,
+  "cold_start_ready_seconds": 7.266,
+  "public_runs_after": [
+    "run_cea87f1f9f414d9fbd1b",
+    "run_7ba7fd1f7d684d2dac9d",
+    "run_1c06e4b8b32c4905af21",
+    "run_d49c36588fc04ea69836",
+    "run_be2f39c0fe9e4985bae8",
+    "run_95498dc2da8a47f0bbf0"
+  ],
+  "all_prior_reports_readable": true,
+  "instance_changed": false,
+  "memory_scope": "Post-restart snapshot, not load-test peak; Linux process high-water marks reset at restart.",
+  "restart_proof": "Fly reported stopped before HTTP auto-start; version instance_id is unchanged by stop/start."
+}

@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-09-28T00:45:15.757250+00:00",
+  "bucket": "rsf-evidence",
+  "credentials_saved": true,
+  "checks": {
+    "list": true,
+    "write": true,
+    "read": true,
+    "overwrite_blocked": true,
+    "delete_blocked": true,
+    "original_preserved": true
+  },
+  "status": "passed",
+  "verification_object": "verification/setup-a12403592cd5498881c9c3d9d879ce5e.txt",
+  "overwrite_response": {
+    "code": "ObjectLockedByBucketPolicy",
+    "http_status": 409
+  },
+  "delete_response": {
+    "code": "ObjectLockedByBucketPolicy",
+    "http_status": 409
+  },
+  "expected_sha256": "2b64c45eeebcafe96ada63dbc3d5c090a82929783a6aa87b8d3bd764d8c23af6",
+  "classification_note": "R2 rejected overwrite and delete with HTTP 409 ObjectLockedByBucketPolicy. Initial probe assumed HTTP 403; corrected classification from retained responses without repeating mutations."
+}

@@ -1,52 +1,43 @@
-# Portfolio execution status and owner handoff
+# Portfolio execution status
 
-Updated 2026-09-27. Audience: **equal AI engineering and quantitative research**. This is the current execution record; the [roadmap](PORTFOLIO_ROADMAP.md) preserves the original gap assessment and task IDs.
+Updated 2026-09-28 UTC. Audience: equal emphasis on AI engineering and quantitative research. The original gap assessment remains in the [roadmap](PORTFOLIO_ROADMAP.md); this document records current delivery.
 
-The [static portfolio](https://ahines99.github.io/systematic-research-factory/) is published on GitHub Pages and its landing page, three principal reports and research assets were verified over HTTPS. [Delivery verification](portfolio-delivery-verification.json) records 292 local test passes, the clean-public-clone demo/evaluation, the repeated study and the candidate image scan. Consult [current CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml) for the exact latest revision. Browser visual inspection remains pending; HTTP checks do not substitute for it.
+The [portfolio](https://ahines99.github.io/systematic-research-factory/) and [hosted demo](https://systematic-research-factory.fly.dev/demo) are online. Public demos use deterministic rules and scripted approvers. All prices are simulated; neither the demo nor the simulation study establishes tradable alpha.
 
-## Accepted decisions
+## Delivered evidence
 
-Alex accepted the recommended public GitHub/Fly/Neon/R2 approach and supplied `ahines99/systematic-research-factory`. Use GitHub as the portfolio destination for now. Keep Opus 5, free rules-based guests, $1/run and $3/day model caps, a $20 total live-evaluation allowance with a $3 pilot, and a $25/month hosting target with review at a $20 projection. Start Fly at one shared CPU/1 GB in `iad`. Use Neon Free for setup, then confirm a 24-hour recovery window on the chosen launch plan. Use R2 Standard with 90-day retention. No custom domain or paid market-data purchase is required. Actual billing limits and retention still need platform verification.
+| Area | Result |
+|---|---|
+| Engineering | Five-specialist audit remediated; 302 local tests passed, four PostgreSQL-specific skips covered separately; ten protected-branch CI checks passed before hosted deployment. |
+| Quant research | Frozen 240-combination study, twenty held-out worlds, all raw results and inspected plots. Clean null gate passes 0/20; clean planted passes 13/20; all forty leaky controls blocked. |
+| Live AI evaluation | Development pilots and frozen comparison are reported separately in the [live evaluation record](live-evaluation-protocol.md). Rejected outputs, costs and latency failures remain failures. No general skills-uplift or unattended-model-reliability claim. |
+| Deployment | One shared CPU/1 GiB Fly machine in iad, dedicated Neon database and nonadministrative role, private R2 storage; deploy uses a scanned immutable image digest. |
+| Database | Neon PostgreSQL 18.6: 67 contract tests passed, one SQLite-only parameter skipped; client TLS verified. Disposable validation branch removed. |
+| Retention | R2 ninety-day lock rejects overwrite and delete with HTTP 409; original object bytes preserved. Owner accepted Neon's verified six-hour point-in-time recovery window for this portfolio. |
+| Recovery | Isolated point-in-time restore recovered all six demos; twelve archived objects read and six deterministic artifacts replayed exactly. Completed in 19.69 seconds including cleanup. |
+| Access | Official MCP SDK exercised all four roles; authenticated hypothesis freeze/backtest/report read and guest private-report denial passed. Viewer rotation verified revoked-key rejection and replacement-key access. |
+| Rollback | Both preserved candidate images deployed and passed original-report checks; intended v1 restored. Total 99.34 seconds. |
+| Runtime | Stop/start preserved all six reports; one cold readiness observation was 7.266 seconds. Application RSS was about 190 MiB after restart, not a load-test peak. |
+| Presentation | Desktop/mobile pages and report navigation passed browser checks; screenshots visually inspected. The recovery-card naming collision was identified and corrected for the next runtime. |
+| Delivery | CI checks Python 3.12/3.13/3.14, PostgreSQL, packages, container, dependency vulnerabilities, offline evaluations and preserved historical artifact comparison. Release automation assembles distributions, checksums, evidence and an SBOM. |
 
-Alex has Anthropic and Cloudflare accounts; API billing/key readiness and R2 activation are not established. Fly and Neon setup remains an owner dependency. A Claude chat account alone does not establish API access. This execution has made **no paid model calls and provisioned no paid infrastructure**. No release tag or deployment has been created.
+See [hosted acceptance and immutable evidence](operations/2026-09-28/README.md), [current CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml), and the [release review](go-live-review.md) for exact revisions and publication state. Historical test counts and earlier failed probes remain dated records, not current account-setup tasks.
 
-## Work completed or prepared
+## Accepted operating limits
 
-| Roadmap tasks | Delivery and evidence | Remaining boundary |
-|---|---|---|
-| P01–P02 | Public repository integrated without replacing its initial history; audit fixes and candidate archives committed; publication scan found no matching credential patterns and no API-key rows in archived databases | Automated scanning is bounded, not a guarantee of absence |
-| P03 | README/handoff, ADR fallback policy and demo narration reconciled; this status separates current execution from historical audit counts | Owner reviews the public story |
-| P04 | Immutable historical source selection, archive checksums, richer current runtime identities and classified cross-CPU comparisons; exact current-runtime tests retained | New v1 release baseline waits for final source/version freeze; historical cross-host comparison is not byte-identical replay |
-| P05 | Advisory reachability review and dated [risk register](security-risk-register.md); candidate image scanning added alongside the release gate | Actual final image and residual risk acceptance still required |
-| P06 | Hosted CI fully passed on [0107a81](https://github.com/ahines99/systematic-research-factory/actions/runs/36357022307), including PostgreSQL and Python 3.12/3.13/3.14; final presentation/bundle changes go through CI again | See current workflow result for subsequent revisions |
-| P07 | [Live evaluation protocol](live-evaluation-protocol.md), paired arms, cases, repeat count, accounting and stop rules prepared | P08–P09 need API access, dashboard comparison and owner sample review |
-| P10 | Deployment defaults and exact secret checklist prepared | Real app/database/bucket identifiers and accounts missing |
-| P15–P17 | Guided demo page, six application-exported reports, static portfolio, [case study](CASE_STUDY.md) and truthful [recording script](demo-script.md) | Browser connector exposed no browser; visual QA/screenshots and owner narration remain unverified |
-| P18 | CI candidate evidence bundle and release attachment automation prepared: wheel, sdist, checksums, scorecard, reports, study and manifest | First actual release publication remains gated |
-| P23 | [Contribution/maintenance instructions](../CONTRIBUTING.md), [security reporting](../SECURITY.md) and ownership/teardown expectations prepared; GitHub private vulnerability reporting enabled | Owner takes ongoing billing/security responsibility |
-| P25–P26 | Protocol frozen before results; 240 recorded combinations; all records/summaries reproduced exactly in a separate output directory; [research note](research/note.md), data sheet, CSV/JSON and inspected scientific plots | Review simulation interpretation; this is not empirical equity alpha |
+Hosted model dispatch remains capped at $1/run and $3/UTC day; guests use free deterministic rules. The finite local evaluation was separately authorized for a $5 cumulative pilot and $20 UTC-day allowance, retaining a $20 lifetime total inclusive of every earlier call and unresolved hold. The original lost response retains its full $0.99998 reservation; provider billing remains unknown and the owner instructed continuation without reconciliation.
 
-Pending acceptance: P08–P14 (live/hosted evidence), browser/client walkthrough, P19–P22 (final freeze, release, deployed acceptance and personal publication). P24, actual prior-published-release replay, is a subsequent-release obligation. Do not describe the portfolio as finalized v1.0 while these remain open.
+Hosting target: $25/month, with review at a $20 projected monthly cost. One shared CPU/1 GiB in iad, Neon Free with six-hour restore, R2 Standard with ninety-day retention; no custom domain, market-data subscription or dedicated IPv4. Actual seven-day bills cannot be inferred from configuration or one runtime measurement.
 
-## What Alex needs to do next
+## Owner actions
 
-1. **Anthropic API:** enable billing in the API console and set `ANTHROPIC_API_KEY` in the local ignored `.env` or approved platform secret store. Tell the assistant only that it is configured. Do not send the value in chat. Confirm project spending controls; the assistant can then perform the bounded pilot and evaluation, with you checking billed totals and a small sample of outputs.
-2. **Cloudflare R2:** activate R2 if necessary. Supply the nonsecret account/bucket identifiers and install a bucket-scoped app credential securely. Keep policy-administration access separate. The assistant can configure/test retention and app access once connected; Cloudflare DNS ownership alone is insufficient.
-3. **Fly.io and Neon:** create/sign into the accounts and complete identity/billing/terms yourself. Supply account/team/project identifiers through normal authenticated access. The assistant can provision and configure the agreed small deployment after access is available; do not pre-purchase additional capacity. Confirm the actual Neon restore window and the projected total before paid launch.
-4. **Personal review:** read the case study and research note; try the README from a fresh checkout as a first-time reviewer. Focus on explaining the clean/leaky controls, multiplicity, evidence binding and simulation limits. The assistant handles technical fixes. Provide a supported browser/client session for visual and MCP walkthroughs when available.
-5. **Video and release:** record the prepared narration and send its public URL when ready; an unlisted video is suitable for review. Then review the concrete final commit, image digest, scan, live/hosted evidence and residual risks. Final approval must refer to those actual deliverables before a `v1.0.0` tag/deploy. No further roadmap-level approval is needed for ordinary preparation.
+1. **Personal review and narration:** read the [case study](CASE_STUDY.md) and [research note](research/note.md), then use the [recording script](demo-script.md) for a short walkthrough. Explain simulation limits, the clean/leaky controls and the failed live-model cases. Add the video URL when published; no video or personal endorsement has been fabricated.
+2. **Human model ratings:** rate the blinded sample for usefulness, evidence support and clarity before opening its separate arm key. These ratings are distinct from automated pass/fail and remain uncollected until you supply them.
+3. **Ongoing ownership:** observe actual Fly/Neon/R2 costs over seven days using the [cost log](operations/cost-observation.md); retain account access and review security updates. The app-scoped GitHub Fly deployment token expires after ninety days and must be renewed before then.
+The owner authorized finalization and publication; the assistant records the concrete technical release review and post-deployment checks. No personal sample ratings or narration are inferred from that authorization.
 
-## Exact credential destinations
+Credentials are already configured locally and on the relevant platforms. No additional Anthropic, Neon, Fly or R2 account creation is required. Local operator credentials remain in ignored files; their values must never be copied into documentation or screenshots.
 
-| Destination | Names | Purpose |
-|---|---|---|
-| Local ignored `.env` for the evaluation | `ANTHROPIC_API_KEY`; dedicated `RSF_DATABASE_URL` | Paid pilot, paired study and durable accounting |
-| Fly app secrets | `ANTHROPIC_API_KEY`, `RSF_DATABASE_URL`, `RSF_S3_ENDPOINT_URL`, `RSF_S3_ACCESS_KEY_ID`, `RSF_S3_SECRET_ACCESS_KEY` | Application access; use `postgresql+psycopg://…?sslmode=require` for Neon |
-| Fly nonsecret configuration | App name, allowed hosts/origins/public URL, `RSF_BLOB_STORE=s3://<bucket>` | Must match the actual resources; current names are templates |
-| GitHub `production` environment secrets | `FLY_API_TOKEN`, `RSF_SMOKE_API_KEY` | Scoped deployment token and read-only application viewer key |
+## Honest limits
 
-Generate the application viewer key only against the actual deployment database; keep it distinct from the model key and from approver access. The assistant must validate secret presence without printing values. Use the [deployment guide](deployment.md) and [runbook](runbook.md) for commands.
-
-## Hosted acceptance still to execute
-
-Verify authenticated/guest behavior, restart persistence, R2 overwrite/delete rejection using the app token, timed isolated database/blob restore, credential rotation, immutable image rollback, and cold-start/memory behavior. Observe costs for seven days alongside final presentation work. Record actual results and failures; configuration files do not prove these controls. Keep the static reports as a fallback if the dynamic demo is stopped.
+The image scan retains three Medium and one Low Python advisories, tracked in the [risk register](security-risk-register.md). No High/Critical matches were present in the deployed candidate scan. Model output validation does not establish semantic correctness; the live study includes failures. The project provides no trading tools, production availability SLA, or on-call service. A seven-day observation requires elapsed time. Replaying an actual prior published release becomes testable after a subsequent release exists; the current exact restore replay is a different, completed check.
