@@ -1,8 +1,24 @@
 # Live model evaluation protocol
 
-Prepared before any paid calls. **Not executed.** The offline 37-case scorecard is not a live Anthropic baseline.
+Prepared before any paid calls. The first pilot was executed and failed complete acceptance; its [frozen report](live-evaluation/pilot-1/pilot-report.md) preserves both attempts. The offline 37-case scorecard is not a live Anthropic baseline.
+
+## Revision two, declared before further generation
+
+The first pilot exposed an incompatible negative-verdict check and a long-response transport failure. Revision two fixes task-specific negative verdicts, consumes provider streaming internally, and clarifies concise qualitative output versus numeric metric references. These changes were informed by the pilot: subsequent results are a separate revised experiment, not an untouched replication of the initial protocol. Original artifacts and accounting are retained.
+
+The owner explicitly instructed continuation without dashboard reconciliation. The uncertain first-pilot call retains its full $0.99998 reservation in the same ledger; it is never refunded, represented as confirmed spend, or excluded from the $3 daily/pilot and $20 lifetime admission checks. Continue only while confirmed usage plus all unresolved holds plus the next bounded run fits the allowance. Dashboard reconciliation remains an unverified limitation. No retry of the uncertain original step is permitted.
+
+Run the same two-case pilot under the revised source, then the same seven-case paired comparison if compatible and affordable. Use distinct revision-two output paths. Preserve failed checks; neither prompt tuning nor case replacement is allowed during this revision. If the daily allowance prevents completion, publish the completed observations and remaining schedule instead of increasing caps.
 
 ## Frozen comparison
+
+The fourth clean-workflow pilot returned a valid grounded economic review, then paused after 45,548 recorded tokens across two responses ($0.403820; 110.941 seconds). Its subsequent retry could not fit the remaining 60,000-token ceiling. Before further testing, the default token ceiling is raised to 150,000 to accommodate three skill-backed steps and bounded validation retries; financial caps are unchanged. Completed paid responses are now audited immediately, and scorecards include run state/reason so a later budget stop cannot hide the diagnostic record. The fourth pilot's implementation response was billed and recorded in usage, but its raw body was not retained in that old scorecard; do not imply otherwise.
+
+The third clean-workflow pilot again failed (76.625 seconds, $0.384835); canonical metric references resolved, but the blanket numeric-prose check misclassified the repository identifier `ADR-0003` as a measurement. A fourth corrective revision explicitly exempts only the repository's ADR identifiers and standard SEC form names from this lexical check. Actual quantitative claims still require validated metric references; arbitrary numbers and invented ADR identifiers remain rejected in regression tests. The final corrective pilot may lower its per-run cap to the remaining original $3 allowance; this is operational compatibility testing, not a skills-effect estimate. All prior failures remain published.
+
+Revision two results: the targeted PIT review passed (29.337 seconds, $0.122790). The clean workflow failed output grounding after two responses (110.353 seconds, $0.446470), with complete recorded usage and no new uncertain reservation. [Raw outputs](live-evaluation/revision-2/pilot-clean.json) are retained. The original uncertain call remains held.
+
+Before a third corrective pilot, add a code-generated metric catalog containing only resolvable evidence references and their canonical formats. The second pilot showed the model guessing formatting and field paths absent from its inputs. The validator remains strict; no invalid output is promoted. This is a further development revision, not a treatment/control result. Repeat the clean-workflow pilot once under this revision while charging every earlier attempt and unresolved hold to the original allowance. Do not start a paired claim until the source is frozen and enough budget remains. Preserve latency failures as failures; do not raise the frozen case's latency threshold.
 
 Keep the accepted `claude-opus-5` default, structured-output contract, frozen case files and statistical thresholds. Verify current availability and price again before the pilot; never substitute another model silently. Compare Skills enabled versus `--no-skills` with identical case/input hashes, three planned repeats per arm. Alternate arm order by repeat (on/off, off/on, on/off). Use distinct output directories and one durable accounting database for the whole experiment.
 

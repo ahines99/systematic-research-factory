@@ -233,6 +233,15 @@ def resolve_metric(ref: MetricReference, evidence_documents: dict[str, Any]) -> 
 
 
 _METRIC_SLOT = re.compile(r"\{metric:(\d+)\}")
+# These are document/form identifiers, not numerical measurements. Keep the
+# allowlist explicit so arbitrary numbers, years and invented IDs still fail.
+_DOCUMENT_IDENTIFIER = re.compile(r"\b(?:ADR-000[1-9]|10-[KQ](?:/A)?|8-K)\b")
+
+
+def _has_ungrounded_number(prose: str) -> bool:
+    return any(c.isnumeric() for c in _DOCUMENT_IDENTIFIER.sub("", prose))
+
+
 METRIC_LABELS = {
     "/ic_mean": "Mean information coefficient",
     "/turnover_mean": "Mean turnover per rebalance",
@@ -252,6 +261,22 @@ METRIC_FORMATS = {
 }
 
 
+def metric_catalog(documents: dict[str, Any]) -> list[dict[str, str]]:
+    """Expose resolvable canonical references, not an unbounded numeric dataset dump."""
+    result = []
+    for evidence_id in sorted(documents):
+        for path in sorted(METRIC_LABELS):
+            ref = MetricReference(
+                evidence_id=evidence_id, field_path=path, format=METRIC_FORMATS.get(path, ".3f")
+            )
+            try:
+                value = resolve_metric(ref, documents)
+            except (KeyError, IndexError, TypeError, ValueError, OverflowError):
+                continue
+            result.append({**ref.model_dump(), "label": METRIC_LABELS[path], "rendered_value": value})
+    return result
+
+
 def validate_output(
     raw: Any,
     *,
@@ -269,11 +294,15 @@ def validate_output(
     # Free-form numeric assertions cannot be verified by citation membership. Keep
     # numbers in explicit field references and render them after validation.
     for label, prose in [("summary", output.summary), *[("open question", q) for q in output.open_questions]]:
-        if any(c.isnumeric() for c in prose):
+        if _has_ungrounded_number(prose):
             problems.append(f"{label} contains an ungrounded number; put quantitative claims in metric_refs")
     if output.verdict not in verdicts:
         problems.append(f"verdict {output.verdict!r} is not one of {verdicts}")
     scope = review_scope or {}
+    # Each task has its own negative verdict. Requiring the committee's
+    # "reject" in a PIT review makes a supported "leakage" finding impossible.
+    negative_verdicts = set(verdicts) & {"reject", "leakage", "unsupported", "infeasible"}
+    cautious_verdicts = negative_verdicts | (set(verdicts) & {"needs_evidence", "needs_more_evidence"})
     seen = [a.attack for a in output.attacks]
     if len(seen) != len(set(seen)) or any(a not in ATTACKS for a in seen):
         problems.append("attack names must be known and unique")
@@ -292,16 +321,20 @@ def validate_output(
             and not output.needs_evidence
         ):
             problems.append(f"untested material attack {attack.attack} requires needs_evidence")
-        if attack.status == "unrefuted" and attack.severity == "blocking" and output.verdict != "reject":
+        if (
+            attack.status == "unrefuted"
+            and attack.severity == "blocking"
+            and output.verdict not in negative_verdicts
+        ):
             problems.append("unrefuted blocking attack requires rejection")
         if (
             attack.status == "unrefuted"
             and attack.severity == "high"
-            and output.verdict not in ("reject", "needs_more_evidence")
+            and output.verdict not in cautious_verdicts
         ):
             problems.append("unrefuted high attack requires rejection or more evidence")
         for prose in (attack.criterion, attack.observation, attack.evidence_request):
-            if any(c.isnumeric() for c in prose):
+            if _has_ungrounded_number(prose):
                 problems.append("attack numbers must be grounded through calculation claims, not prose")
     authoritative = scope.get("dissent", [])
     for dissent in output.dissent:
@@ -312,9 +345,8 @@ def validate_output(
         ):
             problems.append("human/earlier dissent must be preserved verbatim from supplied records")
         if dissent.role == "model_reviewer" and any(
-            c.isnumeric()
+            _has_ungrounded_number(text)
             for text in (dissent.argument, dissent.response, dissent.resolution_criterion)
-            for c in text
         ):
             problems.append("model dissent numbers belong in grounded calculation claims")
     if any(d not in [entry.model_dump(mode="json") for entry in output.dissent] for d in authoritative):
@@ -329,7 +361,7 @@ def validate_output(
             )
         if claim.kind is ClaimKind.CALCULATION and not claim.metric_refs:
             problems.append(f"claim {i} calculation requires structured metric_refs")
-        if any(c.isnumeric() for c in _METRIC_SLOT.sub("", claim.statement)):
+        if _has_ungrounded_number(_METRIC_SLOT.sub("", claim.statement)):
             problems.append(f"claim {i} contains an ungrounded number; use {{metric:index}} and metric_refs")
         slots = [int(x) for x in _METRIC_SLOT.findall(claim.statement)]
         if set(slots) != set(range(len(claim.metric_refs))):

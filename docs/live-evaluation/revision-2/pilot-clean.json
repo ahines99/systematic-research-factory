@@ -1,0 +1,602 @@
+{
+  "format": "rsf-scorecard/2",
+  "generated_at": "2026-09-28T00:55:35+00:00",
+  "provider": "anthropic",
+  "skills_enabled": true,
+  "scope": "partial_dimensions",
+  "uncovered_dimensions": [
+    "permission_fidelity",
+    "uncertainty_calibration",
+    "recovery"
+  ],
+  "model_exercised_cases": 1,
+  "total": 1,
+  "passed": 0,
+  "adversarial": 0,
+  "dimensions": {
+    "tool_correctness": {
+      "passed": 2,
+      "total": 6
+    },
+    "evidence_fidelity": {
+      "passed": 2,
+      "total": 2
+    },
+    "calculation_fidelity": {
+      "passed": 3,
+      "total": 3
+    },
+    "permission_fidelity": {
+      "passed": 0,
+      "total": 0
+    },
+    "uncertainty_calibration": {
+      "passed": 0,
+      "total": 0
+    },
+    "recovery": {
+      "passed": 0,
+      "total": 0
+    },
+    "cost_latency": {
+      "passed": 1,
+      "total": 2
+    }
+  },
+  "cases": [
+    {
+      "id": "01-clean-pass",
+      "title": "Clean research reaches the committee and is approved",
+      "adversarial": false,
+      "dimensions": [
+        "tool_correctness",
+        "evidence_fidelity",
+        "calculation_fidelity"
+      ],
+      "passed": false,
+      "seconds": 110.353,
+      "cost_usd": 0.44647,
+      "checks": [
+        {
+          "dimension": "tool_correctness",
+          "name": "approval accepted",
+          "passed": false,
+          "detail": "got CONFLICT"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "run status",
+          "passed": false,
+          "detail": "needs_review (expected complete)"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "gate recommendation",
+          "passed": false,
+          "detail": "needs_more_evidence: ['Evidence needed: Reviewer output rejected.']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "final decision",
+          "passed": false,
+          "detail": "None"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding statistics_passed present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_clean', 'needs_evidence', 'statistics_passed']"
+        },
+        {
+          "dimension": "tool_correctness",
+          "name": "finding leakage_clean present",
+          "passed": true,
+          "detail": "types=['backtest_summary', 'data_provenance', 'experiment_frozen', 'feature_coverage', 'leakage_clean', 'needs_evidence', 'statistics_passed']"
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "cited evidence exists",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "evidence_fidelity",
+          "name": "facts and calculations are cited",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "Sharpe recomputed from daily returns",
+          "passed": true,
+          "detail": "2.544005 vs 2.544005"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "deflated Sharpe recomputed",
+          "passed": true,
+          "detail": "1.000000 vs 1.000000"
+        },
+        {
+          "dimension": "calculation_fidelity",
+          "name": "knowledge-time verdict independently confirmed",
+          "passed": true,
+          "detail": "audit passed=True, independent future inputs=False"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within time budget",
+          "passed": false,
+          "detail": "110.35s"
+        },
+        {
+          "dimension": "cost_latency",
+          "name": "within cost budget",
+          "passed": true,
+          "detail": "$0.4465"
+        }
+      ],
+      "provenance": {
+        "requested_provider": "anthropic",
+        "configured_provider": "anthropic",
+        "actual_providers": [
+          "anthropic"
+        ],
+        "actual_models": [
+          "claude-opus-5"
+        ],
+        "model_exercised": true,
+        "skills_enabled": true,
+        "case_sha256": "31478e58aa99dc11804cac5a3dbdce8f472b73d716dadc344005c3832b011768",
+        "runtime": {
+          "package_version": "0.1.0",
+          "source_sha256": "b0e75b998b445fd5cc9bd260bf9b6551637714843ba362bcfcf305e3678f4b50",
+          "python": "3.12.10",
+          "python_build": [
+            "tags/v3.12.10:0cc8128",
+            "Apr  8 2025 12:21:36"
+          ],
+          "libc": [
+            "",
+            ""
+          ],
+          "numpy": "2.5.3",
+          "numpy_simd": {
+            "baseline": [
+              "X86_V2"
+            ],
+            "found": [
+              "X86_V3"
+            ]
+          },
+          "numerical_libraries": [
+            {
+              "user_api": "blas",
+              "internal_api": "openblas",
+              "num_threads": 24,
+              "prefix": "libscipy_openblas",
+              "version": "0.3.34.106.0",
+              "threading_layer": "pthreads",
+              "architecture": "SkylakeX"
+            }
+          ],
+          "platform": "Windows-AMD64",
+          "dependencies": {
+            "numpy": "2.5.3",
+            "pydantic": "2.13.5",
+            "pydantic-settings": "2.15.0",
+            "sqlalchemy": "2.0.54",
+            "alembic": "1.20.0",
+            "anyio": "4.15.1",
+            "tzdata": "2026.4",
+            "PyYAML": "6.0.3"
+          }
+        },
+        "python_full": "3.12.10",
+        "thresholds": {
+          "min_observations": 252,
+          "min_newey_west_t": 3.0,
+          "min_deflated_sharpe": 0.95,
+          "bootstrap_confidence": 0.95,
+          "bootstrap_samples": 2000,
+          "require_ci_lower_above_zero": true,
+          "max_delay_sharpe_decay": 0.5
+        },
+        "budgets": {
+          "max_tokens_per_run": 60000,
+          "max_cost_usd_per_run": 1.0,
+          "max_cost_usd_per_day": 3.0,
+          "max_guest_live_runs_per_day": 3,
+          "step_latency_target_seconds": 60.0
+        },
+        "evidence_hashes": {
+          "ev_afb1fadeb0908cfad0a02949": "e68600bfde2a88f1ff6cecee26266a80e019375890e8792c54ede97d755672a1",
+          "ev_d65f503f30d27fa8e2adebce": "9d67f2217451e92f6dec3e71f718641364c723d71fb14c134c27695dcb79090b",
+          "ev_235f58b0b2d432638aa34404": "5c80dacead1d93216449fbbaae54fb6608ad6c6cec1b72029ca501bea0479420",
+          "ev_fc171be9d067ab6287d4c5f7": "a5b053d56c14d952cc1a334852194d0e28022aea91ff5e0e5a86c6196ba961f3",
+          "ev_a09df1b36a37ac97ae0cfd8a": "1bcf9b08b8260cdfc6a1920977fdb670091c619a1a321940ee73591be0ccd101",
+          "ev_cfcaa7efce46309daa4e4686": "c037cfddac3e897bb6b971b61a8504bd3d8b603c9f5700e8d2eff9b27cb37e70",
+          "ev_d98015cfa2bd89a1231019f7": "36cc45f27ff26385beca79565e762a289bbf057570e3f0581afc29fc0c6eac96",
+          "ev_d9f47b3f1016cbd65fdc6eac": "605748d5b7962072758c6d6e71a5d1992573d605686618fb89a223f537a41ef1"
+        },
+        "judgments": [],
+        "judgment_audit": [
+          {
+            "attempts": 1,
+            "idempotency_key": "idem_06c977c14978679b58dde3f05c0c53ba",
+            "artifact_evidence_id": null,
+            "findings": [
+              "fnd_23f1b57a14819256c3eb32a5"
+            ],
+            "reason_code": "NEEDS_EVIDENCE",
+            "provider": "anthropic",
+            "model": "claude-opus-5",
+            "prompt_version": "125f8b7a6a7b6f6ba2ea09509580cccd9e029cd608497ec1a843f759348afd9a",
+            "skill_version": "7770b422637bb8f3a8e5fe794eac612c97808ec869abec7fa6d00beea3c4b42f",
+            "schema_version": "judgment/3",
+            "schema_hash": "5df08d6cebba7dbea5d72006d579b83310bcc16c9f871d8fceccc5deb1666b3d",
+            "input_hash": "ea6fdd3a8cf9edc23d0c0db41d97c8980b6d4c31f1de36931735ae4f5de2b77a",
+            "input_tokens": 43624,
+            "output_tokens": 9134,
+            "cost_usd": 0.44647000000000003,
+            "review_attempts": [
+              {
+                "provider": "anthropic",
+                "model": "claude-opus-5",
+                "raw_output": {
+                  "verdict": "supported",
+                  "confidence": "medium",
+                  "summary": "The hypothesis rests on post-earnings-announcement drift (investor under-reaction to earnings news), a long-documented and economically plausible mechanism, and the frozen spec dates information from filing acceptance, which matches the mechanism's premise that the drift starts once the filing is public. The measured sign agrees with the pre-registered expected sign, and the significance and robustness statistics supplied point the same way. Two caveats limit confidence: the feature is a year-over-year EPS change rather than a surprise relative to an expectation, so it is only a proxy for the news the mechanism describes; and the measured cross-sectional information coefficient is large relative to what a fundamental signal would plausibly earn in real markets, which can only be judged against the documented planted effect strength of this semi-synthetic price simulation (ADR-0003), which was not supplied. Mechanism and sign checks are met on the evidence given; magnitude is consistent only under the simulation caveat. This is a targeted mechanism/sign/timing review, not a red-team signoff; cost, regime, concentration, capacity and crowding work was excluded from scope and was not tested.",
+                  "claims": [
+                    {
+                      "kind": "fact",
+                      "statement": "The frozen hypothesis declares timing_basis 'acceptance', a forward horizon of {metric:0} days, and a pre-registered expected sign of {metric:1}, which is consistent with a drift mechanism that begins when the filing becomes public.",
+                      "evidence_ids": [
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_afb1fadeb0908cfad0a02949",
+                          "field_path": "/horizon_days",
+                          "format": "d"
+                        },
+                        {
+                          "evidence_id": "ev_afb1fadeb0908cfad0a02949",
+                          "field_path": "/expected_sign",
+                          "format": "d"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "fact",
+                      "statement": "The measured mean information coefficient is {metric:0} with an information ratio of {metric:1}, i.e. positive and therefore of the same sign as the pre-registered expectation.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac",
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/ic_mean",
+                          "format": ".3f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/ic_ir",
+                          "format": ".2f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "fact",
+                      "statement": "The statistical review reports an annualized Sharpe of {metric:0}, a Newey-West t-statistic of {metric:1} over {metric:2} observations, and a block-bootstrap confidence interval running from {metric:3} to {metric:4}, whose lower bound is above zero.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/sharpe_annualized",
+                          "format": ".2f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/newey_west_t",
+                          "format": ".2f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/n_obs",
+                          "format": "d"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/bootstrap_ci/0",
+                          "format": ".2f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/bootstrap_ci/1",
+                          "format": ".2f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "fact",
+                      "statement": "The deflated Sharpe reported is {metric:0}, computed with a recorded trial count of {metric:1}, and the reported delay decay is {metric:2}; the variance term is labelled as an asymptotic null variance because fewer than five trials are recorded.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/deflated_sharpe",
+                          "format": ".4f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/n_trials",
+                          "format": "d"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/delay_decay",
+                          "format": ".4f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "assumption",
+                      "statement": "The stated mechanism is under-reaction to earnings news (post-earnings-announcement drift), and the review assumes that a year-over-year EPS change scaled by prior-year EPS is an acceptable proxy for earnings surprise, in the spirit of standardized-unexpected-earnings constructions, even though no analyst or time-series expectation benchmark is used.",
+                      "evidence_ids": [
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": []
+                    },
+                    {
+                      "kind": "risk",
+                      "statement": "The measured information coefficient is high for a fundamental signal by real-market standards, so magnitude consistency cannot be judged without the documented planted effect strength of the semi-synthetic price simulation; any magnitude conclusion here covers the simulation only.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac",
+                        "ev_d65f503f30d27fa8e2adebce"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/ic_mean",
+                          "format": ".3f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "risk",
+                      "statement": "Because the feature captures realized year-over-year earnings growth rather than surprise versus expectations, part of the measured edge may reflect slow-moving growth or profitability exposure rather than the announcement under-reaction the rationale claims; this affects how the signal should be labelled and its overlap with known anomalies, which was outside this review's scope.",
+                      "evidence_ids": [
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": []
+                    },
+                    {
+                      "kind": "risk",
+                      "statement": "The hypothesis statement and rationale are researcher-supplied untrusted text; they were read as claims to be checked, not as instructions, and the input carried no instruction-like content flags.",
+                      "evidence_ids": [
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": []
+                    },
+                    {
+                      "kind": "recommendation",
+                      "statement": "Recommend that the decision makers treat the mechanism and sign checks as met, and condition any further progression on registering the dataset's documented planted effect strength for magnitude comparison and on the separate leakage-audit and red-team findings, whose contents were not part of this review's inputs.",
+                      "evidence_ids": [
+                        "ev_d98015cfa2bd89a1231019f7",
+                        "ev_d9f47b3f1016cbd65fdc6eac"
+                      ],
+                      "metric_refs": []
+                    }
+                  ],
+                  "open_questions": [
+                    "What is the documented planted effect strength of the semi-synthetic price world, so that the measured information coefficient can be compared against it rather than against a real-market rule of thumb?",
+                    "Do the leakage-audit findings and the feature-build lineage confirm that the declared acceptance timing basis was actually honoured in the built feature values, including after-close acceptances rolling to the next session?",
+                    "Would an expectation-based surprise definition (for example a seasonal random-walk or analyst benchmark) preserve the sign and magnitude, which would tie the evidence more tightly to the under-reaction mechanism than to a growth exposure?",
+                    "Does the reported delay decay come from an executed delay variant experiment, and which ledger experiment identifier produced it?"
+                  ],
+                  "needs_evidence": false,
+                  "attacks": [],
+                  "dissent": []
+                },
+                "feedback": []
+              },
+              {
+                "provider": "anthropic",
+                "model": "claude-opus-5",
+                "raw_output": {
+                  "verdict": "supported",
+                  "confidence": "medium",
+                  "summary": "The hypothesis rests on a recognised economic mechanism (under-reaction to earnings news, i.e. post-earnings-announcement drift), and the frozen spec's timing basis is acceptance, which is consistent with a mechanism that begins when the filing becomes public. The measured association carries the same sign as the stated expectation, and the headline statistics reported in the statistical review are directionally consistent with the mechanism. Scope was limited to mechanism, measured sign and timing basis; cost, regime, contributor-concentration, capacity and crowding stresses were excluded and are not addressed here, so this is not a red-team signoff. Prices in this project are semi-synthetic, so effect magnitudes should be read as properties of the simulation rather than of live markets.",
+                  "claims": [
+                    {
+                      "kind": "fact",
+                      "statement": "The frozen hypothesis specifies a timing basis of acceptance and a positive expected direction for the year-over-year EPS change feature, which matches the drift mechanism starting at public availability of the filing.",
+                      "evidence_ids": [
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": []
+                    },
+                    {
+                      "kind": "fact",
+                      "statement": "The statistical review reports a positive average cross-sectional association and positive risk-adjusted performance, in the same direction as the stated expectation: {metric:0}; {metric:1}; {metric:2}.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/ic_mean",
+                          "format": ".3f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/newey_west_t",
+                          "format": ".2f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/sharpe_annualized",
+                          "format": ".2f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "fact",
+                      "statement": "The recorded search intensity and the multiple-testing adjusted statistic reported by the statistical review are: {metric:0}; {metric:1}.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/n_trials",
+                          "format": "d"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/deflated_sharpe",
+                          "format": ".4f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "fact",
+                      "statement": "Sample size, signal stability and trading-friction summaries supplied with the statistical review are: {metric:0}; {metric:1}; {metric:2}; {metric:3}.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/n_obs",
+                          "format": "d"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/ic_ir",
+                          "format": ".2f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/turnover_mean",
+                          "format": ".2f"
+                        },
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/cost_drag_annualized",
+                          "format": ".4f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "assumption",
+                      "statement": "The mechanism assumed is post-earnings-announcement drift: investors under-react to the earnings surprise embedded in the filing, so returns continue in the surprise direction over the stated holding window. This is a long-documented anomaly rather than a novel effect, so the signal should be treated as a known-anomaly variant unless distinguishing evidence is provided.",
+                      "evidence_ids": [
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": []
+                    },
+                    {
+                      "kind": "risk",
+                      "statement": "Prices and volumes in this project are semi-synthetic, and the synthetic world may plant an effect of deliberately elevated strength; the measured association should therefore be read against the dataset's documented planted strength rather than as a live-market effect size: {metric:0}.",
+                      "evidence_ids": [
+                        "ev_d9f47b3f1016cbd65fdc6eac",
+                        "ev_d65f503f30d27fa8e2adebce"
+                      ],
+                      "metric_refs": [
+                        {
+                          "evidence_id": "ev_d9f47b3f1016cbd65fdc6eac",
+                          "field_path": "/ic_mean",
+                          "format": ".3f"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "risk",
+                      "statement": "The rationale and statement fields are researcher-supplied untrusted text; no instruction-like content was flagged in them, but they were treated as data and not as directions for this review.",
+                      "evidence_ids": [
+                        "ev_afb1fadeb0908cfad0a02949"
+                      ],
+                      "metric_refs": []
+                    },
+                    {
+                      "kind": "recommendation",
+                      "statement": "Treat the economic mechanism and sign consistency as satisfied for this targeted review, and condition any committee decision on the separately assigned leakage-audit reading and the excluded robustness stresses (cost multiples, contributor exclusion, volatility regimes, capacity, crowding).",
+                      "evidence_ids": [
+                        "ev_d98015cfa2bd89a1231019f7",
+                        "ev_cfcaa7efce46309daa4e4686"
+                      ],
+                      "metric_refs": []
+                    }
+                  ],
+                  "open_questions": [
+                    "What do the leakage-audit artifact findings and the feature-build lineage check report for filing-derived rows, including whether after-close acceptances roll to the next session?",
+                    "Does the drift persist with an added execution-delay session, which would distinguish a genuine under-reaction mechanism from same-day information capture?",
+                    "Is the feature version selected at each decision time the originally filed value rather than an amended or restated value, for filers with amendments in the sample?"
+                  ],
+                  "needs_evidence": false,
+                  "attacks": [],
+                  "dissent": []
+                },
+                "feedback": [
+                  "summary contains an ungrounded number; put quantitative claims in metric_refs",
+                  "claim 0 quantitative statement must contain only metric placeholders; metric labels are rendered by code",
+                  "claim 0 metric reference 0 does not resolve to a valid numeric artifact field",
+                  "claim 0 metric reference 1 does not resolve to a valid numeric artifact field",
+                  "claim 1 quantitative statement must contain only metric placeholders; metric labels are rendered by code",
+                  "claim 1 metric reference 1 does not resolve to a valid numeric artifact field",
+                  "claim 2 quantitative statement must contain only metric placeholders; metric labels are rendered by code",
+                  "claim 2 metric reference 0 does not resolve to a valid numeric artifact field",
+                  "claim 2 metric reference 1 does not resolve to a valid numeric artifact field",
+                  "claim 2 metric reference 3 does not resolve to a valid numeric artifact field",
+                  "claim 2 metric reference 4 does not resolve to a valid numeric artifact field",
+                  "claim 3 quantitative statement must contain only metric placeholders; metric labels are rendered by code",
+                  "claim 3 metric reference 0 does not resolve to a valid numeric artifact field",
+                  "claim 3 metric reference 2 does not resolve to a valid numeric artifact field",
+                  "claim 5 must use every metric reference through its matching placeholder",
+                  "claim 5 quantitative statement must contain only metric placeholders; metric labels are rendered by code"
+                ]
+              }
+            ]
+          }
+        ],
+        "accounting": {
+          "durable": true,
+          "ledger_id": "edf4c3a093f284426d115a5c6c8176e5f3d694f1a4e9c33f776dddefa8297d3a",
+          "run_ids": [
+            "run_352ab8ec3db94320a3e6"
+          ],
+          "outstanding": [],
+          "settled_usage": [
+            {
+              "usage_id": 3,
+              "run_id": "run_352ab8ec3db94320a3e6",
+              "step": "Economic rationale review",
+              "model": "claude-opus-5",
+              "input_tokens": 21557,
+              "output_tokens": 5218,
+              "cost_usd": 0.238235,
+              "created_at": "2026-09-28 00:54:44.128239+00:00"
+            },
+            {
+              "usage_id": 4,
+              "run_id": "run_352ab8ec3db94320a3e6",
+              "step": "Economic rationale review",
+              "model": "claude-opus-5",
+              "input_tokens": 22067,
+              "output_tokens": 3916,
+              "cost_usd": 0.208235,
+              "created_at": "2026-09-28 00:55:35.571339+00:00"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

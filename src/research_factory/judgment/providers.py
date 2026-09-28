@@ -417,13 +417,23 @@ class AnthropicProvider:
 
         user = self.user_message(request)
         try:
-            response = self.client.beta.messages.create(
+            parameters = dict(
                 model=self.model,
                 max_tokens=request.max_output_tokens,
                 system=request.system,
                 messages=[{"role": "user", "content": user}],
                 output_config={"format": {"type": "json_schema", "schema": request.schema}},
             )
+            # Consume the SDK stream internally; callers still receive one final,
+            # validated document. Long reasoning must not sit behind a silent
+            # non-streaming read timeout. A partial stream never settles usage.
+            stream = getattr(self.client.beta.messages, "stream", None)
+            if stream is not None:
+                with stream(**parameters) as events:
+                    response = events.get_final_message()
+            else:
+                # Small injected clients used by offline contract tests.
+                response = self.client.beta.messages.create(**parameters)
         except (anthropic.RateLimitError, anthropic.APITimeoutError, anthropic.APIConnectionError) as exc:
             raise TransientError(f"model API temporarily unavailable: {type(exc).__name__}") from exc
         except anthropic.APIStatusError as exc:

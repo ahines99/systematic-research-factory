@@ -23,6 +23,7 @@ from ..judgment import prompts
 from ..judgment.contract import (
     SCHEMA_VERSION,
     JudgmentValidationError,
+    metric_catalog,
     output_schema,
     render_memo,
     validate_output,
@@ -556,7 +557,12 @@ class JudgmentStep:
         }
         slug = self.slug.replace("-", "_")
         scope = prompts.review_scope(slug)
-        payload = {**self.payload(ctx), "evidence_catalog": catalog, "review_scope": scope}
+        payload = {
+            **self.payload(ctx),
+            "evidence_catalog": catalog,
+            "metric_catalog": metric_catalog(evidence_documents),
+            "review_scope": scope,
+        }
         if slug == "research_committee":
             prior_reviews = []
             dissent = []
@@ -609,6 +615,24 @@ class JudgmentStep:
             response = await run_blocking(
                 s.budget.invoke, s.provider, request, ctx.run.run_id, self.name, s.engine
             )
+            if response.provider == "anthropic":
+                # Persist each completed paid attempt before validation or a
+                # later budget stop can discard the enclosing step's stamp.
+                s.audit.append(
+                    run_id=ctx.run.run_id,
+                    step=self.name,
+                    event_type="model_response_received",
+                    actor="model-reviewer",
+                    payload={
+                        "provider": response.provider,
+                        "model": response.model,
+                        "raw_output": response.raw,
+                        "feedback": list(request.feedback),
+                        "input_tokens": response.input_tokens,
+                        "output_tokens": response.output_tokens,
+                        "cost_usd": response.cost_usd,
+                    },
+                )
             stamp["model"] = response.model
             stamp["provider"] = response.provider
             review_attempts.append(
