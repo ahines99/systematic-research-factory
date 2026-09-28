@@ -1,0 +1,107 @@
+{
+  "checked_at": "2026-09-28T01:24:28.802087+00:00",
+  "client": "official MCP Python SDK",
+  "frozen_experiment": {
+    "experiment_id": "exp_2a6fb8d9b553186587f725d6",
+    "research_family": "hosted-sdk-acceptance",
+    "trial_number": 1,
+    "created": false,
+    "note": "This exact experiment was already frozen; no new trial was added."
+  },
+  "analysis": {
+    "run_id": "run_4e118ded75c741a0b35f",
+    "run_status": "complete",
+    "experiment_id": "exp_2a6fb8d9b553186587f725d6",
+    "step": "Backtest",
+    "artifact_evidence_id": "ev_fc17ece9b1b70d29c237bc4d",
+    "artifact": {
+      "execution_delay_minutes": 30,
+      "format": "rsf-backtest/1",
+      "lag_sessions": 1,
+      "quantile": 0.2,
+      "summary": {
+        "gross_annual_return": 0.1784804995839228,
+        "n_obs": 519,
+        "names_per_side": 8,
+        "net_annual_return": 0.17574928571109044,
+        "net_total_return": 0.42602743347289174,
+        "rebalances": 26,
+        "sharpe_annualized": 2.1385545455800288
+      },
+      "transaction_cost_bps": 5.0,
+      "unfilled_orders": [
+        {
+          "decision": "2023-06-19",
+          "execution": "2023-06-20",
+          "reason": "not_listed",
+          "requested_weight": 0.0,
+          "security_id": "SYN040"
+        }
+      ]
+    },
+    "findings": [
+      {
+        "schema_version": "1",
+        "finding_id": "fnd_bb50a126679ae283c6c3f7f5",
+        "step": "Hypothesis freeze",
+        "finding_type": "experiment_frozen",
+        "title": "Experiment frozen",
+        "statement": "Experiment exp_2a6fb8d9b553186587f725d6 is trial 1 in research family 'hosted-sdk-acceptance'. Any change to it creates a new experiment and a new trial.",
+        "severity": "info",
+        "confidence": "high",
+        "evidence_ids": [],
+        "assumptions": [],
+        "metadata": {}
+      },
+      {
+        "schema_version": "1",
+        "finding_id": "fnd_fcf6ad750dd7a32b88602985",
+        "step": "Data acquisition",
+        "finding_type": "data_provenance",
+        "title": "Prices are simulated",
+        "statement": "Prices in this dataset are simulated with planted effects (ADR-0003). Results say nothing about real-world returns.",
+        "severity": "info",
+        "confidence": "high",
+        "evidence_ids": [
+          "ev_d65f503f30d27fa8e2adebce"
+        ],
+        "assumptions": [],
+        "metadata": {}
+      },
+      {
+        "schema_version": "1",
+        "finding_id": "fnd_d75aad05f5975ca0ac8cce46",
+        "step": "Feature build",
+        "finding_type": "feature_coverage",
+        "title": "Feature coverage",
+        "statement": "'eps_yoy_change' (acceptance timing) has values for 1148 of 1148 eligible security-dates (100%) across 26 decision dates.",
+        "severity": "info",
+        "confidence": "high",
+        "evidence_ids": [
+          "ev_235f58b0b2d432638aa34404",
+          "ev_d65f503f30d27fa8e2adebce"
+        ],
+        "assumptions": [],
+        "metadata": {}
+      },
+      {
+        "schema_version": "1",
+        "finding_id": "fnd_7b52bd3a6550a71e78549308",
+        "step": "Backtest",
+        "finding_type": "backtest_summary",
+        "title": "Backtest completed",
+        "statement": "519 daily observations, annualized Sharpe 2.14 after 5 bps costs, execution 1 session(s) after the decision.",
+        "severity": "info",
+        "confidence": "high",
+        "evidence_ids": [
+          "ev_d65f503f30d27fa8e2adebce"
+        ],
+        "assumptions": [],
+        "metadata": {}
+      }
+    ]
+  },
+  "guest_private_read": "NOT_FOUND (concealed)",
+  "model_calls": 0,
+  "scope": "Authenticated hypothesis freeze, deterministic backtest and report read; guest private-report denial. No paid research dispatch."
+}

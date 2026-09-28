@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-09-28T01:49:38.909327+00:00",
+  "project_id": "late-glade-26290529",
+  "history_retention_seconds": 21600,
+  "branches": [
+    {
+      "id": "br-blue-poetry-b4u5590o",
+      "name": "production"
+    }
+  ],
+  "database": "rsf",
+  "application_role": "rsf_app",
+  "superuser": false,
+  "create_database": false,
+  "create_role": false,
+  "client_tls": true
+}

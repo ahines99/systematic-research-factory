@@ -1,0 +1,1 @@
+registry.fly.io/systematic-research-factory@sha256:e53a73e28057107a5e896ab938066980ed761de61d9f8b2686197ad7c0e31981

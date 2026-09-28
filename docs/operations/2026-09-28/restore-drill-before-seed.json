@@ -1,0 +1,11 @@
+{
+  "started_at": "2026-09-28T01:21:50.534533+00:00",
+  "project": "late-glade-26290529",
+  "parent_branch": "br-blue-poetry-b4u5590o",
+  "restore_timestamp": "2026-09-28T01:21:50.534533+00:00",
+  "scratch_branch": "br-green-resonance-b4e1uld0",
+  "cleanup_http_status": 200,
+  "cleaned_up": true,
+  "elapsed_seconds": 13.31,
+  "completed_at": "2026-09-28T01:22:03.850655+00:00"
+}

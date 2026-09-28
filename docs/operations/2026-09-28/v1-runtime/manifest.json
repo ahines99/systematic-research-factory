@@ -1,0 +1,18 @@
+{
+  "source_commit": "f4d438f7b28bf0702e6a01e0b314188a62ccb34c",
+  "workflow": "https://github.com/ahines99/systematic-research-factory/actions/runs/36366507618",
+  "image": "registry.fly.io/systematic-research-factory@sha256:22248d65630702a8ddd0c66e0f9c69d1967ef91264e90712800b27d84bbfc9fe",
+  "visual_review": "Desktop/mobile screenshots inspected; six distinct scenario cards including recovery; no overflow.",
+  "sha256": {
+    "candidate-image.txt": "aac1c150c9ca6b5f98148b4719bea6e09c4ac3b44c18ee8620ce60ce6458b28e",
+    "candidate-runs.json": "239e7b7eb1016e994570f602cc950eea9047353a04d98e2bf7f8259032cb5707",
+    "candidate-scan.json": "46a53c62b5a9fb80860b48a6640ac490cf24324d0396041108141782e7f89caa",
+    "browser/browser-checks.json": "3fcbe17b61224f1d5d8e434473a04ff07c6f7cf1e141b3ae344b696d92ce6dba",
+    "browser/demo-desktop.png": "2f8c324d027aec64d8f06e1f169437a892f4b2b6d14ec31aa01d75fdc1924bc5",
+    "browser/demo-mobile.png": "7a86b2aba15c2a3e1a4171805fad422c3ba260de114ad2b432d38e2d4471ab06",
+    "browser/portfolio-desktop.png": "46c7e401e099e33792b494fd269b416ba33d8590723a28444b55c8137a7cf34e",
+    "browser/portfolio-mobile.png": "a5f30f64ad10960e7b5c711e163cedadb127091e3bcc59edf0f08f8394f881b6",
+    "browser/report-desktop.png": "25492c71bc9b30598394dcdb5c9e32c10e8d02f992790845f293bb6c376e0437",
+    "browser/report-mobile.png": "d780b86e18bf87caf295f6c7a6d03945c57b2dd9bb8e37da43c7eda4dc662448"
+  }
+}

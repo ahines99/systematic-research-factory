@@ -23,3 +23,9 @@ The 2026-09-23 audit left four decisions to the owner. The owner accepted the re
 
 ## Revisit when
 There's real traffic, or model pricing changes.
+
+## Portfolio launch acceptance (2026-09-28 UTC)
+
+The owner accepted Neon Free's verified **6-hour point-in-time restore window** for the portfolio demo, replacing the earlier 24-hour launch target. R2 evidence retention is **90 days**. These are distinct controls: retained blobs cannot reconstruct database rows outside the database history window.
+
+For the finite local live-model experiment only, the owner authorized a $5 cumulative pilot allowance and $20 UTC-day allowance, with $20 total across all attempts and outstanding holds and $1 per run. Hosted defaults remain $3/day. The original uncertain response retains its full reservation; it is not counted as a confirmed charge or refunded.

@@ -42,6 +42,12 @@ def package(
         "docs/security-risk-register.md",
     ):
         inputs.append((root / relative, Path(relative)))
+    # Only reviewed public evidence trees; never collect var/, databases or env files.
+    for directory in ("docs/live-evaluation", "docs/operations"):
+        for source in sorted((root / directory).rglob("*")):
+            if source.is_file() and source.suffix in {".json", ".md", ".png", ".txt"}:
+                inputs.append((source, source.relative_to(root)))
+    inputs.append((root / "docs/live-evaluation-protocol.md", Path("docs/live-evaluation-protocol.md")))
     for source, _ in inputs:
         if not source.is_file() or source.is_symlink():
             raise ValueError(f"required regular evidence file missing: {source}")
@@ -64,7 +70,7 @@ def package(
     manifest = {
         "format": "rsf-release-evidence/1",
         "source_revision": revision,
-        "live_model_evidence": False,
+        "live_model_evidence": any("docs/live-evaluation/" in relative.as_posix() for _, relative in inputs),
         "files": files,
     }
     (out / "evidence-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

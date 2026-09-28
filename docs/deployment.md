@@ -6,7 +6,7 @@ Target: Fly.io (app), Neon (PostgreSQL), Cloudflare R2 (evidence blobs), per [AD
 
 1. **Neon:** create a project and copy the pooled connection string. Enable point-in-time restore and note the plan's retention window, which RSF-068 needs.
 2. **Cloudflare R2:** create bucket `rsf-evidence`, then an API token with **Object Read & Write only on that bucket**.
-   - R2 tokens cannot leave out delete, so **add a bucket lock rule** (for example, retain all objects for 3 years). The lock is what makes evidence tamper-proof: the app's conditional puts stop overwrites, and the lock stops deletes even with a leaked token.
+   - R2 tokens cannot leave out delete, so **add a bucket lock rule** (retain all objects for the agreed 90 days). The lock is what enforces object retention: the app's conditional puts stop overwrites, and the lock stops deletes even with a leaked token.
 3. **Fly.io:**
 
    ```bash

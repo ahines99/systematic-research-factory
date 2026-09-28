@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-09-28T01:23:41.639Z",
+  "results": [
+    {
+      "page": "portfolio",
+      "viewport": "desktop",
+      "http_status": 200,
+      "horizontal_overflow": false
+    },
+    {
+      "page": "demo",
+      "viewport": "desktop",
+      "http_status": 200,
+      "horizontal_overflow": false
+    },
+    {
+      "page": "report",
+      "viewport": "desktop",
+      "navigated": true
+    },
+    {
+      "page": "portfolio",
+      "viewport": "mobile",
+      "http_status": 200,
+      "horizontal_overflow": false
+    },
+    {
+      "page": "demo",
+      "viewport": "mobile",
+      "http_status": 200,
+      "horizontal_overflow": false
+    },
+    {
+      "page": "report",
+      "viewport": "mobile",
+      "navigated": true
+    }
+  ]
+}

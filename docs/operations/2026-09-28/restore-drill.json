@@ -1,0 +1,45 @@
+{
+  "started_at": "2026-09-28T01:23:20.554161+00:00",
+  "project": "late-glade-26290529",
+  "parent_branch": "br-blue-poetry-b4u5590o",
+  "restore_timestamp": "2026-09-28T01:23:20.554161+00:00",
+  "scratch_branch": "br-restless-voice-b4rheyt4",
+  "copied_demo_runs": 6,
+  "evidence_objects_read": 12,
+  "replay": {
+    "original_run_id": "run_cea87f1f9f414d9fbd1b",
+    "replay_run_id": "run_ee1b080ee0c84f3ca294",
+    "identical": true,
+    "compared": {
+      "Hypothesis freeze": [
+        "c8c83c8bc79acd3c588fd52f64f4d546bffb6289b588aec929cd46403e61142b",
+        "c8c83c8bc79acd3c588fd52f64f4d546bffb6289b588aec929cd46403e61142b"
+      ],
+      "Data acquisition": [
+        "a5b053d56c14d952cc1a334852194d0e28022aea91ff5e0e5a86c6196ba961f3",
+        "a5b053d56c14d952cc1a334852194d0e28022aea91ff5e0e5a86c6196ba961f3"
+      ],
+      "Feature build": [
+        "1bcf9b08b8260cdfc6a1920977fdb670091c619a1a321940ee73591be0ccd101",
+        "1bcf9b08b8260cdfc6a1920977fdb670091c619a1a321940ee73591be0ccd101"
+      ],
+      "Backtest": [
+        "c037cfddac3e897bb6b971b61a8504bd3d8b603c9f5700e8d2eff9b27cb37e70",
+        "c037cfddac3e897bb6b971b61a8504bd3d8b603c9f5700e8d2eff9b27cb37e70"
+      ],
+      "Leakage audit": [
+        "36cc45f27ff26385beca79565e762a289bbf057570e3f0581afc29fc0c6eac96",
+        "36cc45f27ff26385beca79565e762a289bbf057570e3f0581afc29fc0c6eac96"
+      ],
+      "Statistical review": [
+        "605748d5b7962072758c6d6e71a5d1992573d605686618fb89a223f537a41ef1",
+        "605748d5b7962072758c6d6e71a5d1992573d605686618fb89a223f537a41ef1"
+      ]
+    }
+  },
+  "success": true,
+  "cleanup_http_status": 200,
+  "cleaned_up": true,
+  "elapsed_seconds": 19.69,
+  "completed_at": "2026-09-28T01:23:40.234867+00:00"
+}

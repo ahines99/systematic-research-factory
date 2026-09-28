@@ -1,6 +1,14 @@
 # Live model evaluation protocol
 
+The [completed final report](live-evaluation/final-study/report.md) contains all 42 paired-study observations, earlier-cost accounting, exact runner/input identities and the unscored blinded review packet.
+
 Prepared before any paid calls. The first pilot was executed and failed complete acceptance; its [frozen report](live-evaluation/pilot-1/pilot-report.md) preserves both attempts. The offline 37-case scorecard is not a live Anthropic baseline.
+
+## Final-study authorization and source freeze (2026-09-28 UTC)
+
+The owner explicitly authorized a $5 cumulative pilot allowance and $20 UTC-day allowance, retaining the **$20 total experiment cap** and **$1/run**. This supersedes the earlier $3 pilot/day limits for this local experiment only; hosted defaults remain $3/day. All earlier recorded usage and the original $0.99998 uncertain reservation remain included. The frozen final source is `d0dd403` (the merged implementation of `2ea1a5d`). Only the evaluation's runtime daily allowance is overridden; case inputs, prompts, thresholds and per-run limits remain fixed. Each case is admitted only when its full $1 upper bound fits the lifetime allowance. New uncertain responses stop the experiment.
+
+The final clean compatibility pilot precedes the planned seven-case, three-repeat paired study. Output-contract or latency failures are retained as negative results, not repaired mid-study. The study may proceed after a completed, fully accounted response even if a model judgment fails acceptance. This evaluates the frozen implementation's limitations rather than requiring a favorable pilot result. A separate, earlier one-case Skills-on/off diagnostic was selected after a successful PIT pilot and is excluded from the planned comparison.
 
 ## Revision two, declared before further generation
 

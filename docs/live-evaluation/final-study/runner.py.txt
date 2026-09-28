@@ -1,0 +1,40 @@
+import os, json, sqlite3, hashlib, subprocess, sys
+from pathlib import Path
+from datetime import datetime, timezone
+import anyio
+os.environ["RSF_BUDGETS__MAX_COST_USD_PER_DAY"]="20"
+from research_factory.evals import load_cases, run_case, _accounting_engine
+from research_factory.judgment import prompts
+OUT=Path("var/live-eval/final-study")
+DB="var/live-eval/accounting.db"
+def accounting():
+    with sqlite3.connect(DB) as c:
+        used=c.execute("select coalesce(sum(cost_usd),0) from model_usage").fetchone()[0]
+        held=c.execute("select coalesce(sum(cost_usd),0) from model_reservations where status in ('pending','uncertain')").fetchone()[0]
+        uncertain=c.execute("select reservation_id from model_reservations where status in ('pending','uncertain')").fetchall()
+    return {"confirmed_usd":used,"held_usd":held,"conservative_total_usd":used+held,"unresolved_ids":[r[0] for r in uncertain]}
+async def main():
+    mode=sys.argv[1]
+    cases=load_cases(Path("var/live-eval/pilot-clean" if mode=="pilot" else "var/live-eval/cases"))
+    engine=_accounting_engine("sqlite:///"+DB)
+    order=[(0,True)] if mode=="pilot" else [(r,a) for r in (1,2,3) for a in ((True,False) if r%2 else (False,True))]
+    for repeat,enabled in order:
+        prompts.set_skills_enabled(enabled)
+        for case in cases:
+            dest=OUT / (f"pilot-{case.id}.json" if mode=="pilot" else f"repeat-{repeat}-{'on' if enabled else 'off'}-{case.id}.json")
+            if dest.exists(): raise RuntimeError("Refusing to overwrite or repeat an existing observation")
+            before=accounting()
+            limit=5 if mode=="pilot" else 20
+            if before["conservative_total_usd"]+1>limit:
+                print("STOP: next bounded run does not fit allowance",before,flush=True);return
+            case.budgets["max_cost_usd_per_day"]=20
+            print("START",dest.name,"used+held",before["conservative_total_usd"],flush=True)
+            result=await run_case(case,"anthropic",engine)
+            after=accounting()
+            record={"source_commit":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"repeat":repeat,"skills_enabled":enabled,"before":before,"after":after,"result":result}
+            dest.write_text(json.dumps(record,indent=2),encoding="utf-8")
+            print("DONE",dest.name,"pass",result["passed"],"cost",result["cost_usd"],"seconds",result["seconds"],flush=True)
+            if set(after["unresolved_ids"])-set(before["unresolved_ids"]):
+                print("STOP: new uncertain call retained",flush=True);return
+    engine.dispose()
+anyio.run(main)

@@ -1,6 +1,6 @@
 # Systematic Research Factory
 
-An AI engineering and quantitative research portfolio project by Alex Hines, developed with AI coding assistance. Candidate implementation; hosted operations and live-model evidence are not yet complete.
+An AI engineering and quantitative research portfolio project by Alex Hines, developed with AI coding assistance. Public research implementation with independently reported offline controls, live-provider limitations and hosted acceptance evidence.
 
 ## Problem
 
@@ -31,10 +31,16 @@ Hosted CI exposed a useful limitation: identical code and container image did no
 
 ## Evidence and claim boundaries
 
-Review the [live CI checks](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml), [five-specialist audit and remediation](audits/2026-09-27/remediation.md), [golden cases](../evals/golden/), [raw study](research/results/study.json), and [sample reports](samples/README.md). The offline suite has 37 cases; its success is not evidence that skills improve a paid model. The [live evaluation protocol](live-evaluation-protocol.md) must be executed and reported before making that claim.
+Review the [live CI checks](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml), [five-specialist audit and remediation](audits/2026-09-27/remediation.md), [golden cases](../evals/golden/), [raw study](research/results/study.json), and [sample reports](samples/README.md). The offline suite has 37 cases; its success is not evidence that skills improve a paid model. The [live evaluation protocol](live-evaluation-protocol.md) preserves development pilots and a frozen paired study. Live pilots exposed genuine failures: a task-specific verdict mismatch, an interrupted response, ambiguous numeric identifiers and incompatible model-generated metric references. Fixes preserve strict validation and publish negative outcomes; a valid schema or one successful targeted review does not establish general model reliability.
 
-The current delivery and account dependencies are in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md). A successful first release still needs live API accounting, hosted retention/recovery/rollback evidence, a recorded walkthrough and owner signoff. Research only: no brokerage or trading capability exists.
+The current delivery and account dependencies are in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md). Operational acceptance and release status are recorded separately from the research results. The owner records the personal walkthrough, reviews blinded model outputs and observes actual hosting costs over time. Research only: no brokerage or trading capability exists.
 
 ## Interview walkthrough
 
 Explain the clean run, then show why a timing leak is invalid even if performance improves. Trace a numerical claim to its artifact, explain how a later trial affects committee review, and distinguish a scripted approval from a real approver. Close with the CPU replay finding and the limitations of the simulation. These are concrete design decisions to defend, not claims of production financial performance.
+
+## Measured live-model result
+
+The frozen [seven-case comparison](live-evaluation/final-study/report.md) completed three repeats per arm: Skills-on passed 15/21 at $4.928400, Skills-off 14/21 at $2.371960. Both passed fourteen paired observations; one passed only with Skills; six failed in both arms. Full workflows exceeded the frozen latency target and sometimes failed validation or cost targets. The small difference does not establish general improvement, while the extra context had a measurable cost. Both arms retained the same core prompt, evidence and hard validators.
+
+The deployed system's conservative behavior is part of the result: invalid or uncertain reviews pause for evidence rather than receiving fabricated approvals. All earlier development failures and the original uncertain charge remain in the experiment accounting. The operational proof is separate: a point-in-time database restore replayed six deterministic artifacts exactly, real credentials were rotated, and preserved image rollback passed in both directions.

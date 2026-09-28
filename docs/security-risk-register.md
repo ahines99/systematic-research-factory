@@ -13,9 +13,11 @@ The local remediation scan used Grype 0.119.0 and passed the **fixed High/Critic
 
 ## Operational residuals
 
-- R2 retention, least-privilege app credentials and isolated restore are unverified until real resources exist. An administrator can change a retention policy; do not describe evidence as unconditionally tamper-proof.
+- Actual R2 overwrite/delete denial, viewer-key rotation and isolated restore with exact replay passed on 2026-09-28; see [hosted evidence](operations/2026-09-28/README.md). Owner accepted six-hour Neon recovery and ninety-day R2 retention. An administrator can change a retention policy; evidence is not unconditionally tamper-proof.
 - Model prose can be misleading despite a valid citation. Structured numeric binding and scoped review contracts reduce specific failure modes, not general semantic risk. Public guest demos use rules and never paid calls.
 - Numerical replay depends on CPU/backend settings as well as source and versions. See the [measured CI finding](audits/2026-09-27/ci-followup.md); historical numerical comparison must not be labeled exact replay.
 - The project has no production on-call commitment. Keep public reports as an offline fallback, cap spending, restrict keyed access, and shut down dynamic service if ownership or monitoring lapses.
 
 Before release, attach the actual scan/digest, reassess any changed advisories, complete the hosted controls, and have Alex explicitly accept remaining risk or defer publication. No `v1.0.0` tag has been created by this preparation.
+
+The deployed candidate scan on 2026-09-28 matched the same three Medium and one Low advisories, with no High/Critical matches. Its immutable digest and full JSON are preserved in the hosted evidence directory.

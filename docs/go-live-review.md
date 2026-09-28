@@ -1,45 +1,43 @@
-# v1.0 go-live review (RSF-080)
+# v1.0 release review
 
-Reviewed 2026-09-27 against the [roadmap](ROADMAP.md). Package version remains `0.1.0`; no release is tagged or deployed from this checkout.
+Reviewed 2026-09-28 UTC. The hosted service is live. The 1.0.0 package declarations and recovery-card fix are merged at `f4d438f`; tagging and post-release acceptance are separate actions. See [current release publication](https://github.com/ahines99/systematic-research-factory/releases).
 
-**Verdict: unreleased candidate; hosted backend not yet live.** The five-specialist [audit](audits/2026-09-27/README.md) found defects despite previously passing tests. The [remediation record](audits/2026-09-27/remediation.md) preserves its verification results. Subsequent GitHub publication, hosted CI fixes, research and presentation delivery are tracked in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md). That status is authoritative for current owner dependencies.
+## Concrete evidence
 
-| Capability | Local acceptance evidence | External acceptance still required |
-|---|---|---|
-| Authenticated research workflow | Nine stages, role and ownership checks, six recorded demo scenarios, HTTP/MCP tests | Hosted Fly/Neon/R2 operation and client smoke |
-| Durable execution | Atomic checkpoints and terminal outcomes, owner-fenced writes, heartbeats, conflict-safe insertions, stale approval rejection | Hosted restart and restore drill |
-| Reproducible deterministic artifacts | Archived configuration and snapshots, source/dependency fingerprints, deterministic-only replay, stored candidate archive | Replay an actual previous release using its preserved runtime after the first release exists |
-| Grounded reviews | Schema/citation validation, numeric artifact references rendered by code, explicit uncertainty pauses, targeted skill evaluation | Live model baselines and a measured skills treatment/control comparison |
-| Bounded paid dispatch | Transactional reservations, output limits, late/refusal accounting, audited reconciliation | Verify supported provider behavior and actual billed usage with the owner's API account |
-| Distribution and operations | Hosted CI, build/package/container checks; readiness validates database and archived blobs; release is configured to deploy the scanned digest | First release/deployment run, R2 retention, restore and rollback, measured idle cost |
+- [All ten checks passed for the implementation](https://github.com/ahines99/systematic-research-factory/actions/runs/36364743327) and [the v1 runtime preparation](https://github.com/ahines99/systematic-research-factory/actions/runs/36366266733).
+- [Hosted acceptance](operations/2026-09-28/README.md): actual Neon contracts/TLS, R2 lock rejection, official MCP client and authenticated research, isolated restore with exact replay, viewer rotation, stop/start persistence and inspected desktop/mobile screenshots.
+- Original deployed candidate: `registry.fly.io/systematic-research-factory@sha256:e53a73e28057107a5e896ab938066980ed761de61d9f8b2686197ad7c0e31981`. Full scan and checksums are in the operational evidence directory.
+- [Quant study](research/note.md): 240 prespecified simulation combinations, twenty held-out worlds and complete raw results; no empirical-alpha claim.
+- [Live experiment](live-evaluation-protocol.md): development failures retained, one uncertain response held conservatively, frozen paired comparison reported separately. Offline governance success is not live-model reliability.
 
-Passing local tests does not establish investment performance, complete semantic correctness of model prose, or production readiness. Prices are simulated. Listing windows and some EPS values are derived proxies; see [architecture](architecture.md#datasets).
+## Accepted limits and residual risks
 
-The final local image passes the configured high/critical vulnerability gate after Python/OpenSSL updates. Three Medium and one Low Python scanner matches remain tracked in the remediation report; reassess them before release.
+Alex accepted the six-hour Neon Free recovery window and ninety-day R2 retention. The app uses one shared CPU/1 GiB in iad, private storage, free rules-based guest runs, $1/run and $3/day hosted model caps. The separately authorized local experiment keeps a $20 lifetime cap inclusive of prior calls and uncertain holds.
 
-## Required owner or external actions
+The scan has three Medium and one Low Python matches, no High/Critical matches. The [risk register](security-risk-register.md) retains the advisory analysis and review date. Model grounding can reject paid responses; latency and output correctness are measured limitations, not claims erased by increasing budgets. Actual billing for the original lost response remains unknown; its entire reservation stays held at the owner's instruction to continue.
 
-| Tickets | Action and acceptance |
-|---|---|
-| RSF-004, RSF-060 | Public remote and successful hosted CI now exist. Keep branch checks enforced for future changes; final candidate status is linked from the execution record. |
-| RSF-034, RSF-039 | Supply an API key and preserve distinct live model/skills-on/skills-off scorecards, including exact input, prompt, skill, model and runtime provenance. A deterministic rules run cannot prove a skill improves a model. |
-| RSF-065, RSF-067 | Provision Fly, Neon and R2; configure credentials, host allowlists and R2 retention; verify real overwrite/delete behavior under that policy. |
-| RSF-068 | Time a restore into isolated infrastructure, read the restored evidence, and replay with the recorded runtime. Record duration and failures. |
-| RSF-078, RSF-079 | Exercise delivery of the scanned digest, seed public demo runs, run readiness/MCP/authenticated-client checks, rehearse rollback, and measure idle cost against the roadmap's approximate monthly ceiling. |
-| RSF-052 | Record the corrected demo with simulated-data and review-scope limitations visible. |
-| RSF-077 | Preserve the first released image and archive; after a subsequent release, prove replay of that prior release in its original runtime. The stored candidate fixture is useful but is not an earlier published release. |
-| RSF-080 | Review pre-tag evidence; update both version declarations, regenerate `uv.lock`, update the changelog and run release checks. Tag only after pre-tag approval. Record post-deployment acceptance separately. |
-
-This order avoids requiring the first release to exist before its own tag. External actions are pending acceptance, not claims that the repository has no implementation for them. No cloud account, production credentials or paid calls were used for this remediation.
-
-## Historical evidence
-
-The 2026-09-23 three-agent fixes remain represented by `tests/test_audit_regressions.py`. The 2026-09-27 audit at commit `91e3023` is preserved unchanged as a historical baseline; its test counts and defect descriptions describe that commit. Current results belong in the separate remediation record.
+Personal narration, blinded usefulness ratings and seven-day cost observation are human/time-dependent work. They are not fabricated or described as complete. They also do not prevent the free rules demo, published research or operational evidence from being reviewed now. A future prior-published-release replay must use that preserved release's actual runtime; the completed candidate restore is not relabeled as such.
 
 ## Drill log
 
-| Date | Environment and immutable version | Drill | Duration | Result |
+| UTC date | Environment | Drill | Duration | Result |
 |---|---|---|---|---|
-| Pending | | Restore, archived evidence and replay | | |
-| Pending | | Release rollback and client/storage smoke | | |
-| Pending | | Idle cost observation | | |
+| 2026-09-28 | Isolated Neon child, original Fly candidate, private R2 | Restore after demo seeding, read twelve objects, exact replay of six deterministic steps | 19.69s including cleanup | Passed; child removed |
+| 2026-09-28 | Same production candidate | Viewer credential rotation and revoked-key denial | Recorded requests | Passed; GitHub secret updated |
+| 2026-09-28 | Single Fly machine | Confirm stopped, HTTP auto-start, reread six original reports | Ready after 7.266s | Passed; one observation |
+| 2026-09-28 | Desktop and mobile Chromium | Page/navigation/disclosure/overflow checks and visual inspection | Pipeline artifact | Passed; recovery title collision corrected in next candidate |
+| 2026-09-28 onward | Fly/Neon/R2 billing | Seven-day actual cost observation | Requires elapsed time | [Open log](operations/cost-observation.md) |
+
+The initial restore probe intentionally retained its failed completeness check when it raced seeding. No production database reset, migration downgrade, or real-run approval was used in these drills. Release/rollback image evidence and post-tag results are appended when executed.
+
+## Historical record
+
+The [five-specialist audit](audits/2026-09-27/README.md), [remediation](audits/2026-09-27/remediation.md) and [cross-CPU replay investigation](audits/2026-09-27/ci-followup.md) remain preserved. Their original source revisions and test counts are historical evidence.
+
+## Finalization authorization and v1 candidate
+
+The owner explicitly instructed completion of all remaining assistant work and finalization of the project. This authorizes publication after the technical checks; it does not imply that the owner supplied human sample ratings or personally reviewed every artifact. The assistant performs and records the technical pre-tag review.
+
+The v1 runtime candidate passed [the full hosted pipeline](https://github.com/ahines99/systematic-research-factory/actions/runs/36366507618), including the corrected six-scenario browser check. Source: `f4d438f7b28bf0702e6a01e0b314188a62ccb34c`. Image: `registry.fly.io/systematic-research-factory@sha256:22248d65630702a8ddd0c66e0f9c69d1967ef91264e90712800b27d84bbfc9fe`. [Scan, screenshots and manifest](operations/2026-09-28/v1-runtime/manifest.json) preserve the actual candidate. The final tag adds the published experiment/operational record and release-evidence attachment checks; it does not change the frozen model prompts or quantitative implementation.
+
+The [candidate rollback drill](operations/2026-09-28/rollback-acceptance.json) passed in both directions in 99.34 seconds. The intended v1 candidate is restored and all original reports remain readable.

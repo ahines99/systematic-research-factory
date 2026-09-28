@@ -1,0 +1,33 @@
+{
+  "source_commit": "d0dd403",
+  "workflow_run": "https://github.com/ahines99/systematic-research-factory/actions/runs/36365241823",
+  "image": "registry.fly.io/systematic-research-factory@sha256:e53a73e28057107a5e896ab938066980ed761de61d9f8b2686197ad7c0e31981",
+  "restore_window_hours": 6,
+  "restore_window_owner_accepted": true,
+  "r2_retention_days": 90,
+  "visual_review": "Desktop/mobile portfolio, demo and report inspected. No page overflow; recovery card title collision identified for correction.",
+  "files": {
+    "candidate-image.txt": "4025738aa1a12d5b44fe092d866c97e6b7709541ebf30f3a6b0b0bed29e18ec4",
+    "candidate-runs.json": "7a4bb06fca90b2c3e29937319661f8f5ad148c52431602f4ff1aa00de00b52d4",
+    "candidate-scan.json": "c5a97741f04503307dcabfa0f8735ae62a25ec33c1267163584335caf5766359",
+    "hosted-mcp-acceptance.json": "5973728ce8f6508a696c7212aa76482b81d7812d51063038aec2961789abbcdd",
+    "hosted-research-acceptance.json": "889f95ac3da3210463411173d762997f1310a937755234e878576ec90bb793cd",
+    "key-rotation.json": "51ac605236f75496115bf044e5af5841936736b35e24dc50dd29e93073442101",
+    "neon-validation-result.json": "18f44a45dd427d2270c234fe6637e8e340b7dd3573ab4843490c852b93c295a0",
+    "r2-access-verification.json": "a702eab46c0bf3161627c245af567511bb633161f07b7503c0e3b653fb364e0b",
+    "README.md": "605414537a333bf00d4bf3921bde3debad86b7eafcdda210d6d03bd4fbdfa44d",
+    "restart-acceptance.json": "10c244c0b67343ac3f449556e161d62e7c3699ee4f46b0fbd82038db29cbad5c",
+    "restore-drill-before-seed.json": "87ffe13d97c13f86fa479e24a24dcb0931905c93c56acf25cbf5870dc34b98b8",
+    "restore-drill.json": "54d75af004805ee47ef3925c3d8be667603e55e85db9bf6abbdd50baf55b6324",
+    "browser/browser-checks.json": "2bf94fa8c561695e2808d6cd87dd96842f61a8b3e017a5e04f2bd1d75ab8c995",
+    "browser/demo-desktop.png": "86fa7c978829e0f5c661b81fc87db76766591fd5b6d3d0931367bf28f6ed6646",
+    "browser/demo-mobile.png": "19636ba3cfe5c89ab0600071e455556e0526f75e7a5cec5db622b818ad96bb26",
+    "browser/portfolio-desktop.png": "46c7e401e099e33792b494fd269b416ba33d8590723a28444b55c8137a7cf34e",
+    "browser/portfolio-mobile.png": "a5f30f64ad10960e7b5c711e163cedadb127091e3bcc59edf0f08f8394f881b6",
+    "browser/report-desktop.png": "d5dc0f18ad76950bc0eec4a3c585d9c81c1f8035fbe6d2c557bda08af39209b6",
+    "browser/report-mobile.png": "b3ff24df430f5e69e776bce99170cbc19b45991bbac2090d16cfa1fec785f0b4",
+    "rollback-acceptance.json": "85bf81e52b9c0040b542a638c026f7bcded7fa172700a763435ae889b24bc0e1",
+    "cloud-config-verification.json": "38bac1c25d2589fb3d4db3867bc41d101c7c4e8b3dc81fc34631d8bf6c4d8333"
+  },
+  "related_runtime_manifest": "v1-runtime/manifest.json"
+}

@@ -1,0 +1,5 @@
+{
+  "sha256_raw_bytes": "1b5c928a1f620ee348aa62fd119fb02ff76b2b22f398f2b83c0b26ffa5292800",
+  "sha256_utf8_lf": "4dbb2511c2f7cb71b36426f10abf6c7ae5af1d190b17fdd8960c9d3ae8fb6eb3",
+  "note": "The prospective manifest hashed UTF-8 LF source text; the executed Windows file uses CRLF. Both identify the same unchanged runner source."
+}

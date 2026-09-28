@@ -33,13 +33,13 @@
     <p class="eyebrow">AI engineering × quantitative research</p>
     <h1>A convincing backtest still has to earn approval.</h1>
     <p class="lead">An evidence-first research system: freeze the hypothesis, test what was knowable, account for repeated trials, and keep model-written reviews behind deterministic checks and a separate approval role.</p>
-    <div class="actions"><a class="button primary" href="samples/clean-approved.html">Inspect a clean run</a><a class="button" href="samples/leak-caught.html">See a timing leak get blocked</a></div>
-    <p class="notice"><strong>Portfolio candidate · Simulated prices.</strong> These are static reports generated with deterministic rules and scripted approval actors. They do not establish real investment returns or live-model quality. Hosted service, paid-model evaluation and the v1.0 release remain pending.</p>
+    <div class="actions"><a class="button primary" href="https://systematic-research-factory.fly.dev/demo">Open the hosted demo</a><a class="button" href="samples/clean-approved.html">Inspect a recorded run</a><a class="button" href="samples/leak-caught.html">See a timing leak get blocked</a></div>
+    <p class="notice"><strong>Research portfolio · Simulated prices.</strong> These are static reports generated with deterministic rules and scripted approval actors. They do not establish real investment returns or live-model quality. The hosted demo is online. Live-provider tests and operational drills are reported separately; consult the linked status for release publication and remaining human review.</p>
   </section>
   <section aria-labelledby="proof-title">
     <h2 id="proof-title">Evidence on both sides of the system.</h2>
     <div class="grid">
-      <article class="card"><p class="number">37 cases</p><h3>Governance evaluation</h3><p>Offline cases cover point-in-time inputs, fabricated claims, approval roles and budget behavior. Live model uplift is still unmeasured.</p><a href="https://github.com/ahines99/systematic-research-factory/tree/main/evals/golden">Inspect the evaluation cases</a></article>
+      <article class="card"><p class="number">37 cases</p><h3>Governance evaluation</h3><p>Offline cases cover point-in-time inputs, fabricated claims, approval roles and budget behavior. Live-provider results include failed reviews; passing offline cases does not establish model reliability.</p><a href="https://github.com/ahines99/systematic-research-factory/tree/main/evals/golden">Inspect the evaluation cases</a></article>
       <article class="card"><p class="number">240 runs</p><h3>Frozen simulation study</h3><p>Twenty evaluation worlds, coupled controls and prespecified sensitivities. Every seed and configuration is included.</p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/note.md">Read the research note</a></article>
       <article class="card"><p class="number">9 stages</p><h3>Recoverable execution</h3><p>Content-addressed evidence, persisted checkpoints, role separation and bounded model spending support an auditable workflow.</p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/architecture.md">Explore the architecture</a></article>
     </div>
@@ -60,7 +60,7 @@
     <p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/protocol.md">Frozen protocol</a> · <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/data-sheet.md">Data and methodology</a> · <a href="research/results/metrics.csv">Download all metrics (CSV)</a> · <a href="research/results/study.json">Raw results and provenance (JSON, 8 MB)</a></p>
   </section>
   <section aria-labelledby="design-title">
-    <p class="eyebrow">Engineering judgment</p><h2 id="design-title">Separate calculation, review and authority.</h2>
+    <p class="eyebrow">Engineering judgment</p><h2 id="design-title">Separate calculation, review and authority.</h2><p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/live-evaluation/final-study/report.md">Live Skills-on/off results and failures</a> &middot; <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/operations/2026-09-28/README.md">Hosted recovery, access and browser evidence</a></p>
     <ol class="flow"><li>Frozen hypothesis</li><li>Point-in-time data</li><li>Backtest + audit</li><li>Statistical checks</li><li>Evidence-cited review</li><li>Approval boundary</li></ol>
     <p>Code computes numerical claims. A model may draft bounded, evidence-cited judgments. The deterministic gate constrains the recommendation; a different authorized actor owns approval. Citation validity does not prove that all qualitative prose is correct.</p>
     <p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/CASE_STUDY.md">Read the case study</a> · <a href="https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml">Inspect live CI status</a> · <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/audits/2026-09-27/ci-followup.md">What cross-CPU replay taught us</a></p>
@@ -71,6 +71,6 @@ uv sync --locked
 uv run --no-sync rsf demo --out-dir var/reports
 uv run --no-sync rsf eval --provider rules</code></pre><p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/PORTFOLIO_STATUS.md">Current delivery status and remaining owner actions</a></p></section>
 </main>
-<footer>Alex Hines · AI-assisted engineering and research project · MIT license · Research only; no trading tools. Static showcase, not a running investment service.</footer>
+<footer>Alex Hines · AI-assisted engineering and research project · MIT license · Research only; no trading tools. Public research showcase with a hosted rules demo; no investment service.</footer>
 </body>
 </html>
