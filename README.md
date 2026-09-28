@@ -1,8 +1,8 @@
 # Systematic Research Factory
 
-A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM drafts evidence-cited reviews. Code computes and renders numeric claims; a deterministic gate and a separate human control decisions. Qualitative prose still needs review.
+A governed research platform with equal emphasis on **quantitative research engineering and AI platform engineering**. Its primary user is a systematic quantitative researcher working within a small team. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM drafts evidence-cited reviews. Code computes and renders numeric claims; a deterministic gate and a separate human control decisions. Qualitative prose still needs review.
 
-> **Status:** hosted research portfolio with a reproducible 240-run simulation study, a measured live-model comparison, and verified recovery/access controls. Live-model failures and human review boundaries are published explicitly. See [release status](https://github.com/ahines99/systematic-research-factory/releases), [hosted demo](https://systematic-research-factory.fly.dev/demo), and [delivery evidence and owner actions](docs/PORTFOLIO_STATUS.md).
+> **V1 is complete and presentation-ready.** The [v1.0.0 release](https://github.com/ahines99/systematic-research-factory/releases/tag/v1.0.0) includes a reproducible 240-combination simulation study, a measured live-model comparison, and verified recovery/access controls. Live-model failures and human review boundaries are published explicitly. See the [canonical positioning and approved resume entry](docs/PORTFOLIO_POSITIONING.md), [hosted demo](https://systematic-research-factory.fly.dev/demo), and [delivery evidence and owner actions](docs/PORTFOLIO_STATUS.md).
 
 [![CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml)
 
@@ -70,9 +70,10 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 
 | Document | Contents |
 |---|---|
-| [docs/PORTFOLIO_STATUS.md](docs/PORTFOLIO_STATUS.md) | Current execution status, accepted decisions and exact owner/account actions |
+| [docs/PORTFOLIO_POSITIONING.md](docs/PORTFOLIO_POSITIONING.md) | Canonical v1 positioning, approved resume entry, claim boundaries, interview stories and separate v2 scope |
+| [docs/PORTFOLIO_STATUS.md](docs/PORTFOLIO_STATUS.md) | Delivered v1 evidence, accepted operating limits and remaining personal/maintenance actions |
 | [docs/CASE_STUDY.md](docs/CASE_STUDY.md) · [docs/research/note.md](docs/research/note.md) | AI/quant case study, frozen simulation results and limitations |
-| [docs/PORTFOLIO_ROADMAP.md](docs/PORTFOLIO_ROADMAP.md) | Remaining portfolio gaps, detailed assistant/owner actions, dependencies and acceptance criteria |
+| [docs/PORTFOLIO_ROADMAP.md](docs/PORTFOLIO_ROADMAP.md) | Historical portfolio finishing plan; current v1 scope and presentation work are recorded separately |
 | [docs/architecture.md](docs/architecture.md) | Layers, the workflow, evidence and provenance, reproducibility, deployment |
 | [docs/data_contracts.md](docs/data_contracts.md) | Every contract and table, generated from the code |
 | [docs/threat_model.md](docs/threat_model.md) | Threats, mitigations, tests and residual risks |
@@ -84,3 +85,5 @@ Hypothesis freeze → Data acquisition → Feature build → Backtest → Leakag
 ## Scope
 
 Research only. Live trading, order routing and broker connectivity are permanently out of scope. MIT licensed.
+
+An empirical market-data study is a [separate v2 phase](docs/PORTFOLIO_POSITIONING.md#separate-v2-empirical-study): define the research question and data requirements, strengthen the required data/execution modeling, then freeze and execute its protocol. Additional platform features are not prerequisites for presenting v1.

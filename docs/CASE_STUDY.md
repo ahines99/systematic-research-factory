@@ -2,6 +2,8 @@
 
 An AI engineering and quantitative research portfolio project by Alex Hines, developed with AI coding assistance. Public research implementation with independently reported offline controls, live-provider limitations and hosted acceptance evidence.
 
+V1 is complete and presentation-ready. Its [canonical positioning](PORTFOLIO_POSITIONING.md) gives equal emphasis to quantitative research engineering and AI platform engineering: a governed research platform connecting point-in-time data handling, statistical discipline, AI-assisted evidence review, durable execution, and explicit approval controls. The primary user is a systematic quantitative researcher working within a small team. The workflow connects the researcher to reproducible analysis, evidence review, and an independent decision.
+
 ## Problem
 
 A plausible backtest and a fluent explanation can conceal unavailable information, a selected universe or a large search over failed strategies. An LLM makes reviewing evidence easier, but it also introduces fabricated claims and authority confusion. The system makes those risks inspectable and gives deterministic controls the authority to stop a run.
@@ -33,7 +35,7 @@ Hosted CI exposed a useful limitation: identical code and container image did no
 
 Review the [live CI checks](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml), [five-specialist audit and remediation](audits/2026-09-27/remediation.md), [golden cases](../evals/golden/), [raw study](research/results/study.json), and [sample reports](samples/README.md). The offline suite has 37 cases; its success is not evidence that skills improve a paid model. The [live evaluation protocol](live-evaluation-protocol.md) preserves development pilots and a frozen paired study. Live pilots exposed genuine failures: a task-specific verdict mismatch, an interrupted response, ambiguous numeric identifiers and incompatible model-generated metric references. Fixes preserve strict validation and publish negative outcomes; a valid schema or one successful targeted review does not establish general model reliability.
 
-The current delivery and account dependencies are in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md). Operational acceptance and release status are recorded separately from the research results. The owner records the personal walkthrough, reviews blinded model outputs and observes actual hosting costs over time. Research only: no brokerage or trading capability exists.
+The delivered release and operating limits are in [PORTFOLIO_STATUS.md](PORTFOLIO_STATUS.md); required account setup is complete. Operational acceptance is recorded separately from the research results. Personal narration, blinded usefulness ratings and hosting-cost observation remain personal or time-dependent follow-through, not v1 engineering prerequisites. Research only: no brokerage or trading capability exists.
 
 ## Interview walkthrough
 
@@ -41,6 +43,10 @@ Explain the clean run, then show why a timing leak is invalid even if performanc
 
 ## Measured live-model result
 
-The frozen [seven-case comparison](live-evaluation/final-study/report.md) completed three repeats per arm: Skills-on passed 15/21 at $4.928400, Skills-off 14/21 at $2.371960. Both passed fourteen paired observations; one passed only with Skills; six failed in both arms. Full workflows exceeded the frozen latency target and sometimes failed validation or cost targets. The small difference does not establish general improvement, while the extra context had a measurable cost. Both arms retained the same core prompt, evidence and hard validators.
+The frozen [seven-case comparison](live-evaluation/final-study/report.md) completed three repeats per arm: Skills-on passed 15/21 at $4.928400, Skills-off 14/21 at $2.371960. Both passed fourteen paired observations; one passed only with Skills; six failed in both arms. Every full-workflow observation missed at least one frozen acceptance criterion: workflows exceeded the latency target and sometimes failed validation or cost targets. The small difference does not establish general improvement, while the extra context had a measurable cost. Both arms used the same model, core prompt, evidence and hard validators; this was a procedural-context comparison, not a provider comparison.
 
 The deployed system's conservative behavior is part of the result: invalid or uncertain reviews pause for evidence rather than receiving fabricated approvals. All earlier development failures and the original uncertain charge remain in the experiment accounting. The operational proof is separate: a point-in-time database restore replayed six deterministic artifacts exactly, real credentials were rotated, and preserved image rollback passed in both directions.
+
+## Separate v2 research
+
+A future empirical study starts with a specific research question and its evidence requirements. Historical prices, fundamental-data suitability, and stronger execution modeling belong to that [separate v2 sequence](PORTFOLIO_POSITIONING.md#separate-v2-empirical-study). Its protocol must be frozen before evaluation outcomes are examined. The completed v1 simulation, controls and published failures remain preserved as their own evidence.

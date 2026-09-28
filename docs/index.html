@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Alex Hines: auditable AI engineering and quantitative research, with reproducible simulation controls and evidence-backed decisions.">
+  <meta name="description" content="Systematic Research Factory v1 by Alex Hines: quantitative research and AI engineering with point-in-time data controls, reproducible studies, evidence-bound reviews and separate approval.">
   <title>Systematic Research Factory · Alex Hines</title>
   <style>
     :root { color-scheme: light; --ink:#193b36; --muted:#4b625c; --paper:#f5f3eb; --line:#c0cdc3; --accent:#9f421c; }
@@ -30,17 +30,18 @@
 <header><strong>Alex Hines / Systematic Research Factory</strong><nav aria-label="Main navigation"><a href="#runs">Recorded runs</a><a href="#research">Research</a><a href="https://github.com/ahines99/systematic-research-factory">GitHub ↗</a></nav></header>
 <main id="main">
   <section class="hero">
-    <p class="eyebrow">AI engineering × quantitative research</p>
+    <p class="eyebrow">Quantitative Research &amp; AI Engineering · v1.0.0 released</p>
     <h1>A convincing backtest still has to earn approval.</h1>
-    <p class="lead">An evidence-first research system: freeze the hypothesis, test what was knowable, account for repeated trials, and keep model-written reviews behind deterministic checks and a separate approval role.</p>
+    <p class="lead">A governed research platform for a systematic quantitative researcher in a small team: freeze the hypothesis, test what was knowable, account for repeated trials, and keep AI-assisted evidence review behind deterministic checks and a separate approval role.</p>
+    <p>v1 is complete and presentation-ready. It connects point-in-time data handling, statistical discipline, durable execution and explicit approval controls. <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/PORTFOLIO_POSITIONING.md">Canonical positioning and resume entry</a> · <a href="https://github.com/ahines99/systematic-research-factory/releases/tag/v1.0.0">Published release and verification evidence</a></p>
     <div class="actions"><a class="button primary" href="https://systematic-research-factory.fly.dev/demo">Open the hosted demo</a><a class="button" href="samples/clean-approved.html">Inspect a recorded run</a><a class="button" href="samples/leak-caught.html">See a timing leak get blocked</a></div>
-    <p class="notice"><strong>Research portfolio · Simulated prices.</strong> These are static reports generated with deterministic rules and scripted approval actors. They do not establish real investment returns or live-model quality. The hosted demo is online. Live-provider tests and operational drills are reported separately; consult the linked status for release publication and remaining human review.</p>
+    <p class="notice"><strong>Research portfolio · Simulated prices.</strong> All published strategy returns use simulated prices. SEC-derived filings add real timestamp and version complications. Recorded reports and the hosted demo use deterministic rules and scripted approval actors; they do not establish empirical alpha or live-model quality. Live-provider tests and operational drills are reported separately. Personal narration, blinded ratings and hosting-cost observation remain owner tasks, not unfinished v1 engineering.</p>
   </section>
   <section aria-labelledby="proof-title">
     <h2 id="proof-title">Evidence on both sides of the system.</h2>
     <div class="grid">
       <article class="card"><p class="number">37 cases</p><h3>Governance evaluation</h3><p>Offline cases cover point-in-time inputs, fabricated claims, approval roles and budget behavior. Live-provider results include failed reviews; passing offline cases does not establish model reliability.</p><a href="https://github.com/ahines99/systematic-research-factory/tree/main/evals/golden">Inspect the evaluation cases</a></article>
-      <article class="card"><p class="number">240 runs</p><h3>Frozen simulation study</h3><p>Twenty evaluation worlds, coupled controls and prespecified sensitivities. Every seed and configuration is included.</p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/note.md">Read the research note</a></article>
+      <article class="card"><p class="number">240 runs</p><h3>Frozen simulation study</h3><p>Protocol and seeds frozen before execution; twenty held-out synthetic worlds generated during execution with recorded dataset hashes. Every planned combination is published.</p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/note.md">Read the research note</a></article>
       <article class="card"><p class="number">9 stages</p><h3>Recoverable execution</h3><p>Content-addressed evidence, persisted checkpoints, role separation and bounded model spending support an auditable workflow.</p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/architecture.md">Explore the architecture</a></article>
     </div>
   </section>
@@ -55,7 +56,8 @@
   </section>
   <section id="research" aria-labelledby="research-title">
     <p class="eyebrow">Research result · not investment performance</p><h2 id="research-title">Better-looking results can be invalid.</h2>
-    <p class="lead">In planted worlds, the timing leak increased paired Sharpe by a median 1.23. The audit blocked all 40 leaky runs across both controls. Only 13 of 20 clean planted worlds passed the combined statistical and leakage gate.</p>
+    <p class="lead">In planted worlds, the timing leak increased paired Sharpe by a median 1.23. The audit blocked all 40 constructed timing-leak controls. Only 13 of 20 clean planted worlds passed the combined statistical and leakage gate.</p>
+    <p>That acceptance rate describes this generator and frozen design; it is not a calibrated general statistical-power estimate. The simulation gate combines leakage and statistical checks. The application committee also considers findings and requires a separate approval decision.</p>
     <figure><img src="research/results/controls.svg" alt="Simulated evaluation: twenty Sharpes per control and median wealth paths. The invalid leaky control appears stronger than clean timing, while the null is near zero. All individual results remain in the dataset." width="1920" height="720"><figcaption>Known simulated signal; 2022–2023 evaluation. Pointwise median paths are not one investable portfolio. Twenty worlds leave substantial uncertainty; 0/20 clean null passes has a Wilson 95% upper limit of 16.1%.</figcaption></figure>
     <p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/protocol.md">Frozen protocol</a> · <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/research/data-sheet.md">Data and methodology</a> · <a href="research/results/metrics.csv">Download all metrics (CSV)</a> · <a href="research/results/study.json">Raw results and provenance (JSON, 8 MB)</a></p>
   </section>
@@ -63,13 +65,15 @@
     <p class="eyebrow">Engineering judgment</p><h2 id="design-title">Separate calculation, review and authority.</h2><p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/live-evaluation/final-study/report.md">Live Skills-on/off results and failures</a> &middot; <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/operations/2026-09-28/README.md">Hosted recovery, access and browser evidence</a></p>
     <ol class="flow"><li>Frozen hypothesis</li><li>Point-in-time data</li><li>Backtest + audit</li><li>Statistical checks</li><li>Evidence-cited review</li><li>Approval boundary</li></ol>
     <p>Code computes numerical claims. A model may draft bounded, evidence-cited judgments. The deterministic gate constrains the recommendation; a different authorized actor owns approval. Citation validity does not prove that all qualitative prose is correct.</p>
+    <p>The 42-observation live comparison used one model with and without Skill procedures: 15/21 accepted with Skills versus 14/21 without, at more than twice the recorded cost. Every full-workflow observation missed at least one frozen acceptance criterion. Targeted successes do not establish general Skills uplift; human usefulness ratings remain uncollected.</p>
+    <p>Two AI-assisted audit and remediation examples connect the research and engineering work: <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/adr/0008-review-time-trial-counting.md">preventing near-duplicate trials from weakening the multiple-testing adjustment</a> and <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/audits/2026-09-27/remediation.md">binding approvals to the evidence and trial context actually reviewed</a>.</p>
     <p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/CASE_STUDY.md">Read the case study</a> · <a href="https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml">Inspect live CI status</a> · <a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/audits/2026-09-27/ci-followup.md">What cross-CPU replay taught us</a></p>
   </section>
   <section aria-labelledby="try-title"><h2 id="try-title">Reproduce it without an API key.</h2><pre><code>git clone https://github.com/ahines99/systematic-research-factory.git
 cd systematic-research-factory
 uv sync --locked
 uv run --no-sync rsf demo --out-dir var/reports
-uv run --no-sync rsf eval --provider rules</code></pre><p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/PORTFOLIO_STATUS.md">Current delivery status and remaining owner actions</a></p></section>
+uv run --no-sync rsf eval --provider rules</code></pre><p><a href="https://github.com/ahines99/systematic-research-factory/blob/main/docs/PORTFOLIO_STATUS.md">Current delivery status and remaining owner actions</a></p><p>Historical market prices and stronger execution modeling belong to a separate, question-driven v2 empirical study. v1's synthetic controls and original evidence remain preserved. No external customer adoption, production-scale throughput or availability SLA is claimed.</p></section>
 </main>
 <footer>Alex Hines · AI-assisted engineering and research project · MIT license · Research only; no trading tools. Public research showcase with a hosted rules demo; no investment service.</footer>
 </body>
