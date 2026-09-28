@@ -1,10 +1,56 @@
 # Blinded human review
 
-Score each output from 1 (poor) to 5 (strong) for usefulness, support from the provided evidence, and clarity. Record uncertainty where evidence is unavailable. Do not open the separate key until ratings are fixed. No ratings have been entered by the assistant. Arm labels are hidden, although wording may reveal procedural cues; blinding is imperfect. Rate evidence support as unassessable if the supplied context is insufficient.
+Score usefulness, support from the supplied inputs, and clarity from 1 (poor) to 5 (strong). Record uncertainty where the inputs cannot support a conclusion. No ratings have been entered. Do not open the separate key until your ratings are fixed.
+
+Four preselected observations per arm are represented. Each sample uses the last response with a captured request and output in that observation; this may precede a later rejected response. This is a review of captured artifacts, not an estimate of overall workflow success. All failed attempts remain in the raw study. Arm labels and system/skill text are omitted; wording may still reveal procedural cues.
 
 ## Sample 1
 
 Task: An amendment cannot replace the original before its acceptance
+
+### Supplied task inputs
+
+```json
+{
+  "filing": {
+    "acceptanceDateTime": "2024-08-01T12:00:00Z",
+    "filingDate": "2024-08-01",
+    "reportDate": "2024-03-31",
+    "version": "amendment"
+  },
+  "decision_ts": "2024-05-03T20:00:00Z",
+  "review_scope": {
+    "mode": "targeted_review",
+    "assigned": [
+      "knowledge_time",
+      "filing_version"
+    ],
+    "excluded": [
+      "full_red_team_signoff",
+      "cost_multiplier_stress",
+      "contributor_exclusion_stress",
+      "volatility_regime_stress",
+      "real_market_capacity",
+      "factor_crowding"
+    ],
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ],
+    "dissent": []
+  },
+  "evidence_catalog": [
+    {
+      "evidence_id": "ev_02e425ab398e2179adc285e2",
+      "source_type": "artifact:evaluation-input",
+      "step": "Evaluation input"
+    }
+  ]
+}
+```
+
+### Model output
 
 ```json
 {
@@ -91,6 +137,50 @@ Usefulness: ___ / 5; evidence support: ___ / 5; clarity: ___ / 5; notes: ___
 ## Sample 2
 
 Task: An amendment cannot replace the original before its acceptance
+
+### Supplied task inputs
+
+```json
+{
+  "filing": {
+    "acceptanceDateTime": "2024-08-01T12:00:00Z",
+    "filingDate": "2024-08-01",
+    "reportDate": "2024-03-31",
+    "version": "amendment"
+  },
+  "decision_ts": "2024-05-03T20:00:00Z",
+  "review_scope": {
+    "mode": "targeted_review",
+    "assigned": [
+      "knowledge_time",
+      "filing_version"
+    ],
+    "excluded": [
+      "full_red_team_signoff",
+      "cost_multiplier_stress",
+      "contributor_exclusion_stress",
+      "volatility_regime_stress",
+      "real_market_capacity",
+      "factor_crowding"
+    ],
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ],
+    "dissent": []
+  },
+  "evidence_catalog": [
+    {
+      "evidence_id": "ev_02e425ab398e2179adc285e2",
+      "source_type": "artifact:evaluation-input",
+      "step": "Evaluation input"
+    }
+  ]
+}
+```
+
+### Model output
 
 ```json
 {
@@ -185,6 +275,29 @@ Usefulness: ___ / 5; evidence support: ___ / 5; clarity: ___ / 5; notes: ___
 ## Sample 3
 
 Task: An explicitly requested full red team cannot certify missing analyses
+
+### Supplied task inputs
+
+```json
+{
+  "review_scope": {
+    "mode": "full_red_team",
+    "assigned": [
+      "all_ten_attacks"
+    ],
+    "excluded": [],
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ],
+    "dissent": []
+  },
+  "evidence_catalog": []
+}
+```
+
+### Model output
 
 ```json
 {
@@ -334,6 +447,49 @@ Usefulness: ___ / 5; evidence support: ___ / 5; clarity: ___ / 5; notes: ___
 
 Task: A filed date without acceptance time is insufficient evidence
 
+### Supplied task inputs
+
+```json
+{
+  "filing": {
+    "filingDate": "2024-05-02",
+    "reportDate": "2024-03-31",
+    "version": "original"
+  },
+  "decision_ts": "2024-05-02T20:00:00Z",
+  "review_scope": {
+    "mode": "targeted_review",
+    "assigned": [
+      "knowledge_time",
+      "filing_version"
+    ],
+    "excluded": [
+      "full_red_team_signoff",
+      "cost_multiplier_stress",
+      "contributor_exclusion_stress",
+      "volatility_regime_stress",
+      "real_market_capacity",
+      "factor_crowding"
+    ],
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ],
+    "dissent": []
+  },
+  "evidence_catalog": [
+    {
+      "evidence_id": "ev_536188d901d59c1122609f68",
+      "source_type": "artifact:evaluation-input",
+      "step": "Evaluation input"
+    }
+  ]
+}
+```
+
+### Model output
+
 ```json
 {
   "verdict": "needs_evidence",
@@ -408,6 +564,50 @@ Usefulness: ___ / 5; evidence support: ___ / 5; clarity: ___ / 5; notes: ___
 ## Sample 5
 
 Task: An after-close acceptance was unavailable at the earlier decision
+
+### Supplied task inputs
+
+```json
+{
+  "filing": {
+    "acceptanceDateTime": "2024-05-02T20:31:07Z",
+    "filingDate": "2024-05-02",
+    "reportDate": "2024-03-31",
+    "version": "original"
+  },
+  "decision_ts": "2024-05-02T20:00:00Z",
+  "review_scope": {
+    "mode": "targeted_review",
+    "assigned": [
+      "knowledge_time",
+      "filing_version"
+    ],
+    "excluded": [
+      "full_red_team_signoff",
+      "cost_multiplier_stress",
+      "contributor_exclusion_stress",
+      "volatility_regime_stress",
+      "real_market_capacity",
+      "factor_crowding"
+    ],
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ],
+    "dissent": []
+  },
+  "evidence_catalog": [
+    {
+      "evidence_id": "ev_114e0257699bedb0d33b5562",
+      "source_type": "artifact:evaluation-input",
+      "step": "Evaluation input"
+    }
+  ]
+}
+```
+
+### Model output
 
 ```json
 {
@@ -492,151 +692,342 @@ Usefulness: ___ / 5; evidence support: ___ / 5; clarity: ___ / 5; notes: ___
 
 Task: Real EDGAR filings reach the committee with a clean audit
 
+### Supplied task inputs
+
 ```json
 {
-  "verdict": "concerns",
-  "confidence": "medium",
-  "summary": "Costs look implementable as tested: mean turnover per rebalance is moderate for a month-long hold, the modelled cost drag is a small fraction of gross annual return, and the reported Sharpe decay from one extra session of execution delay sits well inside the fragility threshold. The blocking implementability doubt is portfolio concentration: the book holds only a single-digit number of names per side, and no per-name or per-date contribution evidence was supplied, while contributor-exclusion and cost-multiplier stress runs are outside this targeted scope and remain unverified. Verdict is concerns pending that evidence.",
+  "evidence_catalog": [
+    {
+      "evidence_id": "ev_fb2b18266d5cf27c5c88c63d",
+      "source_type": "artifact:hypothesis-freeze",
+      "step": "Hypothesis freeze"
+    },
+    {
+      "evidence_id": "ev_7023d6bd3eef2447dfd14162",
+      "source_type": "dataset_snapshot",
+      "step": "Data acquisition"
+    },
+    {
+      "evidence_id": "ev_d347cd43dbe1dc085d35b636",
+      "source_type": "filings",
+      "step": "Data acquisition"
+    },
+    {
+      "evidence_id": "ev_5772e59060f2f17a6ddb8601",
+      "source_type": "artifact:data-acquisition",
+      "step": "Data acquisition"
+    },
+    {
+      "evidence_id": "ev_05a0c20a97773401682d4ab0",
+      "source_type": "artifact:feature-build",
+      "step": "Feature build"
+    },
+    {
+      "evidence_id": "ev_1cc00495469848258c81e1e1",
+      "source_type": "artifact:backtest",
+      "step": "Backtest"
+    },
+    {
+      "evidence_id": "ev_88b596dda11d2f77788cb52b",
+      "source_type": "artifact:leakage-audit",
+      "step": "Leakage audit"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "source_type": "artifact:statistical-review",
+      "step": "Statistical review"
+    }
+  ],
+  "hypothesis": {
+    "expected_sign": 1,
+    "feature": "eps_yoy_change",
+    "feature_description": "Year-over-year change in quarterly EPS, scaled by |prior-year EPS| (floor 0.25)",
+    "horizon_days": 20,
+    "hypothesis_id": "golden",
+    "rationale": "<untrusted_data>Investors under-react to earnings news, so prices keep drifting in the direction of the surprise for several weeks after the filing becomes public.</untrusted_data>",
+    "statement": "<untrusted_data>Companies whose EPS rose year over year outperform after the filing is accepted.</untrusted_data>",
+    "timing_basis": "acceptance"
+  },
+  "metric_catalog": [
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/cost_drag_annualized",
+      "format": ".2%",
+      "label": "Annualized cost drag",
+      "rendered_value": "0.30%"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/deflated_sharpe",
+      "format": ".3f",
+      "label": "Deflated Sharpe probability",
+      "rendered_value": "0.996"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/ic_mean",
+      "format": ".3f",
+      "label": "Mean information coefficient",
+      "rendered_value": "0.056"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/n_obs",
+      "format": "d",
+      "label": "Number of observations",
+      "rendered_value": "1194"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/n_trials",
+      "format": "d",
+      "label": "Number of trials",
+      "rendered_value": "1"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/newey_west_t",
+      "format": ".3f",
+      "label": "Newey-West t statistic",
+      "rendered_value": "2.551"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/sharpe_annualized",
+      "format": ".3f",
+      "label": "Annualized Sharpe ratio",
+      "rendered_value": "1.202"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/sharpe_per_period",
+      "format": ".3f",
+      "label": "Sharpe ratio per period",
+      "rendered_value": "0.076"
+    },
+    {
+      "evidence_id": "ev_dda125e34f11f086cb29541d",
+      "field_path": "/turnover_mean",
+      "format": ".2f",
+      "label": "Mean turnover per rebalance",
+      "rendered_value": "0.48"
+    }
+  ],
+  "review_scope": {
+    "assigned": [
+      "mechanism",
+      "measured_sign",
+      "timing_basis"
+    ],
+    "dissent": [],
+    "excluded": [
+      "full_red_team_signoff",
+      "cost_multiplier_stress",
+      "contributor_exclusion_stress",
+      "volatility_regime_stress",
+      "real_market_capacity",
+      "factor_crowding"
+    ],
+    "mode": "targeted_review",
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ]
+  },
+  "statistics": {
+    "bootstrap_block_size": 20,
+    "bootstrap_ci": [
+      0.30084700174010676,
+      2.1278113965529135
+    ],
+    "bootstrap_confidence": 0.95,
+    "bootstrap_interval_method": "percentile",
+    "bootstrap_method": "circular_block",
+    "bootstrap_samples": 2000,
+    "bootstrap_seed": 20260923,
+    "cost_drag_annualized": 0.003018530150753769,
+    "deflated_sharpe": 0.9956791296874599,
+    "delay_decay": 0.030041781495982134,
+    "expected_max_sharpe_per_period": 0.0,
+    "ic_ir": 0.3292407146721684,
+    "ic_mean": 0.055722878165479835,
+    "kurtosis": 3.2446377236428905,
+    "min_track_record_length": 469.0960192678969,
+    "n_obs": 1194,
+    "n_trials": 1,
+    "newey_west_lags": 20,
+    "newey_west_t": 2.551270971447277,
+    "passed": false,
+    "psr_vs_zero": 0.9956791296874599,
+    "sharpe_annualized": 1.2023117643360728,
+    "sharpe_per_period": 0.07573852206667965,
+    "skew": 0.1420219991621368,
+    "turnover_mean": 0.47673611111111114,
+    "var_sr": 0.0008399230836368697,
+    "var_sr_source": "asymptotic null variance (fewer than 5 recorded trials)"
+  },
+  "untrusted_text_flags": []
+}
+```
+
+### Model output
+
+```json
+{
+  "attacks": [],
   "claims": [
     {
+      "evidence_ids": [
+        "ev_fb2b18266d5cf27c5c88c63d"
+      ],
       "kind": "fact",
-      "statement": "{metric:0}; {metric:1}",
+      "metric_refs": [],
+      "statement": "The frozen hypothesis specifies an acceptance-based timing basis and a positive expected sign for the year-over-year EPS change feature."
+    },
+    {
+      "evidence_ids": [
+        "ev_fb2b18266d5cf27c5c88c63d"
+      ],
+      "kind": "fact",
+      "metric_refs": [],
+      "statement": "The researcher-stated mechanism is under-reaction to earnings news causing prices to drift in the direction of the surprise after the filing becomes public, which maps to the established post-earnings-announcement-drift channel and is coherent with an acceptance-time feature and a multi-week holding horizon."
+    },
+    {
       "evidence_ids": [
         "ev_dda125e34f11f086cb29541d"
       ],
+      "kind": "fact",
       "metric_refs": [
         {
           "evidence_id": "ev_dda125e34f11f086cb29541d",
-          "field_path": "/cost_drag_annualized",
-          "format": ".2%"
+          "field_path": "/ic_mean",
+          "format": ".3f"
         },
+        {
+          "evidence_id": "ev_dda125e34f11f086cb29541d",
+          "field_path": "/newey_west_t",
+          "format": ".3f"
+        }
+      ],
+      "statement": "{metric:0}; {metric:1}"
+    },
+    {
+      "evidence_ids": [
+        "ev_dda125e34f11f086cb29541d"
+      ],
+      "kind": "fact",
+      "metric_refs": [],
+      "statement": "The measured information coefficient and t statistic are positive, matching the sign the mechanism predicts; no sign contradiction is present in the statistical review artifact."
+    },
+    {
+      "evidence_ids": [
+        "ev_dda125e34f11f086cb29541d"
+      ],
+      "kind": "fact",
+      "metric_refs": [
+        {
+          "evidence_id": "ev_dda125e34f11f086cb29541d",
+          "field_path": "/sharpe_annualized",
+          "format": ".3f"
+        },
+        {
+          "evidence_id": "ev_dda125e34f11f086cb29541d",
+          "field_path": "/deflated_sharpe",
+          "format": ".3f"
+        }
+      ],
+      "statement": "{metric:0}; {metric:1}"
+    },
+    {
+      "evidence_ids": [
+        "ev_dda125e34f11f086cb29541d"
+      ],
+      "kind": "fact",
+      "metric_refs": [
         {
           "evidence_id": "ev_dda125e34f11f086cb29541d",
           "field_path": "/turnover_mean",
           "format": ".2f"
+        },
+        {
+          "evidence_id": "ev_dda125e34f11f086cb29541d",
+          "field_path": "/cost_drag_annualized",
+          "format": ".2%"
         }
-      ]
-    },
-    {
-      "kind": "fact",
-      "statement": "The modelled annualized cost drag is a small fraction of the backtest's gross annual return, so net and gross performance are close.",
-      "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1",
-        "ev_dda125e34f11f086cb29541d"
       ],
-      "metric_refs": []
+      "statement": "{metric:0}; {metric:1}"
     },
     {
-      "kind": "fact",
-      "statement": "The backtest applies a low per-trade transaction cost in basis points and an intraday execution delay after the filing acceptance timestamp, with a month-long holding period and a rebalance count consistent with that hold.",
       "evidence_ids": [
+        "ev_dda125e34f11f086cb29541d",
         "ev_1cc00495469848258c81e1e1"
       ],
-      "metric_refs": []
-    },
-    {
       "kind": "fact",
-      "statement": "The reported Sharpe decay from additional execution delay is well below the maximum delay-decay fragility threshold used by the statistical gate.",
-      "evidence_ids": [
-        "ev_dda125e34f11f086cb29541d"
-      ],
-      "metric_refs": []
+      "metric_refs": [],
+      "statement": "The information-coefficient magnitude sits well below the level at which a filing-derived fundamental signal would warrant leakage scrutiny, and turnover is consistent with a quarterly-filing-driven rebalance rather than an intraday effect, so the measured magnitude is compatible with the claimed drift mechanism."
     },
     {
-      "kind": "fact",
-      "statement": "The backtest holds only a single-digit number of names per side, driven by the quantile cut on a narrow universe.",
       "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1"
+        "ev_88b596dda11d2f77788cb52b",
+        "ev_05a0c20a97773401682d4ab0"
       ],
-      "metric_refs": []
-    },
-    {
       "kind": "assumption",
-      "statement": "Turnover, cost drag and delay decay are taken as computed by the backtest and statistics tools on the frozen rebalance schedule; I recomputed nothing.",
-      "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1",
-        "ev_dda125e34f11f086cb29541d"
-      ],
-      "metric_refs": []
+      "metric_refs": [],
+      "statement": "This review assumes the leakage-audit and feature-build artifacts establish that feature knowledge times respect the acceptance basis; timing verification beyond the frozen spec's declared basis was not part of the assigned mechanism check."
     },
     {
-      "kind": "risk",
-      "statement": "With so few names per side, a handful of positions can carry most of the profit and loss, and idiosyncratic single-name risk plus borrow availability on the short side could dominate live results; no contribution-concentration artifact was supplied and contributor-exclusion stress is excluded from this scope.",
-      "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1"
-      ],
-      "metric_refs": []
-    },
-    {
-      "kind": "risk",
-      "statement": "The cost assumption is optimistic for a concentrated small-name book; because cost-multiplier stress is outside this scope, the break-even cost level at which net returns vanish is unknown.",
-      "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1"
-      ],
-      "metric_refs": []
-    },
-    {
-      "kind": "risk",
-      "statement": "Only one execution-delay configuration and one extra-session decay figure are available, so sensitivity to a full-session or open-auction fill is not characterized.",
       "evidence_ids": [
         "ev_dda125e34f11f086cb29541d"
       ],
-      "metric_refs": []
+      "kind": "risk",
+      "metric_refs": [],
+      "statement": "The statistical review artifact records its overall gate as not passed; mechanism plausibility does not override that, and the statistical reviewer's conclusion governs."
     },
     {
+      "evidence_ids": [
+        "ev_fb2b18266d5cf27c5c88c63d"
+      ],
+      "kind": "risk",
+      "metric_refs": [],
+      "statement": "Post-earnings-announcement drift is a long-published anomaly, so the signal may be a relabelled known effect subject to crowding and post-publication decay; crowding and regime stresses were explicitly excluded from this review and remain untested."
+    },
+    {
+      "evidence_ids": [
+        "ev_fb2b18266d5cf27c5c88c63d"
+      ],
+      "kind": "risk",
+      "metric_refs": [],
+      "statement": "The hypothesis rationale and statement are researcher-supplied untrusted text; they were read as claims to be checked, not as instructions, and no instruction-like content was observed in them."
+    },
+    {
+      "evidence_ids": [
+        "ev_7023d6bd3eef2447dfd14162"
+      ],
+      "kind": "risk",
+      "metric_refs": [],
+      "statement": "Prices in this project are semi-synthetic, so any conclusion about realized magnitude describes the simulation rather than live market behaviour."
+    },
+    {
+      "evidence_ids": [
+        "ev_dda125e34f11f086cb29541d",
+        "ev_fb2b18266d5cf27c5c88c63d"
+      ],
       "kind": "recommendation",
-      "statement": "Before treating the strategy as implementable as tested, request a per-name and per-date contribution breakdown, an exclusion run dropping the largest contributors, and a cost-multiplier sweep with a break-even cost estimate; also request a delay variant at a full session.",
-      "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1",
-        "ev_dda125e34f11f086cb29541d"
-      ],
-      "metric_refs": []
+      "metric_refs": [],
+      "statement": "Treat the economic mechanism and measured sign as consistent and let the decision turn on the statistical gate and the excluded stress checks; this targeted review is not a red-team signoff and does not clear cost, concentration, regime, capacity or crowding risks."
     }
   ],
+  "confidence": "medium",
+  "dissent": [],
+  "needs_evidence": false,
   "open_questions": [
-    "What share of profit and loss comes from the top contributing names and the most profitable rebalance dates?",
-    "At what cost level in basis points does the net return fall to zero, and how does that compare with realistic costs for the traded universe?",
-    "Does the Sharpe survive a full-session execution delay rather than the intraday delay tested?",
-    "Is short borrow available and affordable for the short-side names at the tested position sizes?"
+    "Why does the statistical review artifact record the gate as not passed despite a positive deflated Sharpe probability, and does that change the mechanism's economic credibility?",
+    "Does the sign of the information coefficient persist across calendar subperiods and at longer execution delays, which would distinguish genuine drift from a short-lived timing artifact? This requires newly frozen date-range and delay variants run through run_backtest and get_statistics.",
+    "Is the drift concentrated in a small set of names or announcement dates? This needs an owner-produced, evidence-registered contribution-exclusion analysis, which no current tool provides."
   ],
-  "needs_evidence": true,
-  "attacks": [
-    {
-      "attack": "concentration",
-      "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1"
-      ],
-      "severity": "high",
-      "status": "not_tested",
-      "criterion": "No single name or small set of rebalance dates accounts for a dominant share of cumulative profit and loss.",
-      "observation": "The portfolio holds only a single-digit number of names per side and no contribution breakdown or exclusion run was provided; contributor-exclusion stress is listed as excluded from this review.",
-      "evidence_request": "Per-name and per-date profit-and-loss contribution table from the backtest artifact, plus a re-run excluding the largest contributors."
-    },
-    {
-      "attack": "cost_sensitivity",
-      "evidence_ids": [
-        "ev_1cc00495469848258c81e1e1",
-        "ev_dda125e34f11f086cb29541d"
-      ],
-      "severity": "medium",
-      "status": "not_tested",
-      "criterion": "Net performance remains positive and the Sharpe stays above the gate when transaction costs are multiplied to realistic levels for the universe.",
-      "observation": "Only the single frozen cost assumption is available; cost-multiplier stress requires a new freeze and backtest, which is outside this scope.",
-      "evidence_request": "Backtest and statistics runs at multiple cost multipliers with a break-even cost estimate."
-    },
-    {
-      "attack": "execution_delay",
-      "evidence_ids": [
-        "ev_dda125e34f11f086cb29541d"
-      ],
-      "severity": "low",
-      "status": "refuted",
-      "criterion": "Sharpe lost with one additional session of execution delay stays within the maximum delay-decay threshold.",
-      "observation": "The reported delay decay is well inside the threshold at the tested intraday delay, so same-session timing fragility is not indicated; longer delays were not evaluated.",
-      "evidence_request": "Delay variants at a full session and at the next open to confirm the decay profile."
-    }
-  ],
-  "dissent": []
+  "summary": "The stated mechanism — investor under-reaction to earnings news producing post-announcement drift — is a recognized economic channel, and the frozen spec's timing basis and expected sign are consistent with it. The measured information coefficient, t statistic and Sharpe carry the predicted positive sign, and the effect magnitude is modest enough to be consistent with a genuine fundamental drift signal rather than a timing artifact. This is a targeted mechanism/sign/timing review only: cost, concentration, regime, capacity and crowding stresses and full red-team signoff were excluded, and the statistical review artifact separately records its gate as not passed, which other reviewers must resolve.",
+  "verdict": "supported"
 }
 ```
 
@@ -645,6 +1036,50 @@ Usefulness: ___ / 5; evidence support: ___ / 5; clarity: ___ / 5; notes: ___
 ## Sample 7
 
 Task: An amendment cannot replace the original before its acceptance
+
+### Supplied task inputs
+
+```json
+{
+  "filing": {
+    "acceptanceDateTime": "2024-08-01T12:00:00Z",
+    "filingDate": "2024-08-01",
+    "reportDate": "2024-03-31",
+    "version": "amendment"
+  },
+  "decision_ts": "2024-05-03T20:00:00Z",
+  "review_scope": {
+    "mode": "targeted_review",
+    "assigned": [
+      "knowledge_time",
+      "filing_version"
+    ],
+    "excluded": [
+      "full_red_team_signoff",
+      "cost_multiplier_stress",
+      "contributor_exclusion_stress",
+      "volatility_regime_stress",
+      "real_market_capacity",
+      "factor_crowding"
+    ],
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ],
+    "dissent": []
+  },
+  "evidence_catalog": [
+    {
+      "evidence_id": "ev_02e425ab398e2179adc285e2",
+      "source_type": "artifact:evaluation-input",
+      "step": "Evaluation input"
+    }
+  ]
+}
+```
+
+### Model output
 
 ```json
 {
@@ -731,6 +1166,49 @@ Usefulness: ___ / 5; evidence support: ___ / 5; clarity: ___ / 5; notes: ___
 ## Sample 8
 
 Task: A filed date without acceptance time is insufficient evidence
+
+### Supplied task inputs
+
+```json
+{
+  "filing": {
+    "filingDate": "2024-05-02",
+    "reportDate": "2024-03-31",
+    "version": "original"
+  },
+  "decision_ts": "2024-05-02T20:00:00Z",
+  "review_scope": {
+    "mode": "targeted_review",
+    "assigned": [
+      "knowledge_time",
+      "filing_version"
+    ],
+    "excluded": [
+      "full_red_team_signoff",
+      "cost_multiplier_stress",
+      "contributor_exclusion_stress",
+      "volatility_regime_stress",
+      "real_market_capacity",
+      "factor_crowding"
+    ],
+    "unavailable_capabilities": [
+      "get_statistics accepts experiment_id, not filtered return arrays or regime arguments",
+      "cost/date/delay variants require freeze_hypothesis followed by run_backtest/get_statistics",
+      "no factor-return source or contribution-exclusion tool is provided"
+    ],
+    "dissent": []
+  },
+  "evidence_catalog": [
+    {
+      "evidence_id": "ev_536188d901d59c1122609f68",
+      "source_type": "artifact:evaluation-input",
+      "step": "Evaluation input"
+    }
+  ]
+}
+```
+
+### Model output
 
 ```json
 {
