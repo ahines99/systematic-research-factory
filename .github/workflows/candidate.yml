@@ -71,6 +71,13 @@ jobs:
           curl --fail --retry 10 --retry-delay 6 --retry-all-errors "https://${APP}.fly.dev/healthz"
           flyctl ssh console --app "$APP" -C "rsf --provider rules demo"
           uv run --no-sync python scripts/smoke_deployment.py "https://${APP}.fly.dev" --require-key --record-runs candidate-runs.json
+      - name: browser verification and screenshots
+        env:
+          APP: ${{ steps.meta.outputs.app }}
+        run: |
+          npm install --prefix /tmp/rsf-browser --no-save playwright@1.63.0
+          /tmp/rsf-browser/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/rsf-browser/node_modules node scripts/browser_smoke.cjs "https://${APP}.fly.dev" var/browser
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -79,3 +86,4 @@ jobs:
             candidate-image.txt
             candidate-scan.json
             candidate-runs.json
+            var/browser/
