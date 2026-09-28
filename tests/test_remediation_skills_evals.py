@@ -243,6 +243,7 @@ async def test_stored_judgment_fidelity_detects_tampered_number_and_scoped_memo(
         "statistics",
         "untrusted_text_flags",
         "evidence_catalog",
+        "metric_catalog",
         "review_scope",
     }
     assert "bootstrap_method" in payload["statistics"]

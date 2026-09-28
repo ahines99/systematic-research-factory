@@ -23,6 +23,7 @@ from ..judgment import prompts
 from ..judgment.contract import (
     SCHEMA_VERSION,
     JudgmentValidationError,
+    metric_catalog,
     output_schema,
     render_memo,
     validate_output,
@@ -556,7 +557,12 @@ class JudgmentStep:
         }
         slug = self.slug.replace("-", "_")
         scope = prompts.review_scope(slug)
-        payload = {**self.payload(ctx), "evidence_catalog": catalog, "review_scope": scope}
+        payload = {
+            **self.payload(ctx),
+            "evidence_catalog": catalog,
+            "metric_catalog": metric_catalog(evidence_documents),
+            "review_scope": scope,
+        }
         if slug == "research_committee":
             prior_reviews = []
             dissent = []

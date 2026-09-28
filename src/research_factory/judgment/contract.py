@@ -252,6 +252,22 @@ METRIC_FORMATS = {
 }
 
 
+def metric_catalog(documents: dict[str, Any]) -> list[dict[str, str]]:
+    """Expose resolvable canonical references, not an unbounded numeric dataset dump."""
+    result = []
+    for evidence_id in sorted(documents):
+        for path in sorted(METRIC_LABELS):
+            ref = MetricReference(
+                evidence_id=evidence_id, field_path=path, format=METRIC_FORMATS.get(path, ".3f")
+            )
+            try:
+                value = resolve_metric(ref, documents)
+            except (KeyError, IndexError, TypeError, ValueError, OverflowError):
+                continue
+            result.append({**ref.model_dump(), "label": METRIC_LABELS[path], "rendered_value": value})
+    return result
+
+
 def validate_output(
     raw: Any,
     *,

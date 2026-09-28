@@ -36,6 +36,13 @@ of the artifact it came from. Rules:
    outside metric references. Targeted reviews may leave attacks empty; do not expand
    them into a full red-team audit. For an unrefuted blocking attack use this task's negative
    verdict (leakage, unsupported, infeasible, or reject), never a positive verdict.
+9. When metric_catalog is present, select numeric references from it verbatim: copy its
+   evidence_id, field_path and format. Do not copy label or rendered_value into metric_refs.
+   A quantitative statement must be exactly "{metric:0}" or "{metric:0}; {metric:1}",
+   with NO explanatory words, units or labels. Put qualitative interpretation in a separate
+   fact or risk claim with an empty metric_refs list. Never invent a path or format.
+10. For a targeted review, use a short summary and only the claims necessary to explain the
+    assigned conclusion. Avoid repeating the same statistics or excluded checks.
 Respond only with JSON matching the required schema."""
 
 STEP_PROMPTS = {

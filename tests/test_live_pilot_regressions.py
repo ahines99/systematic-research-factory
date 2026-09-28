@@ -11,10 +11,47 @@ import pytest
 from research_factory.config import Settings
 from research_factory.domain.errors import TransientError
 from research_factory.judgment import prompts
-from research_factory.judgment.contract import JudgmentValidationError, output_schema, validate_output
+from research_factory.judgment.contract import (
+    JudgmentValidationError,
+    metric_catalog,
+    output_schema,
+    validate_output,
+)
 from research_factory.judgment.providers import AnthropicProvider, JudgmentRequest
 from research_factory.persistence.budget import BudgetReservations
 from research_factory.services.container import build_services
+
+
+def test_metric_catalog_exposes_only_valid_fields_with_canonical_formats() -> None:
+    documents = {
+        "ev": {
+            "n_obs": 300,
+            "sharpe_annualized": 1.25,
+            "newey_west_t": float("nan"),
+            "deflated_sharpe": True,
+            "arbitrary": 999,
+        }
+    }
+    catalog = metric_catalog(documents)
+    assert {r["field_path"]: r["format"] for r in catalog} == {"/n_obs": "d", "/sharpe_annualized": ".3f"}
+    for row in catalog:
+        raw = {
+            "verdict": "supported",
+            "confidence": "high",
+            "summary": "A directly grounded metric follows.",
+            "claims": [
+                {
+                    "kind": "calculation",
+                    "statement": "{metric:0}",
+                    "evidence_ids": ["ev"],
+                    "metric_refs": [{k: row[k] for k in ("evidence_id", "field_path", "format")}],
+                }
+            ],
+        }
+        result = validate_output(
+            raw, verdicts=["supported"], allowed_evidence={"ev"}, evidence_documents=documents
+        )
+        assert row["rendered_value"] in result.claims[0].statement
 
 
 @pytest.mark.parametrize(

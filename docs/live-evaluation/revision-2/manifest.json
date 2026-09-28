@@ -1,0 +1,7 @@
+{
+  "source_commit": "7bcbd3d4816b213211ce4660c535f4189dfcfb34",
+  "protocol_sha256": "b3e2ade4302d520b9be450051364e70a54ec4979e05ff71594237aeff2dfd293",
+  "original_manifest_sha256": "bdeefc830c7e420af59a8d5005dd573a34009da1326c3b43ab29f7699c90f842",
+  "accounting": "same original var/live-eval/accounting.db",
+  "unresolved_original_reservation_retained": true
+}
