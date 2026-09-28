@@ -1,7 +1,7 @@
 * text=auto eol=lf
 *.png binary
 *.whl binary
-docs/live-evaluation/**/*.json -text
+docs/live-evaluation/**/*.json -text whitespace=cr-at-eol
 
-docs/operations/**/*.json -text
-docs/live-evaluation/**/*.txt -text
+docs/operations/**/*.json -text whitespace=cr-at-eol
+docs/live-evaluation/**/*.txt -text whitespace=cr-at-eol
