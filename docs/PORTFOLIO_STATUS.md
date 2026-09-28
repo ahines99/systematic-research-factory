@@ -2,6 +2,8 @@
 
 Updated 2026-09-28 UTC. Audience: equal emphasis on AI engineering and quantitative research. The original gap assessment remains in the [roadmap](PORTFOLIO_ROADMAP.md); this document records current delivery.
 
+[v1.0.0 is published](https://github.com/ahines99/systematic-research-factory/releases/tag/v1.0.0) from `c2b8babee11b13a011f901f8e421ee3b2a1fe3f4`. The [release workflow](https://github.com/ahines99/systematic-research-factory/actions/runs/36368156645) records tagged-source tests, scanned-digest deployment and final browser acceptance. All downloaded release checksums and 121 evidence entries were verified.
+
 The [portfolio](https://ahines99.github.io/systematic-research-factory/) and [hosted demo](https://systematic-research-factory.fly.dev/demo) are online. Public demos use deterministic rules and scripted approvers. All prices are simulated; neither the demo nor the simulation study establishes tradable alpha.
 
 ## Delivered evidence

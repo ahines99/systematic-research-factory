@@ -18,6 +18,6 @@ The local remediation scan used Grype 0.119.0 and passed the **fixed High/Critic
 - Numerical replay depends on CPU/backend settings as well as source and versions. See the [measured CI finding](audits/2026-09-27/ci-followup.md); historical numerical comparison must not be labeled exact replay.
 - The project has no production on-call commitment. Keep public reports as an offline fallback, cap spending, restrict keyed access, and shut down dynamic service if ownership or monitoring lapses.
 
-Before release, attach the actual scan/digest, reassess any changed advisories, complete the hosted controls, and have Alex explicitly accept remaining risk or defer publication. No `v1.0.0` tag has been created by this preparation.
+The owner subsequently authorized finalization and publication. The actual v1.0.0 image scan, digest and hosted control evidence are preserved in the [release review](go-live-review.md) and [release assets](https://github.com/ahines99/systematic-research-factory/releases/tag/v1.0.0). This records authorization to publish, not invented human ratings or a claim that all model outputs are reliable.
 
 The deployed candidate scan on 2026-09-28 matched the same three Medium and one Low advisories, with no High/Critical matches. Its immutable digest and full JSON are preserved in the hosted evidence directory.
