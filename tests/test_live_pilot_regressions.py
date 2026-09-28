@@ -22,6 +22,24 @@ from research_factory.persistence.budget import BudgetReservations
 from research_factory.services.container import build_services
 
 
+@pytest.mark.parametrize(
+    "prose", ["Prices are simulated (ADR-0003).", "Inspect the original 10-K/A and 10-Q."]
+)
+def test_document_identifiers_are_not_measurements(prose: str) -> None:
+    raw = {
+        "verdict": "supported",
+        "confidence": "high",
+        "summary": prose,
+        "claims": [{"kind": "risk", "statement": prose}],
+    }
+    validate_output(raw, verdicts=["supported"], allowed_evidence=set())
+    for suffix in [" Sharpe is 999.", " Return is 4.02 percent.", " See ADR-0999."]:
+        with pytest.raises(JudgmentValidationError, match="ungrounded number"):
+            validate_output(
+                {**raw, "summary": prose + suffix}, verdicts=["supported"], allowed_evidence=set()
+            )
+
+
 def test_metric_catalog_exposes_only_valid_fields_with_canonical_formats() -> None:
     documents = {
         "ev": {
