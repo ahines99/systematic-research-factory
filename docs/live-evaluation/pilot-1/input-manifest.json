@@ -1,0 +1,30 @@
+{
+  "prepared_at": "2026-09-28T00:07:32.474855+00:00",
+  "source_commit": "873484d2bdb2b08942ca4a774551564350200290",
+  "protocol_sha256": "85efb036b8e38a3018a297acbd4564d06a1463d525f981bad4e1634240f4f215",
+  "case_sha256": {
+    "01-clean-pass.yaml": "6ea6957196c69dae715cfb469c2ee1c54bf1d1a7af8ee4f3c503d4e600c49e8f",
+    "14-edgar-real-filings.yaml": "b46e924cdea7a9ad4861ade8d2da09d18da0f216aaed1e95ed37e775e85ffb9d",
+    "31-pit-after-close.yaml": "fb975b70902e0c6e8be91b80e558fc405b0589ecb1b42fb6d1b80182e13febe0",
+    "32-pit-amended-version.yaml": "8489cb0c7ea05a09f0b8858c7d68d51f39a54623cb9f43ef9e643c1793ffb4e7",
+    "33-pit-date-only.yaml": "35b1519efdb89e5cda755811e6319ee2c498d4b90fea80dda0eab3882535ebeb",
+    "34-pit-clean-version.yaml": "c4818d09ff3c0ddf4aed289fe411420e3fccb32eb57c97e7f9f3d44716f84fcc",
+    "37-full-red-team-missing-analyses.yaml": "3207d1b239da57ac19b010b0560a62a29290f7bd46e71492c3be4263fde43b6a"
+  },
+  "skill_sha256": {
+    "skills/financial-research-statistics/references/formulas.md": "4ac31fe1d627a71fb1c255ea89d9a70ef9ed0a931fcd04f3aaeba080c3d45d96",
+    "skills/financial-research-statistics/SKILL.md": "6b34ea55191fe29b5dd50b683d5ccd1af4bc5ebf45b47994467ec11ba5b62802",
+    "skills/point-in-time-research/references/edgar-timestamps.md": "8b3d8f5e8b5f61738ba6fbb601a4ad81ec4a3b0a4455332b456420e498c37699",
+    "skills/point-in-time-research/references/survivorship-and-identifiers.md": "84ff3eec61d248ca2d5c4128fb7951a28a6a5ec91608c2bdd9940bd617c1a469",
+    "skills/point-in-time-research/scripts/check_pit_timestamps.py": "088778f045a7c7f84021212031c2bd552b0f4eb73f54b45b40109326b3187834",
+    "skills/point-in-time-research/SKILL.md": "b63a4fbcbb4cd41a32bbd6b042c8ca7cea400b9e48123aa305b1b047fc0c4903",
+    "skills/research-committee/references/memo-template.md": "6a04541c72ea5450a2a6d862eacee7814e0c0944d013522b845ebb68b61c2115",
+    "skills/research-committee/SKILL.md": "3988aad8c76d935b33f3f7f6058b60d4bd561454ef48c11888b17412c8624f30",
+    "skills/signal-red-team/references/attack-playbook.md": "ee6f53d066431e4f1d0206454c7566cb8a390c547e130e7f9484744e0c0a6663",
+    "skills/signal-red-team/SKILL.md": "0af5ad46b803d110d96352d74e431294cbceebdd9070a3df56004861f17d4cea"
+  },
+  "status": "prepared_not_executed",
+  "accounting_database": "sqlite:///var/live-eval/accounting.db",
+  "pilot_allowance_usd": 3,
+  "experiment_allowance_usd": 20
+}

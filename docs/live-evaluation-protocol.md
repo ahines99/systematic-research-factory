@@ -1,6 +1,14 @@
 # Live model evaluation protocol
 
-Prepared before any paid calls. **Not executed.** The offline 37-case scorecard is not a live Anthropic baseline.
+Prepared before any paid calls. The first pilot was executed and failed complete acceptance; its [frozen report](live-evaluation/pilot-1/pilot-report.md) preserves both attempts. The offline 37-case scorecard is not a live Anthropic baseline.
+
+## Revision two, declared before further generation
+
+The first pilot exposed an incompatible negative-verdict check and a long-response transport failure. Revision two fixes task-specific negative verdicts, consumes provider streaming internally, and clarifies concise qualitative output versus numeric metric references. These changes were informed by the pilot: subsequent results are a separate revised experiment, not an untouched replication of the initial protocol. Original artifacts and accounting are retained.
+
+The owner explicitly instructed continuation without dashboard reconciliation. The uncertain first-pilot call retains its full $0.99998 reservation in the same ledger; it is never refunded, represented as confirmed spend, or excluded from the $3 daily/pilot and $20 lifetime admission checks. Continue only while confirmed usage plus all unresolved holds plus the next bounded run fits the allowance. Dashboard reconciliation remains an unverified limitation. No retry of the uncertain original step is permitted.
+
+Run the same two-case pilot under the revised source, then the same seven-case paired comparison if compatible and affordable. Use distinct revision-two output paths. Preserve failed checks; neither prompt tuning nor case replacement is allowed during this revision. If the daily allowance prevents completion, publish the completed observations and remaining schedule instead of increasing caps.
 
 ## Frozen comparison
 

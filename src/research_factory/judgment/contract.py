@@ -274,6 +274,10 @@ def validate_output(
     if output.verdict not in verdicts:
         problems.append(f"verdict {output.verdict!r} is not one of {verdicts}")
     scope = review_scope or {}
+    # Each task has its own negative verdict. Requiring the committee's
+    # "reject" in a PIT review makes a supported "leakage" finding impossible.
+    negative_verdicts = set(verdicts) & {"reject", "leakage", "unsupported", "infeasible"}
+    cautious_verdicts = negative_verdicts | (set(verdicts) & {"needs_evidence", "needs_more_evidence"})
     seen = [a.attack for a in output.attacks]
     if len(seen) != len(set(seen)) or any(a not in ATTACKS for a in seen):
         problems.append("attack names must be known and unique")
@@ -292,12 +296,16 @@ def validate_output(
             and not output.needs_evidence
         ):
             problems.append(f"untested material attack {attack.attack} requires needs_evidence")
-        if attack.status == "unrefuted" and attack.severity == "blocking" and output.verdict != "reject":
+        if (
+            attack.status == "unrefuted"
+            and attack.severity == "blocking"
+            and output.verdict not in negative_verdicts
+        ):
             problems.append("unrefuted blocking attack requires rejection")
         if (
             attack.status == "unrefuted"
             and attack.severity == "high"
-            and output.verdict not in ("reject", "needs_more_evidence")
+            and output.verdict not in cautious_verdicts
         ):
             problems.append("unrefuted high attack requires rejection or more evidence")
         for prose in (attack.criterion, attack.observation, attack.evidence_request):

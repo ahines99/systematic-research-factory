@@ -30,6 +30,12 @@ of the artifact it came from. Rules:
 7. review_scope identifies the assigned checks and explicitly excluded work. Missing material
    evidence for an assigned check requires needs_evidence=true. Never describe excluded work
    as tested or imply a complete red-team signoff from a limited review.
+8. Keep the review concise. Qualitative timestamp comparisons are facts, not calculation
+   claims. A calculation claim always requires metric_refs. Spell out filing-form names
+   and other identifiers containing digits in prose; this contract forbids numeric characters
+   outside metric references. Targeted reviews may leave attacks empty; do not expand
+   them into a full red-team audit. For an unrefuted blocking attack use this task's negative
+   verdict (leakage, unsupported, infeasible, or reject), never a positive verdict.
 Respond only with JSON matching the required schema."""
 
 STEP_PROMPTS = {
