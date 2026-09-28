@@ -1,0 +1,6 @@
+{
+  "source_commit": "4b75e8cdbd9f3311ec1f4004241ac2fea61505e1",
+  "purpose": "final corrective clean-workflow pilot; not paired experiment",
+  "max_cost_usd_per_run": 0.85,
+  "used_plus_held_before_usd": 2.089025
+}

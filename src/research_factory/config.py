@@ -31,7 +31,9 @@ class RetryPolicy(BaseModel):
 
 
 class Budgets(BaseModel):
-    max_tokens_per_run: int = 60_000
+    # Three skill-backed review steps include large repeated input contexts.
+    # Financial admission remains independently capped at $1/run and $3/day.
+    max_tokens_per_run: int = 150_000
     max_cost_usd_per_run: float = 1.00
     max_cost_usd_per_day: float = 3.00
     max_guest_live_runs_per_day: int = 3

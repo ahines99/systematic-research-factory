@@ -618,6 +618,15 @@ async def run_case(
         "evidence_hashes": inputs,
         "judgments": artifacts,
         "judgment_audit": audits,
+        "runs": [
+            {
+                "run_id": run.run_id,
+                "status": str(run.status),
+                "current_step": run.current_step,
+                "status_reason": run.status_reason,
+            }
+            for run in case_runs
+        ],
         "accounting": {
             "durable": paid_accounting,
             "ledger_id": sha256_hex(accounting_engine.url.render_as_string(hide_password=True).encode())

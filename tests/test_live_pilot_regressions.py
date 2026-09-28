@@ -22,6 +22,37 @@ from research_factory.persistence.budget import BudgetReservations
 from research_factory.services.container import build_services
 
 
+@pytest.mark.anyio
+async def test_paid_response_survives_budget_stop_on_validation_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from research_factory.domain.errors import BudgetExceededError
+    from research_factory.judgment.providers import JudgmentResponse
+    from research_factory.workflows.primary import primary_engine
+
+    from .conftest import make_experiment
+
+    services = build_services(Settings(database_url="sqlite://", blob_store="memory://"))
+    calls = 0
+
+    def invoke(*args: Any) -> JudgmentResponse:
+        nonlocal calls
+        calls += 1
+        if calls > 1:
+            raise BudgetExceededError("test retry cap")
+        return JudgmentResponse(
+            {"invalid": "retained paid output"}, "anthropic", "claude-opus-5", 10, 5, 0.001
+        )
+
+    monkeypatch.setattr(services.budget, "invoke", invoke)
+    record, _ = services.ledger.freeze(make_experiment(), "alice")
+    run = await primary_engine(services).start(record.experiment_id, "alice")
+    assert "BUDGET_EXCEEDED" in (run.status_reason or "")
+    events = [e for e in services.audit.events(run.run_id) if e.event_type == "model_response_received"]
+    assert len(events) == 1
+    assert events[0].payload["raw_output"] == {"invalid": "retained paid output"}
+
+
 @pytest.mark.parametrize(
     "prose", ["Prices are simulated (ADR-0003).", "Inspect the original 10-K/A and 10-Q."]
 )
