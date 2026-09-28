@@ -10,7 +10,7 @@ The [portfolio](https://ahines99.github.io/systematic-research-factory/) and [ho
 |---|---|
 | Engineering | Five-specialist audit remediated; 302 local tests passed, four PostgreSQL-specific skips covered separately; ten protected-branch CI checks passed before hosted deployment. |
 | Quant research | Frozen 240-combination study, twenty held-out worlds, all raw results and inspected plots. Clean null gate passes 0/20; clean planted passes 13/20; all forty leaky controls blocked. |
-| Live AI evaluation | Development pilots and frozen comparison are reported separately in the [live evaluation record](live-evaluation-protocol.md). Rejected outputs, costs and latency failures remain failures. No general skills-uplift or unattended-model-reliability claim. |
+| Live AI evaluation | The [frozen comparison](live-evaluation/final-study/report.md) completed all 42 observations: Skills-on 15/21, Skills-off 14/21. Development pilots remain separately labeled. Rejected outputs, costs and latency failures remain failures. No general skills-uplift or unattended-model-reliability claim. |
 | Deployment | One shared CPU/1 GiB Fly machine in iad, dedicated Neon database and nonadministrative role, private R2 storage; deploy uses a scanned immutable image digest. |
 | Database | Neon PostgreSQL 18.6: 67 contract tests passed, one SQLite-only parameter skipped; client TLS verified. Disposable validation branch removed. |
 | Retention | R2 ninety-day lock rejects overwrite and delete with HTTP 409; original object bytes preserved. Owner accepted Neon's verified six-hour point-in-time recovery window for this portfolio. |
@@ -32,7 +32,7 @@ Hosting target: $25/month, with review at a $20 projected monthly cost. One shar
 ## Owner actions
 
 1. **Personal review and narration:** read the [case study](CASE_STUDY.md) and [research note](research/note.md), then use the [recording script](demo-script.md) for a short walkthrough. Explain simulation limits, the clean/leaky controls and the failed live-model cases. Add the video URL when published; no video or personal endorsement has been fabricated.
-2. **Human model ratings:** rate the blinded sample for usefulness, evidence support and clarity before opening its separate arm key. These ratings are distinct from automated pass/fail and remain uncollected until you supply them.
+2. **Human model ratings:** rate the [blinded sample](live-evaluation/final-study/blinded-review.md) for usefulness, evidence support and clarity before opening its separate arm key. These ratings are distinct from automated pass/fail and remain uncollected until you supply them.
 3. **Ongoing ownership:** observe actual Fly/Neon/R2 costs over seven days using the [cost log](operations/cost-observation.md); retain account access and review security updates. The app-scoped GitHub Fly deployment token expires after ninety days and must be renewed before then.
 The owner authorized finalization and publication; the assistant records the concrete technical release review and post-deployment checks. No personal sample ratings or narration are inferred from that authorization.
 

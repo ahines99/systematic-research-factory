@@ -1,5 +1,7 @@
 # Live model evaluation protocol
 
+The [completed final report](live-evaluation/final-study/report.md) contains all 42 paired-study observations, earlier-cost accounting, exact runner/input identities and the unscored blinded review packet.
+
 Prepared before any paid calls. The first pilot was executed and failed complete acceptance; its [frozen report](live-evaluation/pilot-1/pilot-report.md) preserves both attempts. The offline 37-case scorecard is not a live Anthropic baseline.
 
 ## Final-study authorization and source freeze (2026-09-28 UTC)

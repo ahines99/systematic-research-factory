@@ -2,9 +2,14 @@
 
 All notable changes to this project. Versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — v1.0 candidate
+## [1.0.0] — 2026-09-28
 
-This is an unreleased candidate. Current local evidence and external acceptance are recorded in the [remediation report](docs/audits/2026-09-27/remediation.md) and [go-live review](docs/go-live-review.md). There is no separate 0.1.0 release: the MVP and the v1.0 work ship together as `v1.0.0` ([ADR-0009](docs/adr/0009-production-defaults.md)).
+The first release combines the MVP, audit remediation, reproducible research, live-model evaluation and verified hosted delivery. There is no separate 0.1.0 release. Exact results, limitations and operational proofs are linked from the [delivery status](docs/PORTFOLIO_STATUS.md).
+
+### Portfolio delivery
+- Publish the frozen Skills-on/off study with every attempted observation, costs, failures and blinded review packet.
+- Deploy and verify Fly/Neon/R2, locked evidence, official MCP clients, isolated restore with exact replay, viewer rotation, stop/start persistence and candidate rollback.
+- Include live/operational evidence, final image scan and desktop/mobile acceptance in release delivery.
 
 ### Hosted acceptance fixes
 - Distinguish the recovery demo using its recorded acquisition retry; show the latest run for each scenario after reseeding.
@@ -40,7 +45,7 @@ This is an unreleased candidate. Current local evidence and external acceptance 
 - Complete distribution resources, corrected non-root Docker build, full release checks and deployment of the scanned image digest.
 - Production container upgraded to pinned Python 3.14.7 and patched Debian OpenSSL after actual image scanning; the high/critical policy passes, with four lower-severity advisories tracked in the remediation report.
 - Artifact-bound numeric reviews, explicit uncertainty handling, scoped skill/reference payloads, attributable evaluations and robust malformed-input failures.
-- Corrected status and data provenance claims; hosted deployment, live provider experiments and operational drills remain pending.
+- Corrected status and data provenance claims; hosted deployment, live provider experiments and operational drills are documented separately from offline tests.
 
 ### Historical audit fixes (2026-09-23)
 - **Access control:** resources check the HTTP caller, so guests can't read private runs; only a run's requester or an approver can resume or cancel it; guest data queries write no evidence; the proxy client-IP header is trusted only with `RSF_TRUST_PROXY_HEADERS`.

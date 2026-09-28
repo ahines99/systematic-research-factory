@@ -2,11 +2,11 @@
 
 A governed pipeline for systematic equity research. A trading hypothesis is frozen, tested on point-in-time data, audited for leakage and overfitting, and reviewed by a research committee. An LLM drafts evidence-cited reviews. Code computes and renders numeric claims; a deterministic gate and a separate human control decisions. Qualitative prose still needs review.
 
-> **Status:** unreleased v1.0 candidate (package `1.0.0`, awaiting release tag). Public source, hosted CI, an offline demo and a 240-run controlled simulation study are available. Live-model evaluation, hosted operations, video and final release remain pending. See the [current status and owner actions](docs/PORTFOLIO_STATUS.md).
+> **Status:** hosted research portfolio with a reproducible 240-run simulation study, a measured live-model comparison, and verified recovery/access controls. Live-model failures and human review boundaries are published explicitly. See [release status](https://github.com/ahines99/systematic-research-factory/releases), [hosted demo](https://systematic-research-factory.fly.dev/demo), and [delivery evidence and owner actions](docs/PORTFOLIO_STATUS.md).
 
 [![CI](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/ahines99/systematic-research-factory/actions/workflows/ci.yml)
 
-**[Explore the portfolio](https://ahines99.github.io/systematic-research-factory/)** · [Case study](docs/CASE_STUDY.md) · [Quantitative research note](docs/research/note.md) · [Recorded reports](docs/samples/README.md)
+**[Explore the portfolio](https://ahines99.github.io/systematic-research-factory/)** · [Case study](docs/CASE_STUDY.md) · [Quantitative research note](docs/research/note.md) · [Recorded reports](docs/samples/README.md) | [Live AI results](docs/live-evaluation/final-study/report.md) | [Hosted acceptance](docs/operations/2026-09-28/README.md)
 
 The public reports use deterministic rules and scripted approval actors. All prices are simulated. They demonstrate workflow behavior, not live-model quality or real investment returns.
 

@@ -9,6 +9,8 @@ Three planned repeats per arm across seven cases; arm order on/off, off/on, on/o
 | skills-on | 15/21 | 21 | $4.928400 | 23.845 |
 | skills-off | 14/21 | 21 | $2.371960 | 18.02 |
 
+Of 21 complete pairs, both arms passed 14, only Skills-on passed one, only Skills-off passed none, and both failed six. Skills-on cost more than twice as much in this small fixed-case comparison. This is descriptive evidence, not a statistically established general improvement.
+
 ## Every observation
 
 | Repeat | Arm | Case | Result | Seconds | USD | Failed checks |

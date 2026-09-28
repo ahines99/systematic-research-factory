@@ -38,3 +38,9 @@ The current delivery and account dependencies are in [PORTFOLIO_STATUS.md](PORTF
 ## Interview walkthrough
 
 Explain the clean run, then show why a timing leak is invalid even if performance improves. Trace a numerical claim to its artifact, explain how a later trial affects committee review, and distinguish a scripted approval from a real approver. Close with the CPU replay finding and the limitations of the simulation. These are concrete design decisions to defend, not claims of production financial performance.
+
+## Measured live-model result
+
+The frozen [seven-case comparison](live-evaluation/final-study/report.md) completed three repeats per arm: Skills-on passed 15/21 at $4.928400, Skills-off 14/21 at $2.371960. Both passed fourteen paired observations; one passed only with Skills; six failed in both arms. Full workflows exceeded the frozen latency target and sometimes failed validation or cost targets. The small difference does not establish general improvement, while the extra context had a measurable cost. Both arms retained the same core prompt, evidence and hard validators.
+
+The deployed system's conservative behavior is part of the result: invalid or uncertain reviews pause for evidence rather than receiving fabricated approvals. All earlier development failures and the original uncertain charge remain in the experiment accounting. The operational proof is separate: a point-in-time database restore replayed six deterministic artifacts exactly, real credentials were rotated, and preserved image rollback passed in both directions.
