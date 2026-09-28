@@ -1,6 +1,6 @@
 # v1.0 release review
 
-Reviewed 2026-09-28 UTC. The hosted service is live. The 1.0.0 package declarations and recovery-card fix are merged at `f4d438f`; tagging and post-release acceptance are separate actions. See [current release publication](https://github.com/ahines99/systematic-research-factory/releases).
+Reviewed 2026-09-28 UTC. [v1.0.0 is published](https://github.com/ahines99/systematic-research-factory/releases/tag/v1.0.0) at `c2b8babee11b13a011f901f8e421ee3b2a1fe3f4`. The [release workflow](https://github.com/ahines99/systematic-research-factory/actions/runs/36368156645) is the authoritative record of tagged-source tests, scanned-digest deployment and final desktop/mobile acceptance.
 
 ## Concrete evidence
 
@@ -41,3 +41,9 @@ The owner explicitly instructed completion of all remaining assistant work and f
 The v1 runtime candidate passed [the full hosted pipeline](https://github.com/ahines99/systematic-research-factory/actions/runs/36366507618), including the corrected six-scenario browser check. Source: `f4d438f7b28bf0702e6a01e0b314188a62ccb34c`. Image: `registry.fly.io/systematic-research-factory@sha256:22248d65630702a8ddd0c66e0f9c69d1967ef91264e90712800b27d84bbfc9fe`. [Scan, screenshots and manifest](operations/2026-09-28/v1-runtime/manifest.json) preserve the actual candidate. The final tag adds the published experiment/operational record and release-evidence attachment checks; it does not change the frozen model prompts or quantitative implementation.
 
 The [candidate rollback drill](operations/2026-09-28/rollback-acceptance.json) passed in both directions in 99.34 seconds. The intended v1 candidate is restored and all original reports remain readable.
+
+## Published release identity
+
+Image: `ghcr.io/ahines99/systematic-research-factory@sha256:b1e853fdf0234bcdd431bac2dda9f33e0554f47af70620e88caa2a120f9e10cb`. Anonymous registry-manifest access passed. All seven intended release assets were downloaded; every SHA256SUMS entry and all 121 evidence-bundle members matched. The final scan contains three Medium and one Low match, with no High/Critical matches. Post-deployment proof and final screenshots are attached to the release after the workflow completes.
+
+The build tool's one-byte distribution-directory ignore marker was accidentally matched by the original upload wildcard. It was verified and removed from the release assets; future uploads explicitly select wheels and source distributions. No research evidence or release distribution was removed.

@@ -103,7 +103,8 @@ jobs:
             release-scan.json
             image-digest.txt
             SHA256SUMS
-            var/distributions/*
+            var/distributions/*.whl
+            var/distributions/*.tar.gz
             release-evidence.zip
           generate_release_notes: true
 
